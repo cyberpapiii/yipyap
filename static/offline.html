@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YipYap - You're Offline</title>
+    <meta name="theme-color" content="#6366f1">
+    <link rel="icon" href="/favicon.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .offline-container {
+            text-align: center;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .offline-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #6366f1;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .network-status {
+            margin-top: 20px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .network-status.online {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            display: block;
+        }
+
+        .network-status.offline {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            display: block;
+        }
+
+        .cached-content {
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        .cached-content h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .cached-posts {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .post-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .post-item:last-child {
+            border-bottom: none;
+        }
+
+        .post-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                margin: 10px;
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .offline-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>You're Offline</h1>
+        <p>It looks like you've lost your internet connection. Don't worry, you can still browse your recently viewed posts!</p>
+
+        <div class="network-status" id="networkStatus"></div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="tryReconnect()">Try Again</button>
+            <a href="/" class="btn btn-secondary">View Cached Content</a>
+        </div>
+
+        <div class="cached-content" id="cachedContent">
+            <h3>Recently Cached Posts</h3>
+            <div class="cached-posts" id="cachedPosts">
+                <div class="post-item">
+                    <div class="post-title">Loading cached content...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Network status monitoring
+        function updateNetworkStatus() {
+            const statusEl = document.getElementById('networkStatus');
+            if (navigator.onLine) {
+                statusEl.className = 'network-status online';
+                statusEl.textContent = '✅ Back online! You can now browse normally.';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                statusEl.className = 'network-status offline';
+                statusEl.textContent = '❌ Still offline. Showing cached content.';
+            }
+        }
+
+        // Try to reconnect
+        function tryReconnect() {
+            updateNetworkStatus();
+            if (navigator.onLine) {
+                window.location.href = '/';
+            } else {
+                // Show feedback that we're still offline
+                const statusEl = document.getElementById('networkStatus');
+                statusEl.className = 'network-status offline';
+                statusEl.textContent = '❌ Still offline. Check your connection and try again.';
+            }
+        }
+
+        // Load cached posts from IndexedDB
+        async function loadCachedPosts() {
+            try {
+                const db = await openDB();
+                const tx = db.transaction(['cached-posts'], 'readonly');
+                const store = tx.objectStore('cached-posts');
+                const index = store.index('timestamp');
+
+                const posts = [];
+                const request = index.openCursor(null, 'prev');
+
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor && posts.length < 10) {
+                        posts.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        displayCachedPosts(posts);
+                    }
+                };
+
+                request.onerror = () => {
+                    console.error('Failed to load cached posts');
+                    displayNoCachedContent();
+                };
+            } catch (error) {
+                console.error('Failed to access IndexedDB:', error);
+                displayNoCachedContent();
+            }
+        }
+
+        function displayCachedPosts(posts) {
+            const container = document.getElementById('cachedPosts');
+
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="post-item"><div class="post-title">No cached posts available</div></div>';
+                return;
+            }
+
+            container.innerHTML = posts.map(post => `
+                <div class="post-item">
+                    <div class="post-title">${post.content || 'Untitled Post'}</div>
+                    <div class="post-meta">Score: ${post.score || 0} • ${new Date(post.cachedAt).toLocaleDateString()}</div>
+                </div>
+            `).join('');
+        }
+
+        function displayNoCachedContent() {
+            const container = document.getElementById('cachedPosts');
+            container.innerHTML = '<div class="post-item"><div class="post-title">No cached content available</div></div>';
+        }
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('YipYapDB', 1);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('cached-posts')) {
+                        const store = db.createObjectStore('cached-posts', { keyPath: 'id' });
+                        store.createIndex('timestamp', 'cachedAt', { unique: false });
+                    }
+                };
+            });
+        }
+
+        // Initialize page
+        updateNetworkStatus();
+        loadCachedPosts();
+
+        // Listen for network changes
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        // Auto-refresh when back online
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'NETWORK_RESTORED') {
+                    window.location.href = '/';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

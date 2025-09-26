@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1a73e8" />
+  <title>YipYap - You're Offline</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .offline-container {
+      text-align: center;
+      max-width: 400px;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .offline-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      display: block;
+      opacity: 0.9;
+    }
+
+    .offline-title {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      opacity: 0.95;
+    }
+
+    .offline-subtitle {
+      font-size: 16px;
+      margin: 0 0 30px 0;
+      opacity: 0.8;
+      line-height: 1.5;
+    }
+
+    .offline-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .offline-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .offline-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .offline-btn.primary {
+      background: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    .offline-btn.primary:hover {
+      background: #1557b0;
+      border-color: #1557b0;
+    }
+
+    .connection-status {
+      margin-top: 30px;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f44336;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.online {
+      background: #4caf50;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .cached-content {
+      margin-top: 30px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .cached-content h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .cached-content ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .cached-content li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 480px) {
+      .offline-container {
+        margin: 20px;
+        padding: 30px 20px;
+      }
+
+      .offline-title {
+        font-size: 24px;
+      }
+
+      .offline-subtitle {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <span class="offline-icon">📡</span>
+    <h1 class="offline-title">You're Offline</h1>
+    <p class="offline-subtitle">
+      No internet connection detected. Some features may be limited, but you can still browse your recently viewed content.
+    </p>
+
+    <div class="offline-actions">
+      <button class="offline-btn primary" onclick="tryReload()">
+        Try Again
+      </button>
+      <button class="offline-btn" onclick="viewCachedContent()">
+        Browse Offline Content
+      </button>
+    </div>
+
+    <div class="connection-status">
+      <span id="status-indicator" class="status-indicator"></span>
+      <span id="status-text">Connection Status: Offline</span>
+    </div>
+
+    <div class="cached-content" id="cached-content" style="display: none;">
+      <h3>Available Offline Features:</h3>
+      <ul>
+        <li>Recently viewed posts (last 100)</li>
+        <li>Cached comments and discussions</li>
+        <li>Voting on posts (will sync when online)</li>
+        <li>Create new posts (will post when online)</li>
+        <li>Browse your profile and saved content</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Network status monitoring
+    function updateConnectionStatus() {
+      const indicator = document.getElementById('status-indicator');
+      const statusText = document.getElementById('status-text');
+
+      if (navigator.onLine) {
+        indicator.classList.add('online');
+        statusText.textContent = 'Connection Status: Online';
+
+        // Automatically reload after a short delay when back online
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        indicator.classList.remove('online');
+        statusText.textContent = 'Connection Status: Offline';
+      }
+    }
+
+    // Try to reload the main app
+    function tryReload() {
+      if (navigator.onLine) {
+        window.location.href = '/';
+      } else {
+        // Show a message that they're still offline
+        showOfflineMessage();
+      }
+    }
+
+    // Show cached content section
+    function viewCachedContent() {
+      const cachedSection = document.getElementById('cached-content');
+
+      if (cachedSection.style.display === 'none') {
+        cachedSection.style.display = 'block';
+      } else {
+        // Try to navigate to cached content
+        if ('serviceWorker' in navigator && 'caches' in window) {
+          window.location.href = '/?offline=true';
+        } else {
+          showOfflineMessage();
+        }
+      }
+    }
+
+    // Show temporary offline message
+    function showOfflineMessage() {
+      const message = document.createElement('div');
+      message.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(244, 67, 54, 0.9);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 6px;
+          z-index: 1000;
+          animation: slideDown 0.3s ease;
+        ">
+          Still offline. Please check your connection.
+        </div>
+        <style>
+          @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); }
+            to { transform: translateX(-50%) translateY(0); }
+          }
+        </style>
+      `;
+
+      document.body.appendChild(message);
+
+      // Remove message after 3 seconds
+      setTimeout(() => {
+        message.remove();
+      }, 3000);
+    }
+
+    // Listen for network status changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+
+    // Initial status check
+    updateConnectionStatus();
+
+    // Check for cached data and show available content
+    if ('serviceWorker' in navigator && 'caches' in window) {
+      caches.open('yipyap-data-v1').then(cache => {
+        cache.keys().then(keys => {
+          if (keys.length > 0) {
+            console.log('Cached content available:', keys.length, 'items');
+
+            // Show that cached content is available
+            const cachedSection = document.getElementById('cached-content');
+            if (cachedSection) {
+              cachedSection.style.display = 'block';
+            }
+          }
+        });
+      }).catch(err => {
+        console.log('No cached content available');
+      });
+    }
+
+    // Service worker communication
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'CACHE_UPDATED') {
+          console.log('Cache updated, content available offline');
+        }
+      });
+    }
+
+    // Periodic connection check
+    setInterval(() => {
+      // Try to fetch a small resource to check connection
+      fetch('/manifest.json', {
+        method: 'HEAD',
+        cache: 'no-cache'
+      }).then(() => {
+        if (!navigator.onLine) {
+          // Browser thinks we're offline but we got a response
+          updateConnectionStatus();
+        }
+      }).catch(() => {
+        // Connection failed, we're definitely offline
+        updateConnectionStatus();
+      });
+    }, 30000); // Check every 30 seconds
+  </script>
+</body>
+</html>

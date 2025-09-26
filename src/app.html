@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+	<!-- PWA Meta Tags -->
+	<link rel="manifest" href="%sveltekit.assets%/manifest.json" />
+	<meta name="theme-color" content="#6366f1" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+	<meta name="apple-mobile-web-app-title" content="YipYap" />
+
+	<!-- iOS Icons -->
+	<link rel="apple-touch-icon" sizes="180x180" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
+
+	<!-- Preload critical resources -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+	<title>YipYap - Dimes Square</title>
+	<meta name="description" content="Anonymous local community for Dimes Square. Share thoughts, vote, discuss." />
+
+	<!-- Open Graph -->
+	<meta property="og:title" content="YipYap - Dimes Square" />
+	<meta property="og:description" content="Anonymous local community for Dimes Square" />
+	<meta property="og:type" content="website" />
+	<meta property="og:image" content="%sveltekit.assets%/og-image.png" />
+
+	<!-- Twitter -->
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="YipYap - Dimes Square" />
+	<meta name="twitter:description" content="Anonymous local community for Dimes Square" />
+
+	%sveltekit.head%
+</head>
+<body data-sveltekit-preload-data="hover" class="bg-background text-foreground">
+	<div style="display: contents">%sveltekit.body%</div>
+
+	<script>
+		// PWA install prompt handling
+    // Clean up any legacy service workers (e.g., /sw.js from older setup)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) {
+          // If an old worker with a different filename is controlling, unregister it
+          if (reg.active && reg.active.scriptURL.endsWith('/sw.js')) {
+            reg.unregister().catch(() => {})
+          }
+        }
+      }).catch(() => {})
+    }
+
+		let deferredPrompt;
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+			// Trigger custom install UI
+			window.dispatchEvent(new CustomEvent('pwa-installable'));
+		});
+
+		// Track app installs
+		window.addEventListener('appinstalled', () => {
+			console.log('YipYap installed');
+		});
+
+		// Online/offline handling
+		window.addEventListener('online', () => {
+			window.dispatchEvent(new CustomEvent('app-online'));
+		});
+
+		window.addEventListener('offline', () => {
+			window.dispatchEvent(new CustomEvent('app-offline'));
+		});
+	</script>
+</body>
+</html>

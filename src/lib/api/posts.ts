@@ -1,0 +1,530 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type {
+  Database,
+  PostWithStats,
+  CommentWithStats,
+  PostFormData,
+  CommentFormData,
+  PaginatedResponse,
+  FeedType,
+  AnonymousUser,
+  AnonymousColor,
+  AnonymousEmoji
+} from '$lib/types'
+
+/**
+ * API functions for posts and comments
+ */
+
+export class PostsAPI {
+  constructor(private supabase: SupabaseClient<Database>) {}
+
+  private voteToInt(v: 'up' | 'down'): number {
+    return v === 'up' ? 1 : -1
+  }
+
+  private fallbackAnonymousUser(userId: string): AnonymousUser {
+	return {
+	  id: userId,
+	  device_id: '',
+	  emoji: '🎭' as AnonymousEmoji,
+	  color: 'purple' as AnonymousColor,
+	  created_at: '',
+	  last_seen_at: ''
+	} as AnonymousUser
+  }
+
+  private async getAnonymousProfiles(userIds: string[]): Promise<Map<string, AnonymousUser>> {
+    const uniqueIds = Array.from(new Set(userIds.filter((id): id is string => Boolean(id))))
+    if (!uniqueIds.length) {
+      return new Map()
+    }
+
+    const { data, error } = await (this.supabase as any)
+      .from('anonymous_users')
+      .select('id, device_id, emoji, color, created_at, last_seen_at')
+      .in('id', uniqueIds)
+
+    if (error) throw error
+
+    const map = new Map<string, AnonymousUser>()
+    for (const row of data || []) {
+      map.set(row.id, {
+        id: row.id,
+        device_id: row.device_id ?? '',
+        emoji: row.emoji as AnonymousEmoji,
+        color: row.color as AnonymousColor,
+        created_at: row.created_at ?? '',
+        last_seen_at: row.last_seen_at ?? row.created_at ?? ''
+      })
+    }
+    return map
+  }
+
+  private async attachAnonymousIdentities<T extends { anonymous_user_id: string }>(
+    items: T[]
+  ): Promise<Array<T & { anonymous_user: AnonymousUser }>> {
+    if (!items?.length) {
+      return []
+    }
+
+    const identities = await this.getAnonymousProfiles(items.map((item) => item.anonymous_user_id))
+
+    return items.map((item) => ({
+      ...item,
+      anonymous_user: identities.get(item.anonymous_user_id) ?? this.fallbackAnonymousUser(item.anonymous_user_id)
+    }))
+  }
+
+	/**
+	 * Get posts for feed (hot or new)
+	 */
+	async getFeedPosts(
+		feedType: FeedType,
+		cursor?: string,
+		limit = 20,
+		currentUser?: AnonymousUser | null
+	): Promise<PaginatedResponse<PostWithStats>> {
+		try {
+			let query = (this.supabase as any)
+			  .from('post_with_stats')
+			  .select('*')
+			  .is('parent_post_id', null)
+			  .limit(limit)
+			if (feedType === 'hot') {
+				query = query.order('vote_score', { ascending: false }).order('created_at', { ascending: false })
+			} else {
+				query = query.order('created_at', { ascending: false })
+			}
+			if (cursor) query = query.lt('created_at', cursor)
+			const { data: posts, error } = await query
+			if (error) throw error
+			return await this.enrichPosts(posts || [], limit, currentUser)
+		} catch (error: any) {
+			if (error?.code === 'PGRST205') {
+				if (feedType === 'hot') {
+					const { data: hot, error: err } = await (this.supabase as any)
+					  .from('hot_posts')
+					  .select('*')
+					  .eq('community', 'dimes_square')
+					  .is('deleted_at', null)
+					  .order('hot_score', { ascending: false })
+					  .order('created_at', { ascending: false })
+					  .limit(limit)
+					if (err) throw err
+					const mapped = (hot || []).map((p: any) => ({
+						id: p.id,
+						content: p.content,
+						anonymous_user_id: p.user_id,
+						thread_id: null,
+						parent_post_id: null,
+						created_at: p.created_at,
+						updated_at: p.updated_at,
+						is_deleted: !!p.deleted_at,
+						vote_score: p.score ?? 0,
+						comment_count: p.comment_count ?? 0
+					}))
+					return await this.enrichPosts(mapped, limit, currentUser)
+				} else {
+					const { data: posts, error: err } = await (this.supabase as any)
+					  .from('posts')
+					  .select('*')
+					  .eq('community', 'dimes_square')
+					  .is('deleted_at', null)
+					  .order('created_at', { ascending: false })
+					  .limit(limit)
+					if (err) throw err
+					const mapped = (posts || []).map((p: any) => ({
+						id: p.id,
+						content: p.content,
+						anonymous_user_id: p.user_id,
+						thread_id: null,
+						parent_post_id: null,
+						created_at: p.created_at,
+						updated_at: p.updated_at,
+						is_deleted: !!p.deleted_at,
+						vote_score: p.score ?? 0,
+						comment_count: p.comment_count ?? 0
+					}))
+					return await this.enrichPosts(mapped, limit, currentUser)
+				}
+			}
+			console.error('Error fetching feed posts:', error)
+			throw error
+		}
+	}
+
+	private async enrichPosts(posts: any[], limit: number, currentUser?: AnonymousUser | null): Promise<PaginatedResponse<PostWithStats>> {
+		const postsWithVotes = currentUser && posts?.length
+		  ? await this.addUserVotesToPosts(posts, currentUser.id)
+		  : posts || []
+		const withAnon = await this.attachAnonymousIdentities(postsWithVotes)
+		const postsWithReplies = await Promise.all(
+		  withAnon.map(async (post) => {
+		    try {
+		      const replies = await this.getPostReplies(post.id, 0, 2, currentUser)
+		      return {
+		        ...post,
+		        is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
+		        replies: replies.data
+		      }
+		    } catch {
+		      return {
+		        ...post,
+		        is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
+		        replies: []
+		      }
+		    }
+		  })
+		)
+		const hasMore = posts?.length === limit
+		const nextCursor = posts?.length ? posts[posts.length - 1].created_at : null
+		return { data: postsWithReplies, hasMore, nextCursor }
+	}
+
+	/**
+	 * Get a single post with full thread
+	 */
+	async getPost(
+		postId: string,
+		currentUser?: AnonymousUser | null
+	): Promise<PostWithStats | null> {
+		try {
+			const { data: post, error } = await (this.supabase as any)
+				.from('post_with_stats')
+				.select('*')
+				.eq('id', postId)
+				.single()
+			if (error) throw error
+			if (!post) return null
+				const postWithVote = currentUser
+				  ? await this.addUserVotesToPosts([post], currentUser.id)
+				  : [post]
+				let repliesData: any = { data: [] }
+				try {
+				  repliesData = await this.getPostReplies(postId, 0, 100, currentUser)
+				} catch {}
+				const enriched = await this.attachAnonymousIdentities(postWithVote)
+				const postWithIdentity = enriched[0] ?? {
+				  ...postWithVote[0],
+				  anonymous_user: this.fallbackAnonymousUser(post.anonymous_user_id)
+				}
+				return {
+				  ...postWithIdentity,
+				  is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
+				  replies: repliesData.data
+				}
+		} catch (error: any) {
+			if (error?.code === 'PGRST205') {
+				const { data: p, error: err } = await (this.supabase as any)
+				  .from('posts')
+				  .select('*')
+				  .eq('id', postId)
+				  .single()
+				if (err) throw err
+				const base: any = {
+					id: p.id,
+					content: p.content,
+					anonymous_user_id: p.user_id,
+					thread_id: null,
+					parent_post_id: null,
+					created_at: p.created_at,
+					updated_at: p.updated_at,
+					is_deleted: !!p.deleted_at,
+					vote_score: p.score ?? 0,
+					comment_count: p.comment_count ?? 0
+				}
+				const postWithVote = currentUser
+				  ? (await this.addUserVotesToPosts([base], currentUser.id))[0]
+				  : base
+				let repliesData: any = { data: [] }
+				try {
+				  repliesData = await this.getPostReplies(postId, 0, 100, currentUser)
+				} catch {}
+				const enriched = await this.attachAnonymousIdentities([postWithVote])
+				const postWithIdentity = enriched[0] ?? {
+				  ...postWithVote,
+				  anonymous_user: this.fallbackAnonymousUser(base.anonymous_user_id)
+				}
+				return {
+				  ...postWithIdentity,
+				  is_user_post: currentUser ? base.anonymous_user_id === currentUser.id : false,
+				  replies: repliesData.data
+				}
+			}
+			console.error('Error fetching post:', error)
+			throw error
+		}
+	}
+
+	/**
+	 * Get replies to a post
+	 */
+	async getPostReplies(
+		postId: string,
+		offset = 0,
+		limit = 20,
+		currentUser?: AnonymousUser | null
+	): Promise<PaginatedResponse<CommentWithStats>> {
+		try {
+			const { data: comments, error } = await this.supabase
+				.from('comment_with_stats')
+				.select(`*
+				`)
+				.eq('post_id', postId)
+				.is('parent_comment_id', null) // Top-level comments only
+				.order('vote_score', { ascending: false })
+				.order('created_at', { ascending: false })
+				.range(offset, offset + limit - 1)
+
+			if (error) throw error
+
+			// Get user votes
+			const commentsWithVotes = currentUser && comments?.length
+			  ? await this.addUserVotesToComments(comments, currentUser.id)
+			  : comments || []
+
+				const commentsWithIdentity = await this.attachAnonymousIdentities(commentsWithVotes)
+				const commentsWithReplies = await Promise.all(
+				  commentsWithIdentity.map(async (comment: any) => {
+				    const replies = await this.getCommentReplies(comment.id, currentUser)
+				    return {
+				      ...comment,
+				      is_user_comment: currentUser ? comment.anonymous_user_id === currentUser.id : false,
+				      replies: replies
+				    }
+				  })
+				)
+
+			const hasMore = comments?.length === limit
+
+			return {
+				data: commentsWithReplies,
+				hasMore,
+				nextCursor: null // Comments use offset-based pagination
+			}
+		} catch (error) {
+			console.error('Error fetching post replies:', error)
+			throw error
+		}
+	}
+
+	/**
+	 * Get nested replies to a comment
+	 */
+  async getCommentReplies(
+    commentId: string,
+    currentUser?: AnonymousUser | null,
+    depth = 0,
+    maxDepth = 2
+  ): Promise<CommentWithStats[]> {
+		if (depth >= maxDepth) return []
+
+		try {
+			const { data: replies, error } = await this.supabase
+				.from('comment_with_stats')
+				.select(`*`)
+				.eq('parent_comment_id', commentId)
+				.order('vote_score', { ascending: false })
+				.order('created_at', { ascending: false })
+				.limit(10) // Limit nested replies
+
+			if (error) throw error
+			if (!replies?.length) return []
+
+			// Get user votes
+			const repliesWithVotes = currentUser
+			  ? await this.addUserVotesToComments(replies, currentUser.id)
+			  : replies
+
+				const repliesWithIdentity = await this.attachAnonymousIdentities(repliesWithVotes)
+				const repliesWithNestedReplies = await Promise.all(
+					repliesWithIdentity.map(async (reply) => {
+						const nestedReplies = await this.getCommentReplies(
+							reply.id,
+							currentUser,
+							depth + 1,
+							maxDepth
+						)
+						return {
+						  ...reply,
+						  is_user_comment: currentUser ? reply.anonymous_user_id === currentUser.id : false,
+						  replies: nestedReplies
+						}
+					})
+				)
+
+			return repliesWithNestedReplies
+		} catch (error) {
+			console.error('Error fetching comment replies:', error)
+			return []
+		}
+	}
+
+	/**
+	 * Create a new post
+	 */
+  async createPost(
+    data: PostFormData,
+    currentUser: AnonymousUser
+  ): Promise<PostWithStats> {
+    try {
+      // Use RPC to respect RLS and server-side validations
+      const { data: created, error } = await (this.supabase as any)
+        .rpc('rpc_create_post', {
+          p_user: currentUser.id,
+          p_content: data.content
+        })
+      if (error) throw error
+
+      const fullPost = await this.getPost(created.id, currentUser)
+      if (!fullPost) throw new Error('Failed to retrieve created post')
+      return fullPost
+    } catch (error) {
+      console.error('Error creating post:', error)
+      throw error
+    }
+  }
+
+	/**
+	 * Create a new comment
+	 */
+  async createComment(
+    data: CommentFormData,
+    currentUser: AnonymousUser
+  ): Promise<CommentWithStats> {
+    try {
+      // Use RPC to respect RLS and validations
+      const { data: created, error } = await (this.supabase as any)
+        .rpc('rpc_create_comment', {
+          p_user: currentUser.id,
+          p_post: data.postId,
+          p_parent: data.parentCommentId || null,
+          p_content: data.content
+        })
+      if (error) throw error
+
+      const { data: fullComment, error: fetchError } = await this.supabase
+        .from('comment_with_stats')
+        .select(`*`)
+        .eq('id', created.id)
+        .single()
+      if (fetchError) throw fetchError
+
+      const typedComment = fullComment as CommentWithStats | null
+      if (!typedComment) {
+        throw new Error('Failed to retrieve created comment')
+      }
+
+      const identities = await this.getAnonymousProfiles([typedComment.anonymous_user_id])
+      const anonymousUser = identities.get(typedComment.anonymous_user_id) ?? this.fallbackAnonymousUser(typedComment.anonymous_user_id)
+
+      return {
+        ...typedComment,
+        anonymous_user: anonymousUser,
+        is_user_comment: true,
+        user_vote: null,
+        replies: []
+      }
+    } catch (error) {
+      console.error('Error creating comment:', error)
+      throw error
+    }
+  }
+
+	/**
+	 * Vote on a post
+	 */
+  async voteOnPost(
+    postId: string,
+    voteType: 'up' | 'down' | null,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    try {
+      const v = voteType === null ? 0 : this.voteToInt(voteType)
+      const { error } = await (this.supabase as any)
+        .rpc('rpc_vote_post', { p_user: currentUser.id, p_post: postId, p_vote: v })
+      if (error) throw error
+    } catch (error) {
+      console.error('Error voting on post:', error)
+      throw error
+    }
+  }
+
+	/**
+	 * Vote on a comment
+	 */
+  async voteOnComment(
+    commentId: string,
+    voteType: 'up' | 'down' | null,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    try {
+      const v = voteType === null ? 0 : this.voteToInt(voteType)
+      const { error } = await (this.supabase as any)
+        .rpc('rpc_vote_comment', { p_user: currentUser.id, p_comment: commentId, p_vote: v })
+      if (error) throw error
+    } catch (error) {
+      console.error('Error voting on comment:', error)
+      throw error
+    }
+  }
+
+	/**
+	 * Add user votes to posts
+	 */
+	private async addUserVotesToPosts(
+		posts: any[],
+		userId: string
+	): Promise<any[]> {
+		if (!posts.length) return posts
+
+		const postIds = posts.map(p => p.id)
+		const { data: votes } = await this.supabase
+		  .from('votes')
+		  .select('post_id, vote_type')
+		  .in('post_id', postIds)
+		  .eq('user_id', userId)
+
+		const typedVotes = (votes || []) as Array<{ post_id: string | null; vote_type: number | null }>
+		const voteMap = new Map<string, number | null>(
+		  typedVotes
+		    .filter((v) => Boolean(v.post_id))
+		    .map((v) => [v.post_id as string, v.vote_type])
+		)
+
+		return posts.map((post: any) => ({
+		  ...post,
+		  user_vote: voteMap.get(post.id) === 1 ? 'up' : voteMap.get(post.id) === -1 ? 'down' : null
+		}))
+	}
+
+	/**
+	 * Add user votes to comments
+	 */
+	private async addUserVotesToComments(
+		comments: any[],
+		userId: string
+	): Promise<any[]> {
+		if (!comments.length) return comments
+
+		const commentIds = comments.map(c => c.id)
+		const { data: votes } = await this.supabase
+		  .from('votes')
+		  .select('comment_id, vote_type')
+		  .in('comment_id', commentIds)
+		  .eq('user_id', userId)
+
+		const typedVotes = (votes || []) as Array<{ comment_id: string | null; vote_type: number | null }>
+		const voteMap = new Map<string, number | null>(
+		  typedVotes
+		    .filter((v) => Boolean(v.comment_id))
+		    .map((v) => [v.comment_id as string, v.vote_type])
+		)
+
+		return comments.map((comment: any) => ({
+		  ...comment,
+		  user_vote: voteMap.get(comment.id) === 1 ? 'up' : voteMap.get(comment.id) === -1 ? 'down' : null
+		}))
+}
+}

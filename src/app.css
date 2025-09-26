@@ -1,0 +1,239 @@
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* YipYap primary colors (purple theme) */
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary colors */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    /* Destructive colors */
+    --destructive: 0 72.22% 50.59%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Border and input colors */
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --line: 0 0% 12%;
+    --ring: 262.1 83.3% 57.8%;
+
+    /* Custom YipYap vote colors */
+    --vote-up: 160 84% 39%;
+    --vote-down: 0 72% 51%;
+    --vote-up-hover: 160 84% 32%;
+    --vote-down-hover: 0 72% 44%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --line: 0 0% 30%;
+    --ring: 262.1 83.3% 57.8%;
+    --vote-up: 160 84% 39%;
+    --vote-down: 0 72% 51%;
+    --vote-up-hover: 160 84% 46%;
+    --vote-down-hover: 0 72% 58%;
+  }
+}
+
+/* Custom border utilities to fix Tailwind V4 issue */
+@layer utilities {
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+
+  .border-border\/60 {
+    border-color: hsl(var(--border) / 0.6);
+  }
+
+  .hover\:border-border:hover {
+    border-color: hsl(var(--border));
+  }
+
+  .border-line {
+    border-color: hsl(var(--line));
+  }
+
+  .border-line\/60 {
+    border-color: hsl(var(--line) / 0.6);
+  }
+
+  .hover\:border-line:hover {
+    border-color: hsl(var(--line));
+  }
+
+  /* Anonymous avatar background colors */
+  .bg-anonymous-1 {
+    background-color: #8b5cf6; /* Purple */
+  }
+
+  .bg-anonymous-2 {
+    background-color: #3b82f6; /* Blue */
+  }
+
+  .bg-anonymous-3 {
+    background-color: #10b981; /* Green */
+  }
+
+  .bg-anonymous-4 {
+    background-color: #f59e0b; /* Orange */
+  }
+
+  .bg-anonymous-5 {
+    background-color: #ef4444; /* Red */
+  }
+
+  /* Force primary button styling */
+  .btn-primary {
+    background-color: #8b5cf6 !important; /* Purple */
+    color: white !important;
+  }
+
+  .btn-primary:hover {
+    background-color: #7c3aed !important; /* Darker purple on hover */
+  }
+}
+
+/* Custom CSS for enhanced voting experience */
+@layer utilities {
+  /* Touch optimization for mobile */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Smooth transitions for better UX */
+  .transition-vote {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s ease,
+                color 0.2s ease,
+                box-shadow 0.2s ease;
+  }
+
+  /* Enhanced focus states for accessibility */
+  .focus-vote {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    --tw-ring-color: hsl(var(--ring));
+  }
+
+  /* Haptic feedback simulation through visual cues */
+  .haptic-press {
+    transform: scale(0.95);
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Score number transitions */
+  .score-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Loading state animations */
+  .loading-shimmer {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
+
+/* Custom scrollbar for mobile webkit browsers */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure proper font loading */
+  body {
+    font-feature-settings: 'tnum' on, 'lnum' on;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better mobile viewport handling */
+  @media (hover: none) and (pointer: coarse) {
+    .hover\:scale-110:hover {
+      transform: none;
+    }
+
+    .hover\:bg-vote-up\/25:hover {
+      background-color: rgba(16, 185, 129, 0.15);
+    }
+
+    .hover\:bg-vote-down\/25:hover {
+      background-color: rgba(220, 38, 38, 0.15);
+    }
+  }
+}
+
+/* Toast container positioning */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .vote-button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .vote-bounce,
+  .score-bounce,
+  .animate-vote-bounce,
+  .animate-score-bounce {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .transition-vote {
+    transition: none !important;
+  }
+}

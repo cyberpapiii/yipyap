@@ -1,0 +1,12 @@
+
+> yipyap@0.0.1 dev
+> vite dev
+
+Port 5173 is in use, trying another one...
+Port 5174 is in use, trying another one...
+
+  VITE v7.1.5  ready in 509 ms
+
+  ➜  Local:   http://localhost:5175/
+  ➜  Network: use --host to expose
+8:05:41 AM [vite] (client) page reload test-output.html
