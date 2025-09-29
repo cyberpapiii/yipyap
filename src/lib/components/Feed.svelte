@@ -32,6 +32,7 @@
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
 	const MAX_PULL = 120
+	const SCROLL_TOP_THRESHOLD = 5
 
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
 
@@ -61,8 +62,41 @@
 	}
 
 	// Enhanced refresh with pull-to-refresh
+	function resetPullState() {
+		isPulling = false
+		pullToRefreshY = 0
+	}
+
+	function getGlobalScrollTop() {
+		if (typeof window === 'undefined' || typeof document === 'undefined') return 0
+		const doc = document.documentElement
+		const body = document.body
+		return (
+			window.scrollY ??
+			doc?.scrollTop ??
+			body?.scrollTop ??
+			0
+		)
+	}
+
+	function isAtTop() {
+		const containerTop = feedContainer ? feedContainer.scrollTop : 0
+		if (containerTop > SCROLL_TOP_THRESHOLD) return false
+
+		const globalTop = getGlobalScrollTop()
+		return globalTop <= SCROLL_TOP_THRESHOLD
+	}
+
 	async function refreshFeed() {
-		if (!onLoadMore || $feedStore.loading) return
+		if (!onLoadMore) {
+			resetPullState()
+			return
+		}
+
+		if ($feedStore.loading || refreshing) {
+			resetPullState()
+			return
+		}
 
 		refreshing = true
 		// Haptic feedback for refresh
@@ -82,45 +116,63 @@
 
 	// Pull to refresh handlers
 	function handleTouchStart(e: TouchEvent) {
-		if (feedContainer.scrollTop === 0 && e.touches.length === 1) {
-			startY = e.touches[0].clientY
-			isPulling = true
-		}
+		if ($feedStore.loading || refreshing) return
+		if (e.touches.length !== 1) return
+
+		startY = e.touches[0].clientY
+		currentY = startY
+		pullToRefreshY = 0
+		isPulling = isAtTop()
 	}
 
 	function handleTouchMove(e: TouchEvent) {
-		if (!isPulling || e.touches.length !== 1) return
-
+		if (e.touches.length !== 1) return
 		currentY = e.touches[0].clientY
 		const deltaY = currentY - startY
 
-		// Reset pulling if user scrolled down from top
-		if (feedContainer.scrollTop > 5) {
-			isPulling = false
-			pullToRefreshY = 0
+		if ($feedStore.loading || refreshing) {
+			resetPullState()
 			return
 		}
 
-		// Only prevent default and show indicator when pulling down from true top
-		if (deltaY > 0 && feedContainer.scrollTop === 0) {
+		const atTop = isAtTop()
+
+		if (!isPulling) {
+			if (deltaY > 0 && atTop) {
+				isPulling = true
+				startY = currentY
+				pullToRefreshY = 0
+			}
+			return
+		}
+
+		if (!atTop) {
+			resetPullState()
+			return
+		}
+
+		if (deltaY > 0) {
 			e.preventDefault()
 			pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
 		} else {
-			// Reset if not pulling down or not at top
-			isPulling = false
-			pullToRefreshY = 0
+			resetPullState()
 		}
 	}
 
 	function handleTouchEnd() {
 		if (!isPulling) return
 
+		isPulling = false
+
 		if (pullToRefreshY >= PULL_THRESHOLD) {
 			refreshFeed()
 		} else {
 			pullToRefreshY = 0
 		}
-		isPulling = false
+	}
+
+	function handleTouchCancel() {
+		resetPullState()
 	}
 
 	onMount(() => {
@@ -130,6 +182,7 @@
 		feedContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
 		feedContainer.addEventListener('touchmove', handleTouchMove, { passive: false })
 		feedContainer.addEventListener('touchend', handleTouchEnd)
+		feedContainer.addEventListener('touchcancel', handleTouchCancel)
 
 		return () => {
 			if (feedContainer) {
@@ -137,6 +190,7 @@
 				feedContainer.removeEventListener('touchstart', handleTouchStart)
 				feedContainer.removeEventListener('touchmove', handleTouchMove)
 				feedContainer.removeEventListener('touchend', handleTouchEnd)
+				feedContainer.removeEventListener('touchcancel', handleTouchCancel)
 			}
 		}
 	})
@@ -178,20 +232,22 @@
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header -->
-		<div class="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-md py-3 z-10">
-			<h1 class="text-xl font-bold text-foreground">
-				Dimes Square
+		<div class="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-md py-4 z-10">
+			<div class="flex flex-col gap-1">
+				<h1 class="text-3xl font-bold text-foreground">
+					Dimes Square
+				</h1>
 				{#if $feedStore.posts.length > 0}
-					<span class="text-sm font-normal text-muted-foreground ml-2">
+					<span class="text-base text-muted-foreground">
 						{$feedStore.posts.length} {$feedStore.posts.length === 1 ? 'post' : 'posts'}
 					</span>
 				{/if}
-			</h1>
+			</div>
 			<button
 				onclick={refreshFeed}
 				disabled={$feedStore.loading || refreshing}
 				class="
-					p-2.5 rounded-xl transition-all duration-200 ease-out
+					p-3 rounded-xl transition-all duration-200 ease-out
 					hover:bg-accent active:scale-95 active:bg-accent/70
 					disabled:opacity-50 disabled:cursor-not-allowed
 					touch-manipulation
@@ -201,7 +257,7 @@
 				type="button"
 			>
 				<RefreshCw
-					size={20}
+					size={24}
 					class={$feedStore.loading || refreshing ? 'animate-spin' : 'transition-transform duration-200 hover:rotate-90'}
 				/>
 			</button>
