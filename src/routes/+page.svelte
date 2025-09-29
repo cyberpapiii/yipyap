@@ -25,6 +25,7 @@
   // Swipe handling
   function handleTouchStart(e: TouchEvent) {
     touchStartX = e.touches[0].clientX
+    touchEndX = e.touches[0].clientX // Initialize to start position
     isSwiping = true
   }
 
@@ -38,8 +39,9 @@
     isSwiping = false
 
     const swipeDistance = touchEndX - touchStartX
-    const minSwipeDistance = 50
+    const minSwipeDistance = 80 // Increased threshold to prevent accidental swipes
 
+    // Only trigger if there was actual movement
     if (Math.abs(swipeDistance) > minSwipeDistance) {
       // Swiped right - go to previous feed (new)
       if (swipeDistance > 0 && feedType === 'hot') {
