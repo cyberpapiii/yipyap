@@ -200,18 +200,42 @@
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
+    scrollbar-width: none; /* Firefox - hide all scrollbars */
+    -ms-overflow-style: none; /* IE and Edge - hide all scrollbars */
   }
 
-  /* Hide scrollbar for all browsers */
+  /* Hide scrollbar for webkit browsers (iOS Safari, Chrome) */
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Specific hiding for custom-scrollbar and overflow classes */
   .custom-scrollbar,
   .overflow-y-auto {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .custom-scrollbar::-webkit-scrollbar,
   .overflow-y-auto::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Hide scrollbar on body and html */
+  html, body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   /* Ensure proper font loading */
