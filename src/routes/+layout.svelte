@@ -9,25 +9,12 @@
   import { Toaster, Button } from '$lib/components/ui'
   import BottomNav from '$lib/components/BottomNav.svelte'
 
-  let theme: 'light' | 'dark' = 'dark'
-
-  function applyTheme(t: 'light' | 'dark') {
-    theme = t
-    const root = document.documentElement
-    if (t === 'dark') root.classList.add('dark')
-    else root.classList.remove('dark')
-    localStorage.setItem('yipyap_theme', t)
-  }
-
-  function toggleTheme() {
-    applyTheme(theme === 'light' ? 'dark' : 'light')
-  }
-
   onMount(async () => {
     try {
-      // Theme restore
-      const savedTheme = (localStorage.getItem('yipyap_theme') as 'light' | 'dark') || 'dark'
-      applyTheme(savedTheme)
+      // Force dark theme always
+      const root = document.documentElement
+      root.classList.add('dark')
+      root.setAttribute('data-theme', 'dark')
 
       // Initialize anonymous user via helper RPC
       const deviceId = getDeviceId()
