@@ -51,7 +51,16 @@
 
 	// Handle delete
 	async function handleDelete() {
+		// Warning haptic before confirm
+		if ('vibrate' in navigator) {
+			navigator.vibrate(30)
+		}
+
 		if (confirm('Are you sure you want to delete this post?')) {
+			// Delete action haptic
+			if ('vibrate' in navigator) {
+				navigator.vibrate([10, 50, 10])
+			}
 			await onDelete?.(post.id)
 		}
 		showOptionsMenu = false
