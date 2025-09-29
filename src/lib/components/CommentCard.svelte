@@ -138,12 +138,14 @@
 	>
 		<div class="flex gap-3 items-start">
 			<!-- Avatar -->
-			<AnonymousAvatar user={comment.anonymous_user} size="md" />
+			<div class="flex-shrink-0">
+				<AnonymousAvatar user={comment.anonymous_user} size="md" />
+			</div>
 
 			<!-- Comment content -->
 			<div class="flex-1 min-w-0" style:opacity={depthStyles.opacity}>
 				<!-- Header -->
-				<div class="flex items-center gap-2 mb-0.5">
+				<div class="flex items-start gap-2 -mb-2">
 					<div class="flex items-center gap-1 text-xs" style="color: #6B6B6B;">
 						<Clock size={12} />
 						<time datetime={comment.created_at} title={new Date(comment.created_at).toLocaleString()}>
@@ -151,14 +153,14 @@
 						</time>
 					</div>
 					{#if comment.is_user_comment}
-						<span class="text-xs px-1.5 py-0.5 rounded" style="color: #6B6B6B; background-color: rgba(107, 107, 107, 0.1);">
+						<span class="text-[9px] px-1 py-0.5 rounded" style="color: #6B6B6B; background-color: rgba(107, 107, 107, 0.1);">
 							You
 						</span>
 					{/if}
 					<div class="relative ml-auto options-menu-container">
 						<button
 							class="
-								p-2 -mr-2 rounded-md
+								p-0 rounded-md
 								transition-all duration-200 ease-out
 								hover:bg-accent hover:text-foreground
 								active:scale-90 active:bg-accent/70

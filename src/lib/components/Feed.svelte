@@ -252,7 +252,7 @@
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header -->
-		<div class="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-md py-4 z-10">
+		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 z-10">
 			<div class="flex flex-col gap-1">
 				<h1 class="text-3xl font-bold text-foreground">
 					Dimes Square

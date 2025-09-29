@@ -207,12 +207,14 @@
 >
 	<div class="flex gap-3 items-start">
 		<!-- Avatar -->
-		<AnonymousAvatar user={post.anonymous_user} size="md" />
+		<div class="flex-shrink-0">
+			<AnonymousAvatar user={post.anonymous_user} size="md" />
+		</div>
 
 		<!-- Post content -->
 		<div class="flex-1 min-w-0">
 			<!-- Header -->
-			<div class="flex items-center gap-2 mb-0.5">
+			<div class="flex items-start gap-2 -mb-2">
 				<div class="flex items-center gap-1 text-xs" style="color: #6B6B6B;">
 					<Clock size={12} />
 				<time datetime={post.created_at} title={new Date(post.created_at).toLocaleString()}>
@@ -220,14 +222,14 @@
 				</time>
 				</div>
 				{#if post.is_user_post}
-					<span class="text-xs px-1.5 py-0.5 rounded" style="color: #6B6B6B; background-color: rgba(107, 107, 107, 0.1);">
+					<span class="text-[9px] px-1 py-0.5 rounded" style="color: #6B6B6B; background-color: rgba(107, 107, 107, 0.1);">
 						You
 					</span>
 				{/if}
 				<div class="relative ml-auto options-menu-container">
 					<button
 						class="
-							p-2 -mr-2 rounded-md
+							p-0 rounded-md
 							transition-all duration-200 ease-out
 							hover:bg-accent hover:text-foreground
 							active:scale-90 active:bg-accent/70
@@ -292,7 +294,7 @@
 					aria-label={`Reply to post (${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'})`}
 					type="button"
 				>
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 						<path d="M11.9973 21C10.0004 20.9997 8.06029 20.3353 6.48243 19.1114C4.90457 17.8874 3.77857 16.1735 3.2817 14.2394C2.78483 12.3053 2.94531 10.2608 3.73787 8.42795C4.53044 6.59506 5.91008 5.0778 7.65959 4.11506C9.40909 3.15231 11.4291 2.79875 13.4016 3.11004C15.3741 3.42132 17.1871 4.37978 18.5551 5.83452C19.9231 7.28925 20.7684 9.15764 20.958 11.1455C21.1476 13.1334 20.6707 15.1279 19.6023 16.815L20.9973 21L16.8123 19.605C15.3727 20.5187 13.7024 21.0026 11.9973 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 					<span class="font-medium">{post.comment_count}</span>

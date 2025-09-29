@@ -45,7 +45,7 @@
 <header class="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1);">
   <div class="mx-auto max-w-md px-4 h-12 flex items-center justify-center">
     <a href="/" class="flex items-center">
-      <svg width="140" height="19" viewBox="0 0 140 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="180" height="25" viewBox="0 0 140 19" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="18.1957" height="18.1957" rx="9.09783" fill="#D82233"/>
         <path d="M13.3063 4.24139L10.1769 10.0812V13.5978H8.22186V10.0812L4.98456 4.24139H7.28876L9.23114 8.31659L11.091 4.24139H13.3063Z" fill="white"/>
         <rect x="24.2609" width="18.1957" height="18.1957" rx="9.09783" fill="#0062CF"/>

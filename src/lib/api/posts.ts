@@ -159,24 +159,56 @@ export class PostsAPI {
 		  ? await this.addUserVotesToPosts(posts, currentUser.id)
 		  : posts || []
 		const withAnon = await this.attachAnonymousIdentities(postsWithVotes)
-		const postsWithReplies = await Promise.all(
-		  withAnon.map(async (post) => {
-		    try {
-		      const replies = await this.getPostReplies(post.id, 0, 2, currentUser)
-		      return {
-		        ...post,
-		        is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
-		        replies: replies.data
-		      }
-		    } catch {
-		      return {
-		        ...post,
-		        is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
-		        replies: []
-		      }
-		    }
-		  })
-		)
+
+		// Batch fetch all replies for all posts in one query (fixes N+1)
+		let repliesMap = new Map<string, any[]>()
+		if (withAnon.length > 0) {
+			try {
+				const postIds = withAnon.map(p => p.id)
+				const { data: allReplies, error } = await (this.supabase as any)
+					.from('comment_with_stats')
+					.select('*')
+					.in('post_id', postIds)
+					.is('parent_comment_id', null)
+					.order('vote_score', { ascending: false })
+					.order('created_at', { ascending: false })
+
+				if (!error && allReplies) {
+					// Add user votes to replies if we have a current user
+					const repliesWithVotes = currentUser
+						? await this.addUserVotesToComments(allReplies, currentUser.id)
+						: allReplies
+
+					// Attach anonymous identities to replies
+					const repliesWithIdentities = await this.attachAnonymousIdentities(repliesWithVotes)
+
+					// Group by post_id and take top 2 per post
+					for (const reply of repliesWithIdentities) {
+						if (!repliesMap.has(reply.post_id)) {
+							repliesMap.set(reply.post_id, [])
+						}
+						const postReplies = repliesMap.get(reply.post_id)!
+						if (postReplies.length < 2) {
+							postReplies.push({
+								...reply,
+								is_user_comment: currentUser ? reply.anonymous_user_id === currentUser.id : false,
+								replies: []
+							})
+						}
+					}
+				}
+			} catch (error) {
+				console.error('Failed to batch fetch replies:', error)
+			}
+		}
+
+		// Attach replies to posts
+		const postsWithReplies = withAnon.map((post) => ({
+			...post,
+			is_user_post: currentUser ? post.anonymous_user_id === currentUser.id : false,
+			replies: repliesMap.get(post.id) || []
+		}))
+
 		const hasMore = posts?.length === limit
 		const nextCursor = posts?.length ? posts[posts.length - 1].created_at : null
 		return { data: postsWithReplies, hasMore, nextCursor }

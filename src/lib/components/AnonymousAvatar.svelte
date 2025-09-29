@@ -22,9 +22,9 @@
 		base: 'inline-flex items-center justify-center rounded-full font-bold select-none transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:scale-110 hover:shadow-lg cursor-pointer text-white',
 		variants: {
 			size: {
-				sm: 'h-6 w-6 text-xs min-h-[24px] min-w-[24px]',
-				md: 'h-8 w-8 text-sm min-h-[32px] min-w-[32px]',
-				lg: 'h-10 w-10 text-base min-h-[40px] min-w-[40px]'
+				sm: 'h-7 w-7 text-base min-h-[28px] min-w-[28px]',
+				md: 'h-9 w-9 text-xl min-h-[36px] min-w-[36px]',
+				lg: 'h-11 w-11 text-2xl min-h-[44px] min-w-[44px]'
 			}
 		}
 	})

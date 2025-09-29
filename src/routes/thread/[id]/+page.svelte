@@ -30,25 +30,11 @@
 
     initializing = true
     try {
-      // Ensure user identity is loaded first
-      let user = get(currentUser)
-      if (!user) {
-        try {
-          user = await ensureAnonymousUser(supabase as any)
-          if (user) {
-            currentUserStore.set(user)
-          }
-        } catch (error) {
-          console.error('Failed to initialize user identity:', error)
-        }
-      }
-
-      if (!realtime.getState().isInitialized) {
-        await realtime.initialize(supabase as any)
-      }
-
-      await hydrateThread(postId)
-      await realtime.subscribeToThread(postId)
+      // Layout already initialized user and realtime - load thread and subscribe in parallel
+      await Promise.all([
+        hydrateThread(postId),
+        realtime.subscribeToThread(postId)
+      ])
     } catch (error) {
       console.error('Thread load failed', error)
       loadError = error instanceof Error ? error.message : 'Failed to load thread'
@@ -68,7 +54,13 @@
     thread.setLoading(true)
     try {
       const user = get(currentUser) || undefined
-      const fetchedPost = await api.getPost(id, user)
+
+      // Fetch post and comments in parallel
+      const [fetchedPost, replies] = await Promise.all([
+        api.getPost(id, user),
+        api.getPostReplies(id, 0, 50, user)
+      ])
+
       if (!fetchedPost) {
         loadError = 'Thread not found'
         thread.setError(loadError)
@@ -76,8 +68,6 @@
       }
 
       thread.setPost(fetchedPost)
-
-      const replies = await api.getPostReplies(id, 0, 50, user)
       thread.setComments(replies.data)
       loadError = null
     } catch (error: any) {

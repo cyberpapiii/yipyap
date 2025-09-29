@@ -38,20 +38,20 @@
 	}
 
 	const buttonVariants = tv({
-		base: 'relative flex items-center justify-center rounded-full border-2 border-border touch-manipulation select-none transition-all duration-300 ease-out will-change-transform active:duration-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 focus-vote',
+		base: 'relative flex items-center justify-center rounded-full border-2 border-border touch-manipulation select-none transition-all duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 focus-vote',
 		variants: {
 			size: {
-				sm: 'h-6 w-6 min-h-[24px] min-w-[24px]',
-				md: 'h-8 w-8 min-h-[32px] min-w-[32px]',
-				lg: 'h-10 w-10 min-h-[40px] min-w-[40px]'
+				sm: 'h-5 w-5 min-h-[20px] min-w-[20px]',
+				md: 'h-7 w-7 min-h-[28px] min-w-[28px]',
+				lg: 'h-9 w-9 min-h-[36px] min-w-[36px]'
 			},
 			variant: {
-				neutral: 'text-muted-foreground hover:text-foreground hover:bg-accent/70 hover:scale-110 active:scale-95 active:bg-accent transition-vote',
-				upvoted: 'text-white bg-vote-up border-vote-up hover:bg-vote-up/90 hover:scale-110 active:scale-95 active:bg-vote-up shadow-vote transition-vote',
-				downvoted: 'text-white bg-vote-down border-vote-down hover:bg-vote-down/90 hover:scale-110 active:scale-95 active:bg-vote-down shadow-vote transition-vote',
-				animating: 'animate-vote-bounce',
-				error: 'text-red-600 bg-red-100 border-2 border-red-300 animate-pulse',
-				success: 'animate-vote-pulse shadow-vote-active'
+				neutral: 'text-muted-foreground hover:text-foreground hover:bg-accent/70 active:scale-95 active:bg-accent',
+				upvoted: 'text-white bg-vote-up border-vote-up hover:bg-vote-up/90 active:scale-95',
+				downvoted: 'text-white bg-vote-down border-vote-down hover:bg-vote-down/90 active:scale-95',
+				animating: 'scale-95',
+				error: 'text-red-600 bg-red-100 border-2 border-red-300',
+				success: ''
 			}
 		}
 	})
@@ -63,7 +63,7 @@
 	}
 
 	const scoreVariants = tv({
-		base: 'font-semibold tabular-nums transition-all duration-300 ease-out will-change-transform',
+		base: 'font-semibold tabular-nums transition-all duration-200 ease-in-out',
 		variants: {
 			size: {
 				sm: 'text-sm',
@@ -99,22 +99,8 @@
 		isAnimating = true
 		scoreAnimating = true
 
-		try {
-			await onVote(newVote)
-
-			// Show success feedback
-			if (newVote !== previousVote) {
-				successPulse = true
-				setTimeout(() => {
-					successPulse = false
-				}, 600)
-
-				// Show subtle notification for successful votes
-				if (newVote === 'up') {
-					// Could optionally show success toast for important actions
-				}
-			}
-		} catch (error) {
+		// Call onVote without awaiting - let parent handle optimistic update
+		onVote(newVote).catch(error => {
 			// Show error state
 			errorState = true
 			setTimeout(() => {
@@ -126,15 +112,13 @@
 
 			// Trigger error haptic feedback
 			triggerHapticFeedback('heavy')
-		} finally {
-			// End animation after a delay
-			setTimeout(() => {
-				isAnimating = false
-			}, 300)
-			setTimeout(() => {
-				scoreAnimating = false
-			}, 400)
-		}
+		})
+
+		// End animation quickly
+		setTimeout(() => {
+			isAnimating = false
+			scoreAnimating = false
+		}, 150)
 	}
 
 	async function handleDownvote() {
@@ -153,22 +137,8 @@
 		isAnimating = true
 		scoreAnimating = true
 
-		try {
-			await onVote(newVote)
-
-			// Show success feedback
-			if (newVote !== previousVote) {
-				successPulse = true
-				setTimeout(() => {
-					successPulse = false
-				}, 600)
-
-				// Show subtle notification for successful votes
-				if (newVote === 'down') {
-					// Could optionally show success toast for important actions
-				}
-			}
-		} catch (error) {
+		// Call onVote without awaiting - let parent handle optimistic update
+		onVote(newVote).catch(error => {
 			// Show error state
 			errorState = true
 			setTimeout(() => {
@@ -180,15 +150,13 @@
 
 			// Trigger error haptic feedback
 			triggerHapticFeedback('heavy')
-		} finally {
-			// End animation after a delay
-			setTimeout(() => {
-				isAnimating = false
-			}, 300)
-			setTimeout(() => {
-				scoreAnimating = false
-			}, 400)
-		}
+		})
+
+		// End animation quickly
+		setTimeout(() => {
+			isAnimating = false
+			scoreAnimating = false
+		}, 150)
 	}
 
 	// Determine score color and animation state
@@ -248,33 +216,10 @@
 		type="button"
 		title={disabled ? 'Voting disabled' : (userVote === 'up' ? 'Remove upvote' : 'Upvote this content')}
 	>
-		{#if isAnimating}
-			<div class="animate-spin text-current">
-				<svg width={iconSizes[size]} height={iconSizes[size]} viewBox="0 0 24 24" fill="none" class="animate-spin">
-					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416" class="animate-[spin_1s_linear_infinite]" />
-				</svg>
-			</div>
-		{:else}
-			<ChevronUp
-				size={iconSizes[size]}
-				class="transition-transform duration-200 {userVote === 'up' ? 'scale-110' : ''} {errorState ? 'animate-bounce' : ''}"
-			/>
-		{/if}
-
-		<!-- Success pulse animation -->
-		{#if successPulse && userVote === 'up'}
-			<div class="absolute inset-0 rounded-full bg-vote-up/30 animate-vote-pulse"></div>
-		{/if}
-
-		<!-- Loading animation ring -->
-		{#if userVote === 'up' && isAnimating && !errorState}
-			<div class="absolute inset-0 rounded-full bg-vote-up/20 animate-ping"></div>
-		{/if}
-
-		<!-- Error state indicator -->
-		{#if errorState}
-			<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-		{/if}
+		<ChevronUp
+			size={iconSizes[size]}
+			class="transition-all duration-150 ease-in-out"
+		/>
 	</button>
 
 	<!-- Score display -->
@@ -306,33 +251,10 @@
 		type="button"
 		title={disabled ? 'Voting disabled' : (userVote === 'down' ? 'Remove downvote' : 'Downvote this content')}
 	>
-		{#if isAnimating}
-			<div class="animate-spin text-current">
-				<svg width={iconSizes[size]} height={iconSizes[size]} viewBox="0 0 24 24" fill="none" class="animate-spin">
-					<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.416" stroke-dashoffset="31.416" class="animate-[spin_1s_linear_infinite]" />
-				</svg>
-			</div>
-		{:else}
-			<ChevronDown
-				size={iconSizes[size]}
-				class="transition-transform duration-200 {userVote === 'down' ? 'scale-110' : ''} {errorState ? 'animate-bounce' : ''}"
-			/>
-		{/if}
-
-		<!-- Success pulse animation -->
-		{#if successPulse && userVote === 'down'}
-			<div class="absolute inset-0 rounded-full bg-vote-down/30 animate-vote-pulse"></div>
-		{/if}
-
-		<!-- Loading animation ring -->
-		{#if userVote === 'down' && isAnimating && !errorState}
-			<div class="absolute inset-0 rounded-full bg-vote-down/20 animate-ping"></div>
-		{/if}
-
-		<!-- Error state indicator -->
-		{#if errorState}
-			<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-		{/if}
+		<ChevronDown
+			size={iconSizes[size]}
+			class="transition-all duration-150 ease-in-out"
+		/>
 	</button>
 </div>
 

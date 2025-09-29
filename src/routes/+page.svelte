@@ -63,12 +63,7 @@
 
     initializing = true
     try {
-      // Ensure we have an anonymous user before initializing
-      await ensureAnonymousUser(supabase as any)
-
-      if (!realtime.getState().isInitialized) {
-        await realtime.initialize(supabase as any)
-      }
+      // Load feed immediately - layout already initialized user and realtime
       await switchFeed(saved, { skipPersist: true })
     } finally {
       initializing = false
