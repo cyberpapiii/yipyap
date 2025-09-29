@@ -9,7 +9,7 @@
 
 <nav class="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
      style="border-top: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom)">
-  <div class="mx-auto flex h-12 max-w-md items-center justify-between px-8">
+  <div class="mx-auto flex h-12 max-w-md items-center justify-around px-8">
     <a
       href="/"
       aria-label="Home"

@@ -28,6 +28,8 @@
 	let isPulling = $state(false)
 	let startY = 0
 	let currentY = 0
+	let feedOpacity = $state(1)
+	let isTransitioning = $state(false)
 
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
@@ -65,6 +67,19 @@
 	function resetPullState() {
 		isPulling = false
 		pullToRefreshY = 0
+	}
+
+	// Smooth transition for feed changes
+	async function transitionFeed(callback: () => Promise<void>) {
+		isTransitioning = true
+		feedOpacity = 0
+
+		await new Promise(resolve => setTimeout(resolve, 200))
+		await callback()
+
+		feedOpacity = 1
+		await new Promise(resolve => setTimeout(resolve, 300))
+		isTransitioning = false
 	}
 
 	function getGlobalScrollTop() {
@@ -105,8 +120,10 @@
 		}
 
 		try {
-			feedStore.clear()
-			await onLoadMore()
+			await transitionFeed(async () => {
+				feedStore.clear()
+				await onLoadMore()
+			})
 		} finally {
 			refreshing = false
 			pullToRefreshY = 0
@@ -288,7 +305,7 @@
 
 		<!-- Posts -->
 		{#if $feedStore.posts.length > 0}
-			<div class="space-y-4">
+			<div class="space-y-4" style="opacity: {feedOpacity}; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
 				{#each $feedStore.posts as post, index (post.id)}
 					<div
 						class="animate-stagger-fade-in"

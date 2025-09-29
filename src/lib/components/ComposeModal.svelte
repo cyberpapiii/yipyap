@@ -66,7 +66,7 @@
 	}
 
 	// Character count
-	const maxLength = 100
+	const maxLength = 500
 	const charCount = $derived.by(() => content.length)
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
@@ -133,17 +133,18 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 pb-20 sm:pb-4"
+		class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 sm:pb-4"
+		style="z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="bg-background border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: black; opacity: 1;">
+		<div class="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);">
 			<!-- Header -->
-			<div class="flex items-center justify-between p-4 border-b border-border/60">
-				<h2 class="text-lg font-semibold">
+			<div class="flex items-center justify-between p-4">
+				<h2 class="text-2xl font-bold">
 					{$composeState.replyTo ? 'Reply' : 'New Post'}
 				</h2>
 				<button
@@ -152,13 +153,13 @@
 					class="p-2 hover:bg-accent rounded-xl transition-colors disabled:opacity-50"
 					aria-label="Close"
 				>
-					<X size={20} />
+					<X size={24} />
 				</button>
 			</div>
 
 			<!-- Reply context -->
 			{#if $composeState.replyTo}
-				<div class="p-4 bg-muted/50 border-b border-line/60">
+				<div class="px-4 pb-2 bg-muted/30">
 					<div class="flex items-start gap-2">
 						<AnonymousAvatar user={$composeState.replyTo.author} size="sm" />
 						<div class="flex-1 min-w-0">
@@ -189,30 +190,30 @@
 				</div>
 
 				<!-- Footer -->
-				<div class="p-4 border-t border-border/60">
+				<div class="p-4">
 					<!-- Error message -->
 					{#if $composeState.error}
-						<div class="mb-3 p-2 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+						<div class="mb-3 p-3 bg-destructive/10 rounded-xl text-sm text-destructive" style="border: 1px solid rgba(220, 38, 38, 0.2);">
 							{$composeState.error}
 						</div>
 					{/if}
 
 					<!-- Actions -->
 						<div class="flex items-center justify-between">
-							<span class="text-xs font-medium {isOverLimit ? 'text-destructive' : 'text-muted-foreground'}">
+							<span class="text-sm font-medium {isOverLimit ? 'text-destructive' : 'text-muted-foreground'}">
 								{charCount}/{maxLength}
 							</span>
 							<Button
 								type="submit"
 								variant="default"
 								disabled={!canSubmit}
-								class="gap-2 btn-primary"
+								class="gap-2 btn-primary text-base px-6 py-2"
 							>
 								{#if $composeState.isSubmitting}
-									<Loader2 size={16} class="animate-spin" />
+									<Loader2 size={18} class="animate-spin" />
 									<span>Posting...</span>
 								{:else}
-									<Send size={16} />
+									<Send size={18} />
 									<span>Post</span>
 								{/if}
 							</Button>

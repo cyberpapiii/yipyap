@@ -71,6 +71,13 @@ let isRefreshing = $state(false)
 		}
 	}
 
+	function handleTouchCancel() {
+		if (!isPulling) return
+
+		isPulling = false
+		pullDistance = 0
+	}
+
 	async function triggerRefresh() {
 		if (disabled || isRefreshing) return
 
@@ -104,12 +111,14 @@ let shouldTriggerRefresh = $state(false)
 		containerElement.addEventListener('touchstart', handleTouchStart, { passive: false })
 		containerElement.addEventListener('touchmove', handleTouchMove, { passive: false })
 		containerElement.addEventListener('touchend', handleTouchEnd)
+		containerElement.addEventListener('touchcancel', handleTouchCancel)
 
 		return () => {
 			if (containerElement) {
 				containerElement.removeEventListener('touchstart', handleTouchStart)
 				containerElement.removeEventListener('touchmove', handleTouchMove)
 				containerElement.removeEventListener('touchend', handleTouchEnd)
+				containerElement.removeEventListener('touchcancel', handleTouchCancel)
 			}
 		}
 	})

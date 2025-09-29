@@ -1,19 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The SvelteKit app lives in `src/`, with routes under `src/routes/` (e.g., `thread/[id]`) and shared UI or utilities in `src/lib/`. Database SQL and Supabase RPC definitions are kept in `supabase/migrations/`. Static assets, including the manifest and icons, stay in `static/` and `public/`. Legacy push handlers remain in `server/` for reference but are not part of the current flow.
+The SvelteKit app lives in `src/`, with routes scoped under `src/routes/` (for example `src/routes/thread/[id]`). Shared UI, stores, and helpers belong in `src/lib/`; colocate component-specific utilities beside their owners. Database SQL and Supabase RPC definitions stay in `supabase/migrations/`. Static icons and manifest assets sit in `static/` or `public/`. Legacy push handlers under `server/` are reference-only and should not receive new logic.
 
 ## Build, Test, and Development Commands
-Use `npm run dev` to start the hot-reloading dev server. `npm run build` compiles the server, client, and service worker bundles, and `npm run preview` serves the production build for local verification. Run `npm run check` before committing to ensure Svelte and TypeScript diagnostics pass.
+Run `npm run dev` for the hot-reloading local server. Use `npm run build` to compile the production server, client, and service worker bundles, and `npm run preview` to smoke-test the build locally. Execute `npm run check` before opening a pull request to surface TypeScript and Svelte diagnostics. When you add tests, run them with `npx vitest` or wire them into `npm run check`.
 
 ## Coding Style & Naming Conventions
-Code is TypeScript-first with Svelte 5 runes. Favor small modules and colocated helpers. Components live in `src/lib/components/` using PascalCase filenames, while routes are lowercase folders. Keep indentation at two spaces and limit Tailwind utility chains to what is necessary. Prefer explicit types in shared APIs.
+Write TypeScript-first Svelte 5 components using runes. Components in `src/lib/components/` use PascalCase filenames; route folders remain lowercase. Keep modules small, prefer colocated helpers, and default to explicit types in shared APIs. Use two-space indentation and keep Tailwind utility chains concise. Default to ASCII unless an existing file requires otherwise.
 
 ## Testing Guidelines
-There is no formal suite yet; when adding coverage, reach for Vitest and `@testing-library/svelte`. Place component tests beside their subjects (e.g., `Component.test.ts`). Tests should cover critical flows like feed loading, posting, voting, and commenting. Run them with `npx vitest` or integrate into `npm run check` if scripted.
+Reach for Vitest with `@testing-library/svelte` to cover critical flows like feed loading, posting, voting, and commenting. Place test files next to their targets, e.g. `src/lib/components/Composer.test.ts`. Favor behavioural assertions over implementation details and update fixtures when Supabase RPCs change.
 
 ## Commit & Pull Request Guidelines
-Write commit subjects in the imperative mood with optional scopes, such as `feat(feed): add Hot RPC`. Pull requests should include a brief summary, validation steps, and screenshots for UI changes. Link related issues and call out affected routes or migrations so reviewers can focus their checks.
+Write commits in imperative mood optionally scoped, such as `feat(feed): add Hot RPC`. Pull requests should summarize the change, link related issues, list validation steps, and include screenshots for any UI updates. Call out affected routes or migrations so reviewers can focus their checks.
 
 ## Security & Configuration Tips
-All database writes must flow through Supabase RPCs because RLS is enforced; avoid direct table mutations from the client. Store secrets in environment variables and sync any schema change with a migration under `supabase/migrations/`.
+Route all database writes through Supabase RPCs to respect RLS. Keep secrets in environment variables and never commit them. Pair schema changes with a matching migration under `supabase/migrations/` and document any manual setup required for reviewers.

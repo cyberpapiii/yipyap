@@ -127,20 +127,22 @@
 		"
 		role="article"
 	>
-		<div class="flex gap-3">
+		<div class="flex gap-3 items-start">
+			<!-- Avatar -->
+			<AnonymousAvatar user={comment.anonymous_user} size="md" />
+
 			<!-- Comment content -->
 			<div class="flex-1 min-w-0" style:opacity={depthStyles.opacity}>
 				<!-- Header -->
-				<div class="flex items-center gap-2 mb-2">
-					<AnonymousAvatar user={comment.anonymous_user} size="sm" />
-					<div class="flex items-center gap-1 text-xs text-muted-foreground">
+				<div class="flex items-center gap-2 mb-0.5">
+					<div class="flex items-center gap-1 text-xs" style="color: #6B6B6B;">
 						<Clock size={12} />
 						<time datetime={comment.created_at} title={new Date(comment.created_at).toLocaleString()}>
 							{timeAgo}
 						</time>
 					</div>
 					{#if comment.is_user_comment}
-						<span class="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+						<span class="text-xs px-1.5 py-0.5 rounded" style="color: #6B6B6B; background-color: rgba(107, 107, 107, 0.1);">
 							You
 						</span>
 					{/if}
@@ -149,11 +151,12 @@
 							class="
 								p-2 -mr-2 rounded-md
 								transition-all duration-200 ease-out
-								hover:bg-accent text-muted-foreground hover:text-foreground
+								hover:bg-accent hover:text-foreground
 								active:scale-90 active:bg-accent/70
 								touch-manipulation
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
 							"
+							style="color: #6B6B6B;"
 							onclick={toggleOptionsMenu}
 							aria-label="More options for this comment"
 							type="button"
