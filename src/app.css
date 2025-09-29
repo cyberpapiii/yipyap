@@ -2,69 +2,43 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    /* YipYap primary colors (purple theme) */
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 40% 98%;
-
-    /* Secondary colors */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 166 99% 22%;
-    --accent-foreground: 210 40% 98%;
-
-    /* Destructive colors */
-    --destructive: 0 72.22% 50.59%;
-    --destructive-foreground: 210 40% 98%;
-
-    /* Border and input colors */
-    --border: 0 0% 8%;
-    --input: 0 0% 8%;
-    --line: 0 0% 6%;
-    --ring: 262.1 83.3% 57.8%;
-
-    /* Custom YipYap vote colors */
-    --vote-up: 160 84% 39%;
-    --vote-down: 0 72% 51%;
-    --vote-up-hover: 160 84% 32%;
-    --vote-down-hover: 0 72% 44%;
-
-    --radius: 0.5rem;
-  }
-
-  .dark {
+    /* Force dark mode colors always - no light mode */
     --background: 0 0% 6.27%;
     --foreground: 210 40% 98%;
     --card: 0 0% 6.27%;
     --card-foreground: 210 40% 98%;
     --popover: 0 0% 6.27%;
     --popover-foreground: 210 40% 98%;
+
+    /* YipYap primary colors */
     --primary: 262.1 83.3% 57.8%;
     --primary-foreground: 210 40% 98%;
+
+    /* Secondary colors */
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 166 99% 22%;
     --accent-foreground: 210 40% 98%;
+
+    /* Destructive colors */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+
+    /* Border and input colors */
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --line: 0 0% 12%;
     --ring: 262.1 83.3% 57.8%;
+
+    /* Custom YipYap vote colors */
     --vote-up: 160 84% 39%;
     --vote-down: 0 72% 51%;
     --vote-up-hover: 160 84% 46%;
     --vote-down-hover: 0 72% 58%;
+
+    --radius: 0.5rem;
   }
 }
 
