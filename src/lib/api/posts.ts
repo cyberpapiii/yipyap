@@ -17,8 +17,10 @@ import type {
 export class PostsAPI {
   constructor(private supabase: SupabaseClient<Database>) {}
 
-  private voteToInt(v: 'up' | 'down'): number {
-    return v === 'up' ? 1 : -1
+  private voteToInt(v: 'up' | 'down' | null): number {
+    if (v === 'up') return 1
+    if (v === 'down') return -1
+    return 0 // null vote (remove vote)
   }
 
   private fallbackAnonymousUser(userId: string): AnonymousUser {
@@ -438,8 +440,12 @@ export class PostsAPI {
     voteType: 'up' | 'down' | null,
     currentUser: AnonymousUser
   ): Promise<void> {
+    if (!currentUser?.id) {
+      throw new Error('User must be authenticated to vote')
+    }
+
     try {
-      const v = voteType === null ? 0 : this.voteToInt(voteType)
+      const v = this.voteToInt(voteType)
       const { error } = await (this.supabase as any)
         .rpc('rpc_vote_post', { p_user: currentUser.id, p_post: postId, p_vote: v })
       if (error) throw error
@@ -457,8 +463,12 @@ export class PostsAPI {
     voteType: 'up' | 'down' | null,
     currentUser: AnonymousUser
   ): Promise<void> {
+    if (!currentUser?.id) {
+      throw new Error('User must be authenticated to vote')
+    }
+
     try {
-      const v = voteType === null ? 0 : this.voteToInt(voteType)
+      const v = this.voteToInt(voteType)
       const { error } = await (this.supabase as any)
         .rpc('rpc_vote_comment', { p_user: currentUser.id, p_comment: commentId, p_vote: v })
       if (error) throw error

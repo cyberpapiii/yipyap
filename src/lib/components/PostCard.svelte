@@ -167,14 +167,6 @@
 
 </script>
 
-<style>
-	.icon-hover {
-		transition: transform 0.3s ease;
-	}
-	.group:hover .icon-hover {
-		transform: scale(1.2) rotate(15deg);
-	}
-</style>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <article

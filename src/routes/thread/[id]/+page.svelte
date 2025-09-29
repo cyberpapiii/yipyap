@@ -11,6 +11,7 @@
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { CommentWithStats, ComposeState, PostWithStats } from '$lib/types'
   import { supabase } from '$lib/supabase'
+  import { ensureAnonymousUser } from '$lib/auth'
 
   const thread = threadStore
   const currentUser = currentUserStore
@@ -29,6 +30,19 @@
 
     initializing = true
     try {
+      // Ensure user identity is loaded first
+      let user = get(currentUser)
+      if (!user) {
+        try {
+          user = await ensureAnonymousUser(supabase as any)
+          if (user) {
+            currentUserStore.set(user)
+          }
+        } catch (error) {
+          console.error('Failed to initialize user identity:', error)
+        }
+      }
+
       if (!realtime.getState().isInitialized) {
         await realtime.initialize(supabase as any)
       }

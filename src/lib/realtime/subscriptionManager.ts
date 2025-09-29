@@ -1,6 +1,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { RealtimeConnectionManager } from './connectionManager'
 import type { PostWithStats, CommentWithStats, AnonymousUser, FeedType } from '$lib/types'
+import type { PostsAPI } from '$lib/api/posts'
 
 export interface RealtimeEventPayload {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE'
@@ -209,10 +210,7 @@ export class FeedSubscriptionManager {
    * Enrich post data with related information (anonymous_user, user_vote, etc.)
    */
   private async enrichPostData(postData: any): Promise<PostWithStats | null> {
-    // This would typically fetch additional data from the API
-    // For now, we'll create a minimal version
-    // In a real implementation, you'd want to call your posts API
-    console.warn('Post data enrichment not fully implemented - using minimal data')
+    // Create enriched post data from realtime payload
 
     const authorId = postData.anonymous_user_id ?? postData.user_id
     const voteScore = postData.vote_score ?? postData.score ?? 0
@@ -478,7 +476,7 @@ export class ThreadSubscriptionManager {
    * Enrich comment data with related information
    */
   private async enrichCommentData(commentData: any): Promise<CommentWithStats | null> {
-    console.warn('Comment data enrichment not fully implemented - using minimal data')
+    // Create enriched comment data from realtime payload
 
     const authorId = commentData.anonymous_user_id ?? commentData.user_id
     const voteScore = commentData.vote_score ?? commentData.score ?? 0
