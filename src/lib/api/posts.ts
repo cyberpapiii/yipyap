@@ -469,6 +469,54 @@ export class PostsAPI {
   }
 
 	/**
+	 * Delete a post (soft delete)
+	 */
+  async deletePost(
+    postId: string,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('posts')
+        .update({
+          deleted_at: new Date().toISOString(),
+          deletion_reason: 'user_deleted'
+        })
+        .eq('id', postId)
+        .eq('user_id', currentUser.id) // Ensure user owns the post
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      throw error
+    }
+  }
+
+	/**
+	 * Delete a comment (soft delete)
+	 */
+  async deleteComment(
+    commentId: string,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('comments')
+        .update({
+          deleted_at: new Date().toISOString(),
+          deletion_reason: 'user_deleted'
+        })
+        .eq('id', commentId)
+        .eq('user_id', currentUser.id) // Ensure user owns the comment
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error deleting comment:', error)
+      throw error
+    }
+  }
+
+	/**
 	 * Add user votes to posts
 	 */
 	private async addUserVotesToPosts(

@@ -10,11 +10,13 @@
 		feedType,
 		onVote,
 		onReply,
+		onDelete,
 		onLoadMore
 	}: {
 		feedType: FeedType
 		onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
 		onReply?: (post: PostWithStats) => void
+		onDelete?: (postId: string) => Promise<void>
 		onLoadMore?: () => Promise<void>
 	} = $props()
 
@@ -92,9 +94,21 @@
 		currentY = e.touches[0].clientY
 		const deltaY = currentY - startY
 
+		// Reset pulling if user scrolled down from top
+		if (feedContainer.scrollTop > 5) {
+			isPulling = false
+			pullToRefreshY = 0
+			return
+		}
+
+		// Only prevent default and show indicator when pulling down from true top
 		if (deltaY > 0 && feedContainer.scrollTop === 0) {
 			e.preventDefault()
 			pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+		} else {
+			// Reset if not pulling down or not at top
+			isPulling = false
+			pullToRefreshY = 0
 		}
 	}
 
@@ -228,6 +242,7 @@
 							{post}
 							{onVote}
 							{onReply}
+							{onDelete}
 							showReplies={true}
 							isInThread={false}
 						/>

@@ -135,6 +135,15 @@
     background-color: #008EB7; /* T (SIR) */
   }
 
+  /* Vote button border colors */
+  .border-vote-up {
+    border-color: hsl(var(--vote-up));
+  }
+
+  .border-vote-down {
+    border-color: hsl(var(--vote-down));
+  }
+
   /* Force accent button styling */
   .btn-primary {
     background-color: #01735C !important; /* NYC Street Sign Green */

@@ -114,6 +114,9 @@ export function getCachedAnonymousUser(): AnonymousUser | null {
 			// Validate the cached user has required fields
 			if (user.id && user.device_id && user.subway_line && user.subway_color) {
 				return user
+			} else {
+				// Clear invalid cached user (likely from old emoji/color schema)
+				localStorage.removeItem('yipyap_anonymous_user')
 			}
 		}
 	} catch {

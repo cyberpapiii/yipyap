@@ -126,6 +126,34 @@
 
     await api.voteOnCommentOptimistic(commentId, vote, user)
   }
+
+  async function onDelete(postId: string) {
+    const user = get(currentUser)
+    if (!user) return
+
+    try {
+      await api.deletePost(postId, user)
+      // Redirect back to home after deleting the post
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Failed to delete post:', error)
+      alert('Failed to delete post. Please try again.')
+    }
+  }
+
+  async function onDeleteComment(commentId: string) {
+    const user = get(currentUser)
+    if (!user) return
+
+    try {
+      await api.deleteComment(commentId, user)
+      // Refresh the thread to remove the deleted comment
+      await hydrateThread(postId)
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      alert('Failed to delete comment. Please try again.')
+    }
+  }
 </script>
 
 <svelte:head>
@@ -153,6 +181,7 @@
       isInThread={true}
       onVote={async (_postId, voteType) => voteOnPost(voteType)}
       onReply={() => beginReply()}
+      onDelete={onDelete}
       />
     </div>
 
@@ -167,6 +196,7 @@
             comment={comment}
             onVote={(commentId, voteType) => voteOnComment(commentId, voteType)}
             onReply={beginReply}
+            onDelete={onDeleteComment}
           />
         {/each}
       </div>

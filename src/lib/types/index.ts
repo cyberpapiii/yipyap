@@ -212,6 +212,7 @@ export interface PostCardProps {
   isInThread?: boolean
   onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
   onReply?: (post: PostWithStats) => void
+  onDelete?: (postId: string) => Promise<void>
 }
 
 export interface CommentCardProps {
@@ -220,6 +221,7 @@ export interface CommentCardProps {
   maxDepth?: number
   onVote?: (commentId: string, voteType: 'up' | 'down' | null) => Promise<void>
   onReply?: (comment: CommentWithStats) => void
+  onDelete?: (commentId: string) => Promise<void>
 }
 
 export interface VoteButtonsProps {

@@ -95,6 +95,20 @@
     composeStore.setupReply(post, 'post')
   }
 
+  async function onDelete(postId: string) {
+    const user = get(cu)
+    if (!user) return
+
+    try {
+      await api.deletePost(postId, user)
+      // Refresh the current feed to remove the deleted post
+      await loadFeed(feedType)
+    } catch (error) {
+      console.error('Failed to delete post:', error)
+      alert('Failed to delete post. Please try again.')
+    }
+  }
+
   async function onSubmit(content: string, replyTo?: any) {
     let user = get(cu)
     if (!user) {
@@ -131,6 +145,7 @@
       {feedType}
       onVote={onVote}
       onReply={onReply}
+      onDelete={onDelete}
       onLoadMore={loadMore}
     />
 

@@ -38,17 +38,17 @@
 	}
 
 	const buttonVariants = tv({
-		base: 'relative flex items-center justify-center rounded-full touch-manipulation select-none transition-all duration-300 ease-out will-change-transform active:duration-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 focus-vote',
+		base: 'relative flex items-center justify-center rounded-full border-2 border-border touch-manipulation select-none transition-all duration-300 ease-out will-change-transform active:duration-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 focus-vote',
 		variants: {
 			size: {
-				sm: 'h-8 w-8 min-h-[32px] min-w-[32px]',
-				md: 'h-10 w-10 min-h-[40px] min-w-[40px]',
-				lg: 'h-12 w-12 min-h-[48px] min-w-[48px]'
+				sm: 'h-6 w-6 min-h-[24px] min-w-[24px]',
+				md: 'h-8 w-8 min-h-[32px] min-w-[32px]',
+				lg: 'h-10 w-10 min-h-[40px] min-w-[40px]'
 			},
 			variant: {
 				neutral: 'text-muted-foreground hover:text-foreground hover:bg-accent/70 hover:scale-110 active:scale-95 active:bg-accent transition-vote',
-				upvoted: 'text-vote-up bg-vote-up/15 hover:bg-vote-up/25 hover:scale-110 active:scale-95 active:bg-vote-up/30 shadow-vote shadow-vote-up/20 transition-vote',
-				downvoted: 'text-vote-down bg-vote-down/15 hover:bg-vote-down/25 hover:scale-110 active:scale-95 active:bg-vote-down/30 shadow-vote shadow-vote-down/20 transition-vote',
+				upvoted: 'text-white bg-vote-up border-vote-up hover:bg-vote-up/90 hover:scale-110 active:scale-95 active:bg-vote-up shadow-vote transition-vote',
+				downvoted: 'text-white bg-vote-down border-vote-down hover:bg-vote-down/90 hover:scale-110 active:scale-95 active:bg-vote-down shadow-vote transition-vote',
 				animating: 'animate-vote-bounce',
 				error: 'text-red-600 bg-red-100 border-2 border-red-300 animate-pulse',
 				success: 'animate-vote-pulse shadow-vote-active'

@@ -96,6 +96,26 @@ export class RealtimePostsAPI extends PostsAPI {
   }
 
   /**
+   * Delete a post
+   */
+  async deletePost(
+    postId: string,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    return super.deletePost(postId, currentUser)
+  }
+
+  /**
+   * Delete a comment
+   */
+  async deleteComment(
+    commentId: string,
+    currentUser: AnonymousUser
+  ): Promise<void> {
+    return super.deleteComment(commentId, currentUser)
+  }
+
+  /**
    * Load feed posts and automatically subscribe to real-time updates
    */
   async loadFeedWithRealtime(

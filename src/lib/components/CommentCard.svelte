@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Clock, MoreHorizontal } from 'lucide-svelte'
+	import { onMount } from 'svelte'
 	import VoteButtons from './VoteButtons.svelte'
 	import AnonymousAvatar from './AnonymousAvatar.svelte'
 	import type { CommentCardProps } from '$lib/types'
@@ -10,12 +11,14 @@
 		depth = 0,
 		maxDepth = 3,
 		onVote,
-		onReply
+		onReply,
+		onDelete
 	}: CommentCardProps = $props()
 
 	// Animation state
 	let isHovered = $state(false)
 	let isPressed = $state(false)
+	let showOptionsMenu = $state(false)
 
 	// Handle vote
 	async function handleVote(voteType: 'up' | 'down' | null) {
@@ -30,6 +33,23 @@
 			navigator.vibrate(10)
 		}
 		onReply?.(comment)
+	}
+
+	// Handle delete
+	async function handleDelete() {
+		if (confirm('Are you sure you want to delete this comment?')) {
+			await onDelete?.(comment.id)
+		}
+		showOptionsMenu = false
+	}
+
+	// Toggle options menu
+	function toggleOptionsMenu(e: Event) {
+		e.stopPropagation()
+		showOptionsMenu = !showOptionsMenu
+		if ('vibrate' in navigator) {
+			navigator.vibrate(5)
+		}
 	}
 
 	// Touch interaction handlers
@@ -55,6 +75,22 @@
 	let indentClass = $state('')
 	let depthStyles = $state({ opacity: 1, borderColor: '' })
 	let showNestedReplies = $state(depth < maxDepth)
+
+	// Click outside handler to close options menu
+	function handleClickOutside(e: Event) {
+		if (!showOptionsMenu) return
+		const target = e.target as HTMLElement
+		if (!target.closest('.options-menu-container')) {
+			showOptionsMenu = false
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener('click', handleClickOutside)
+		return () => {
+			document.removeEventListener('click', handleClickOutside)
+		}
+	})
 
 	$effect(() => {
 		formattedContent = comment.content.replace(/\n/g, '<br>')
@@ -83,7 +119,7 @@
 	<div
 		class="
 			relative
-			bg-card/60 border border-border/60 rounded-xl p-2 mb-1.5
+			bg-card/60 border border-border/60 rounded-xl p-3 mb-1.5
 			transition-all duration-300 ease-out
 			hover:bg-card/80 hover:border-border hover:shadow-sm
 			{isPressed ? 'scale-[0.99] bg-card/90' : 'scale-100'}
@@ -91,80 +127,123 @@
 		"
 		role="article"
 	>
-		<div class="flex gap-2">
-			<!-- Vote buttons -->
-			{#if onVote}
-				<VoteButtons
-					voteScore={comment.vote_score}
-					userVote={comment.user_vote}
-					onVote={handleVote}
-					size="sm"
-				/>
-			{/if}
-
+		<div class="flex gap-3">
 			<!-- Comment content -->
 			<div class="flex-1 min-w-0" style:opacity={depthStyles.opacity}>
 				<!-- Header -->
-				<div class="flex items-center gap-1.5 mb-1.5">
+				<div class="flex items-center gap-2 mb-2">
 					<AnonymousAvatar user={comment.anonymous_user} size="sm" />
 					<div class="flex items-center gap-1 text-xs text-muted-foreground">
-						<Clock size={10} />
+						<Clock size={12} />
 						<time datetime={comment.created_at} title={new Date(comment.created_at).toLocaleString()}>
 							{timeAgo}
 						</time>
 					</div>
 					{#if comment.is_user_comment}
-						<span class="text-xs text-primary bg-primary/10 px-1 py-0.5 rounded text-[10px]">
+						<span class="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">
 							You
 						</span>
 					{/if}
-					<button
-						class="
-							ml-auto p-1 -mr-1 rounded-md
-							transition-all duration-200 ease-out
-							hover:bg-accent text-muted-foreground hover:text-foreground
-							active:scale-90 active:bg-accent/70
-							touch-manipulation
-							focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-						"
-						aria-label="More options for this comment"
-						type="button"
-						onclick={(e) => {
-							e.stopPropagation()
-							// Haptic feedback for options
-							if ('vibrate' in navigator) {
-								navigator.vibrate(5)
-							}
-						}}
-					>
-						<MoreHorizontal size={12} />
-					</button>
+					<div class="relative ml-auto options-menu-container">
+						<button
+							class="
+								p-2 -mr-2 rounded-md
+								transition-all duration-200 ease-out
+								hover:bg-accent text-muted-foreground hover:text-foreground
+								active:scale-90 active:bg-accent/70
+								touch-manipulation
+								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+							"
+							onclick={toggleOptionsMenu}
+							aria-label="More options for this comment"
+							type="button"
+						>
+							<MoreHorizontal size={16} />
+						</button>
+
+						<!-- Options dropdown menu -->
+						{#if showOptionsMenu}
+							<div
+								class="
+									absolute top-full right-0 mt-1 min-w-32
+									bg-card border border-border rounded-xl shadow-lg
+									py-1 z-10 animate-fade-in
+								"
+								role="menu"
+							>
+								{#if comment.is_user_comment && onDelete}
+									<button
+										class="
+											w-full px-3 py-2 text-left text-sm
+											text-red-500 hover:bg-red-500/10 hover:text-red-600
+											transition-colors flex items-center gap-2
+										"
+										onclick={handleDelete}
+										role="menuitem"
+									>
+										🗑️ Delete Comment
+									</button>
+								{:else}
+									<div class="px-3 py-2 text-xs text-muted-foreground">
+										No options available
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
 				</div>
 
 				<!-- Content -->
-				<div class="text-sm text-foreground mb-1.5 selectable leading-snug">
+				<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed">
 					{@html formattedContent}
 				</div>
 
-				<!-- Actions -->
-				{#if onReply}
-					<button
-						class="
-							text-xs text-muted-foreground font-medium
-							px-1.5 py-0.5 -mx-1.5 rounded-md
-							transition-all duration-200 ease-out
-							hover:text-foreground hover:bg-accent/50
-							active:scale-95 active:bg-accent/70
-							touch-manipulation
-							focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-						"
-						onclick={handleReply}
-						type="button"
-						aria-label={`Reply to comment by ${comment.anonymous_user.emoji}`}
+				<!-- Icon row -->
+				<div class="flex items-center justify-end gap-4">
+					<!-- Reply button -->
+					{#if onReply}
+						<button
+							class="
+								flex items-center gap-1.5 px-2 py-1
+								rounded-md transition-all duration-200 ease-out
+								text-sm text-muted-foreground
+								hover:text-foreground hover:bg-accent/50
+								active:scale-90 active:bg-accent/70
+								touch-manipulation
+								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+							"
+							onclick={handleReply}
+							type="button"
+							aria-label={`Reply to comment by ${comment.anonymous_user.subway_line} line user`}
+						>
+							<span class="font-medium">Reply</span>
+						</button>
+					{/if}
+
+					<!-- Vote buttons -->
+					<div
+						role="none"
+						onclick={(event) => event.stopPropagation()}
+						onkeydown={(event) => event.stopPropagation()}
 					>
-						Reply
-					</button>
-				{/if}
+						{#if onVote}
+							<VoteButtons
+								voteScore={comment.vote_score}
+								userVote={comment.user_vote}
+								onVote={handleVote}
+								size="sm"
+								orientation="horizontal"
+							/>
+						{:else}
+							<div class="flex items-center gap-2 text-muted-foreground">
+								<span class="text-sm font-medium tabular-nums">
+									{comment.vote_score}
+								</span>
+							</div>
+						{/if}
+					</div>
+				</div>
+
 			</div>
 		</div>
 	</div>
@@ -184,6 +263,7 @@
 						{maxDepth}
 						{onVote}
 						{onReply}
+						{onDelete}
 					/>
 				</div>
 			{/each}

@@ -12,13 +12,15 @@
 	let isPressed = $state(false)
 	let isHovered = $state(false)
 	let rippleElements: HTMLElement[] = []
+	let showOptionsMenu = $state(false)
 
 	let {
 		post,
 		showReplies = true,
 		isInThread = false,
 		onVote,
-		onReply
+		onReply,
+		onDelete
 	}: PostCardProps = $props()
 
 	// Enhanced navigation with haptic feedback
@@ -45,6 +47,23 @@
 	// Handle vote
 	async function handleVote(voteType: 'up' | 'down' | null) {
 		await onVote?.(post.id, voteType)
+	}
+
+	// Handle delete
+	async function handleDelete() {
+		if (confirm('Are you sure you want to delete this post?')) {
+			await onDelete?.(post.id)
+		}
+		showOptionsMenu = false
+	}
+
+	// Toggle options menu
+	function toggleOptionsMenu(e: Event) {
+		e.stopPropagation()
+		showOptionsMenu = !showOptionsMenu
+		if ('vibrate' in navigator) {
+			navigator.vibrate(5)
+		}
 	}
 
 	// Ripple effect for touch feedback
@@ -124,9 +143,20 @@
 		}
 	}
 
+	// Click outside handler to close options menu
+	function handleClickOutside(e: Event) {
+		if (!showOptionsMenu) return
+		const target = e.target as HTMLElement
+		if (!target.closest('.options-menu-container')) {
+			showOptionsMenu = false
+		}
+	}
+
 	// Cleanup ripples on unmount
 	onMount(() => {
+		document.addEventListener('click', handleClickOutside)
 		return () => {
+			document.removeEventListener('click', handleClickOutside)
 			rippleElements.forEach(ripple => {
 				if (ripple.parentNode) {
 					ripple.parentNode.removeChild(ripple)
@@ -191,28 +221,49 @@
 						You
 					</span>
 				{/if}
-				<!-- More options button -->
-				<button
-					class="
-						ml-auto p-2 -mr-2 rounded-md
-						transition-all duration-200 ease-out
-						hover:bg-accent text-muted-foreground hover:text-foreground
-						active:scale-90 active:bg-accent/70
-						touch-manipulation
-						focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-					"
-						onclick={(e) => {
-						e.stopPropagation()
-						// Haptic feedback for options
-						if ('vibrate' in navigator) {
-							navigator.vibrate(5)
-						}
-					}}
-					aria-label="More options for this post"
-					type="button"
-				>
-					<MoreHorizontal size={16} />
-				</button>
+				<div class="relative ml-auto options-menu-container">
+					<button
+						class="
+							p-2 -mr-2 rounded-md
+							transition-all duration-200 ease-out
+							hover:bg-accent text-muted-foreground hover:text-foreground
+							active:scale-90 active:bg-accent/70
+							touch-manipulation
+							focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+						"
+						onclick={toggleOptionsMenu}
+						aria-label="More options for this post"
+						type="button"
+					>
+						<MoreHorizontal size={16} />
+					</button>
+
+					<!-- Options dropdown menu -->
+					{#if showOptionsMenu}
+						<div
+							class="
+								absolute top-full right-0 mt-1 min-w-32
+								bg-card border border-border rounded-xl shadow-lg
+								py-1 z-10 animate-fade-in
+							"
+							role="menu"
+						>
+							{#if post.is_user_post && onDelete}
+								<button
+									class="
+										w-full px-3 py-2 text-left text-sm
+										text-red-500 hover:bg-red-500/10 hover:text-red-600
+										transition-colors flex items-center gap-2
+									"
+									onclick={handleDelete}
+									role="menuitem"
+								>
+									🗑️ Delete Post
+								</button>
+							{/if}
+						</div>
+					{/if}
+				</div>
 			</div>
 
 			<!-- Content -->
