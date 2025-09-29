@@ -83,7 +83,7 @@
 	<div
 		class="
 			relative
-			bg-card/60 border border-border/60 rounded-md p-2 mb-1.5
+			bg-card/60 border border-border/60 rounded-xl p-2 mb-1.5
 			transition-all duration-300 ease-out
 			hover:bg-card/80 hover:border-border hover:shadow-sm
 			{isPressed ? 'scale-[0.99] bg-card/90' : 'scale-100'}

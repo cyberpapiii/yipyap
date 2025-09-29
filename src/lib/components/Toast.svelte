@@ -30,7 +30,7 @@
 			out:fly={{ x: 300, duration: 200 }}
 		>
 			<div
-				class="flex items-start p-4 rounded-lg shadow-lg border-l-4 backdrop-blur-sm {colorClasses[notification.type]}"
+				class="flex items-start p-4 rounded-xl shadow-lg border-l-4 backdrop-blur-sm {colorClasses[notification.type]}"
 				role="alert"
 				aria-live={notification.type === 'error' ? 'assertive' : 'polite'}
 			>
@@ -53,7 +53,7 @@
 					<!-- Action button -->
 					{#if notification.action}
 						<button
-							class="inline-flex items-center mt-2 px-3 py-1 text-xs font-medium bg-white/20 hover:bg-white/30 rounded transition-colors duration-200"
+							class="inline-flex items-center mt-2 px-3 py-1 text-xs font-medium bg-white/20 hover:bg-white/30 rounded-lg transition-colors duration-200"
 							onclick={notification.action.handler}
 						>
 							{notification.action.label}
@@ -63,7 +63,7 @@
 
 				<!-- Close button -->
 				<button
-					class="flex-shrink-0 ml-2 p-1 rounded hover:bg-white/20 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+					class="flex-shrink-0 ml-2 p-1 rounded-lg hover:bg-white/20 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
 					onclick={() => notifications.remove(notification.id)}
 					aria-label="Close notification"
 				>

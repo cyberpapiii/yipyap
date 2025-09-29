@@ -57,7 +57,7 @@
 		<!-- Main status indicator -->
 		<button
 			class="
-				flex items-center gap-2 px-3 py-2 rounded-lg backdrop-blur-md
+				flex items-center gap-2 px-3 py-2 rounded-xl backdrop-blur-md
 				border transition-all duration-200 ease-out
 				hover:scale-105 active:scale-95
 				{config.bgColor} {config.borderColor}
@@ -83,7 +83,7 @@
 			<div
 				class="
 					absolute bottom-full right-0 mb-2 w-64
-					bg-card border border-line rounded-lg p-3
+					bg-card border border-line rounded-xl p-3
 					backdrop-blur-md shadow-xl
 					animate-fade-in
 				"
@@ -114,7 +114,7 @@
 						class="
 								w-full mt-3 px-3 py-1.5
 								bg-primary text-primary-foreground
-								rounded text-xs font-medium
+								rounded-lg text-xs font-medium
 								hover:bg-primary/90 transition-colors
 							"
 						onclick={handleReconnect}

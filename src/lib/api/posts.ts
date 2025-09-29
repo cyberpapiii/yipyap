@@ -8,8 +8,6 @@ import type {
   PaginatedResponse,
   FeedType,
   AnonymousUser,
-  AnonymousColor,
-  AnonymousEmoji
 } from '$lib/types'
 
 /**
@@ -27,11 +25,11 @@ export class PostsAPI {
 	return {
 	  id: userId,
 	  device_id: '',
-	  emoji: '🎭' as AnonymousEmoji,
-	  color: 'purple' as AnonymousColor,
+	  subway_line: 'A' as 'A',
+	  subway_color: 'mta-blue' as 'mta-blue',
 	  created_at: '',
 	  last_seen_at: ''
-	} as AnonymousUser
+	}
   }
 
   private async getAnonymousProfiles(userIds: string[]): Promise<Map<string, AnonymousUser>> {
@@ -42,7 +40,7 @@ export class PostsAPI {
 
     const { data, error } = await (this.supabase as any)
       .from('anonymous_users')
-      .select('id, device_id, emoji, color, created_at, last_seen_at')
+      .select('id, device_id, subway_line, subway_color, created_at, last_seen_at')
       .in('id', uniqueIds)
 
     if (error) throw error
@@ -52,8 +50,8 @@ export class PostsAPI {
       map.set(row.id, {
         id: row.id,
         device_id: row.device_id ?? '',
-        emoji: row.emoji as AnonymousEmoji,
-        color: row.color as AnonymousColor,
+        subway_line: row.subway_line as AnonymousUser['subway_line'],
+        subway_color: row.subway_color as AnonymousUser['subway_color'],
         created_at: row.created_at ?? '',
         last_seen_at: row.last_seen_at ?? row.created_at ?? ''
       })

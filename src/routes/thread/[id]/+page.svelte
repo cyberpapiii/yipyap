@@ -134,8 +134,8 @@
 
 {#if initializing || $thread.loading}
   <div class="max-w-2xl mx-auto p-4 space-y-4">
-    <div class="h-28 rounded-md bg-muted animate-pulse"></div>
-    <div class="h-40 rounded-md bg-muted animate-pulse"></div>
+    <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
+    <div class="h-40 rounded-xl bg-muted animate-pulse"></div>
   </div>
 {:else if loadError}
   <div class="p-8 text-center text-destructive">{loadError}</div>
@@ -171,7 +171,7 @@
         {/each}
       </div>
     {:else}
-      <div class="p-6 border border-dashed border-line rounded-md text-center text-sm text-muted-foreground">
+      <div class="p-6 border border-dashed border-line rounded-xl text-center text-sm text-muted-foreground">
         No replies yet. Be the first to join the conversation.
       </div>
     {/if}
@@ -180,9 +180,9 @@
 
 <!-- Floating reply text box -->
 <div class="fixed bottom-20 left-4 right-4 max-w-2xl mx-auto z-10 pb-4">
-  <div class="bg-card border border-border rounded-lg shadow-lg">
+  <div class="bg-card border border-border rounded-2xl shadow-lg">
     <button
-      class="w-full text-left text-muted-foreground text-sm p-3 rounded-lg hover:bg-accent/50 transition-colors"
+      class="w-full text-left text-muted-foreground text-sm p-3 rounded-xl hover:bg-accent/50 transition-colors"
       onclick={() => beginReply()}
     >
       Add a reply...

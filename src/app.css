@@ -18,17 +18,17 @@
     --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 166 99% 22%;
+    --accent-foreground: 210 40% 98%;
 
     /* Destructive colors */
     --destructive: 0 72.22% 50.59%;
     --destructive-foreground: 210 40% 98%;
 
     /* Border and input colors */
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --line: 0 0% 12%;
+    --border: 0 0% 8%;
+    --input: 0 0% 8%;
+    --line: 0 0% 6%;
     --ring: 262.1 83.3% 57.8%;
 
     /* Custom YipYap vote colors */
@@ -53,13 +53,13 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 166 99% 22%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --line: 0 0% 30%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --line: 0 0% 12%;
     --ring: 262.1 83.3% 57.8%;
     --vote-up: 160 84% 39%;
     --vote-down: 0 72% 51%;
@@ -94,35 +94,55 @@
     border-color: hsl(var(--line));
   }
 
-  /* Anonymous avatar background colors */
-  .bg-anonymous-1 {
-    background-color: #8b5cf6; /* Purple */
+  /* MTA Subway Line Colors */
+  .bg-mta-blue {
+    background-color: #0062CF; /* A, C, E */
   }
 
-  .bg-anonymous-2 {
-    background-color: #3b82f6; /* Blue */
+  .bg-mta-orange {
+    background-color: #EB6800; /* B, D, F, M */
   }
 
-  .bg-anonymous-3 {
-    background-color: #10b981; /* Green */
+  .bg-mta-light-green {
+    background-color: #799534; /* G */
   }
 
-  .bg-anonymous-4 {
-    background-color: #f59e0b; /* Orange */
+  .bg-mta-brown {
+    background-color: #8E5C33; /* J, Z */
   }
 
-  .bg-anonymous-5 {
-    background-color: #ef4444; /* Red */
+  .bg-mta-grey {
+    background-color: #7C858C; /* L */
   }
 
-  /* Force primary button styling */
+  .bg-mta-yellow {
+    background-color: #F6BC26; /* N, Q, R, W */
+  }
+
+  .bg-mta-red {
+    background-color: #D82233; /* 1, 2, 3 */
+  }
+
+  .bg-mta-dark-green {
+    background-color: #009952; /* 4, 5, 6 */
+  }
+
+  .bg-mta-purple {
+    background-color: #9A38A1; /* 7 */
+  }
+
+  .bg-mta-teal {
+    background-color: #008EB7; /* T (SIR) */
+  }
+
+  /* Force accent button styling */
   .btn-primary {
-    background-color: #8b5cf6 !important; /* Purple */
+    background-color: #01735C !important; /* NYC Street Sign Green */
     color: white !important;
   }
 
   .btn-primary:hover {
-    background-color: #7c3aed !important; /* Darker purple on hover */
+    background-color: #015A49 !important; /* Darker green on hover */
   }
 }
 

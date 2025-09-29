@@ -4,20 +4,27 @@
 
 	let { user, size = 'md', showTooltip = false }: AnonymousAvatarProps = $props()
 
+	// Subway line to color mapping based on MTA colors
+	const subwayLineColors: Record<string, string> = {
+		'A': 'mta-blue',
+		'B': 'mta-orange',
+		'G': 'mta-light-green',
+		'J': 'mta-brown',
+		'L': 'mta-grey',
+		'N': 'mta-yellow',
+		'1': 'mta-red',
+		'4': 'mta-dark-green',
+		'7': 'mta-purple',
+		'T': 'mta-teal'
+	}
+
 	const avatarVariants = tv({
-		base: 'inline-flex items-center justify-center rounded-full font-medium select-none transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:scale-110 hover:shadow-lg cursor-pointer',
+		base: 'inline-flex items-center justify-center rounded-full font-bold select-none transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:scale-110 hover:shadow-lg cursor-pointer text-white',
 		variants: {
 			size: {
 				sm: 'h-6 w-6 text-xs min-h-[24px] min-w-[24px]',
 				md: 'h-8 w-8 text-sm min-h-[32px] min-w-[32px]',
 				lg: 'h-10 w-10 text-base min-h-[40px] min-w-[40px]'
-			},
-			color: {
-				purple: 'bg-anonymous-1 text-white',
-				blue: 'bg-anonymous-2 text-white',
-				green: 'bg-anonymous-3 text-white',
-				orange: 'bg-anonymous-4 text-white',
-				red: 'bg-anonymous-5 text-white'
 			}
 		}
 	})
@@ -29,68 +36,66 @@
 				sm: 'text-xs px-1.5 py-0.5',
 				md: 'text-sm px-2 py-1',
 				lg: 'text-base px-2.5 py-1.5'
-			},
-			color: {
-				purple: 'bg-anonymous-1',
-				blue: 'bg-anonymous-2',
-				green: 'bg-anonymous-3',
-				orange: 'bg-anonymous-4',
-				red: 'bg-anonymous-5'
 			}
 		}
 	})
 
+	// Get the background color class for the subway line (always use correct mapping)
+	const bgColorClass = $derived(() => {
+		// Always use the correct color mapping based on subway line
+		const correctColor = subwayLineColors[user.subway_line] || 'mta-blue'
+		return `bg-${correctColor}`
+	})
+
 	// Enhanced display name with better accessibility
 	const displayName = $derived(() => {
-		const colorNames = {
-			purple: 'Purple',
-			blue: 'Blue',
-			green: 'Green',
-			orange: 'Orange',
-			red: 'Red'
+		const lineNames: Record<string, string> = {
+			'A': 'A Line (Blue)',
+			'B': 'B Line (Orange)',
+			'G': 'G Line (Light Green)',
+			'J': 'J Line (Brown)',
+			'L': 'L Line (Grey)',
+			'N': 'N Line (Yellow)',
+			'1': '1 Line (Red)',
+			'4': '4 Line (Dark Green)',
+			'7': '7 Line (Purple)',
+			'T': 'T Line (Teal)'
 		}
-		return `${user.emoji} ${colorNames[user.color]} Anonymous`
+		return `${lineNames[user.subway_line] || user.subway_line} Anonymous`
 	})
 
 	// Accessible description for screen readers
 	const accessibleDescription = $derived(() => {
-		const emojiDescriptions: Record<string, string> = {
-			'🎭': 'theater mask',
-			'🦄': 'unicorn',
-			'🚀': 'rocket',
-			'🌟': 'star',
-			'🔥': 'fire',
-			'💫': 'sparkles',
-			'🎨': 'art palette',
-			'🌈': 'rainbow',
-			'⚡': 'lightning bolt',
-			'🎪': 'circus tent'
+		const colorNames: Record<string, string> = {
+			'mta-blue': 'blue',
+			'mta-orange': 'orange',
+			'mta-light-green': 'light green',
+			'mta-brown': 'brown',
+			'mta-grey': 'grey',
+			'mta-yellow': 'yellow',
+			'mta-red': 'red',
+			'mta-dark-green': 'dark green',
+			'mta-purple': 'purple',
+			'mta-teal': 'teal'
 		}
-		const emojiDescription = emojiDescriptions[user.emoji] || user.emoji
-		const colorNames = {
-			purple: 'purple',
-			blue: 'blue',
-			green: 'green',
-			orange: 'orange',
-			red: 'red'
-		}
-		return `Anonymous user with ${emojiDescription} icon and ${colorNames[user.color]} background`
+		const colorName = colorNames[user.subway_color] || 'blue'
+		return `Anonymous user with ${user.subway_line} subway line icon and ${colorName} background`
 	})
 </script>
 
 {#if showTooltip}
 	<div
-		class={chipVariants({ size, color: user.color })}
+		class="{chipVariants({ size })} {bgColorClass()}"
 		title={displayName()}
 		role="img"
 		aria-label={accessibleDescription()}
 		aria-describedby="avatar-{user.id}-tooltip"
 	>
 		<span
-			class="{size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-xl'} leading-none"
+			class="{size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-xl'} leading-none font-bold"
 			aria-hidden="true"
 		>
-			{user.emoji}
+			{user.subway_line}
 		</span>
 		<span class="font-medium" aria-hidden="true">Anonymous</span>
 		<!-- Hidden tooltip for screen readers -->
@@ -100,7 +105,7 @@
 	</div>
 {:else}
 	<div
-		class={avatarVariants({ size, color: user.color })}
+		class="{avatarVariants({ size })} {bgColorClass()}"
 		title={displayName()}
 		role="img"
 		aria-label={accessibleDescription()}
@@ -109,7 +114,7 @@
 			class="leading-none {size === 'sm' ? '' : 'transform hover:scale-110 transition-transform duration-200'}"
 			aria-hidden="true"
 		>
-			{user.emoji}
+			{user.subway_line}
 		</span>
 	</div>
 {/if}

@@ -140,7 +140,7 @@
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="bg-background border border-border rounded-t-lg sm:rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: black; opacity: 1;">
+		<div class="bg-background border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: black; opacity: 1;">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4 border-b border-border/60">
 				<h2 class="text-lg font-semibold">
@@ -149,7 +149,7 @@
 				<button
 					onclick={handleClose}
 					disabled={$composeState.isSubmitting}
-					class="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
+					class="p-2 hover:bg-accent rounded-xl transition-colors disabled:opacity-50"
 					aria-label="Close"
 				>
 					<X size={20} />
@@ -192,7 +192,7 @@
 				<div class="p-4 border-t border-border/60">
 					<!-- Error message -->
 					{#if $composeState.error}
-						<div class="mb-3 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
+						<div class="mb-3 p-2 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
 							{$composeState.error}
 						</div>
 					{/if}

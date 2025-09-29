@@ -34,8 +34,8 @@ export interface Database {
     Functions: Record<string, unknown>
     Enums: {
       vote_type: 'up' | 'down'
-      anonymous_emoji: '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
-      anonymous_color: 'purple' | 'blue' | 'green' | 'orange' | 'red'
+      subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
+      subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
     }
   }
 }
@@ -120,21 +120,21 @@ export interface VoteUpdate {
 export interface AnonymousUser {
   id: string
   device_id: string
-  emoji: '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
-  color: 'purple' | 'blue' | 'green' | 'orange' | 'red'
+  subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
+  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
   created_at: string
   last_seen_at: string
 }
 
 export interface AnonymousUserInsert {
   device_id: string
-  emoji: '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
-  color: 'purple' | 'blue' | 'green' | 'orange' | 'red'
+  subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
+  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
 }
 
 export interface AnonymousUserUpdate {
-  emoji?: '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
-  color?: 'purple' | 'blue' | 'green' | 'orange' | 'red'
+  subway_line?: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
+  subway_color?: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
   last_seen_at?: string
 }
 
@@ -184,8 +184,9 @@ export interface ComposeState {
 }
 
 // Anonymous Identity Types
-export type AnonymousEmoji = '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
+export type SubwayLine = 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
 export type AnonymousColor = 'purple' | 'blue' | 'green' | 'orange' | 'red'
+export type AnonymousEmoji = '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
 
 export interface AnonymousIdentity {
   emoji: AnonymousEmoji
@@ -227,6 +228,7 @@ export interface VoteButtonsProps {
   onVote: (voteType: 'up' | 'down' | null) => Promise<void>
   disabled?: boolean
   size?: 'sm' | 'md' | 'lg'
+  orientation?: 'vertical' | 'horizontal'
 }
 
 export interface AnonymousAvatarProps {

@@ -12,7 +12,7 @@
 </script>
 
 <div
-	class="bg-card border border-line rounded-lg p-4 animate-fade-in"
+	class="bg-card border border-line rounded-2xl p-4 animate-fade-in"
 	style:animation-delay={animationDelay}
 	aria-label="Loading post..."
 	role="status"
@@ -24,7 +24,7 @@
 				class="h-10 w-10 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
 			></div>
 			<div
-				class="h-4 w-8 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+				class="h-4 w-8 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 				style:animation-delay={`${delay * 100 + 150}ms`}
 			></div>
 			<div
@@ -42,11 +42,11 @@
 					style:animation-delay={`${delay * 100 + 200}ms`}
 				></div>
 				<div
-					class="h-3 w-16 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-3 w-16 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 100 + 250}ms`}
 				></div>
 				<div
-					class="ml-auto h-6 w-6 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="ml-auto h-6 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 100 + 300}ms`}
 				></div>
 			</div>
@@ -54,15 +54,15 @@
 			<!-- Content skeleton -->
 			<div class="space-y-2">
 				<div
-					class="h-4 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 100 + 350}ms`}
 				></div>
 				<div
-					class="h-4 w-4/5 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-4 w-4/5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 100 + 400}ms`}
 				></div>
 				<div
-					class="h-4 w-3/5 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-4 w-3/5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 100 + 450}ms`}
 				></div>
 			</div>
@@ -73,8 +73,8 @@
 					class="flex items-center gap-1"
 					style:animation-delay={`${delay * 100 + 500}ms`}
 				>
-					<div class="h-4 w-4 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"></div>
-					<div class="h-3 w-6 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"></div>
+					<div class="h-4 w-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"></div>
+					<div class="h-3 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"></div>
 				</div>
 			</div>
 		</div>
@@ -83,7 +83,7 @@
 	<!-- Shimmer effect overlay -->
 	{#if animated}
 		<div
-			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-skeleton-wave rounded-lg"
+			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-skeleton-wave rounded-2xl"
 			aria-hidden="true"
 		></div>
 	{/if}

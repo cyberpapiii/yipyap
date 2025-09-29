@@ -22,7 +22,7 @@
 
 <div class={`${indentClass} ${depth > 0 ? 'border-l border-line/70 pl-4' : ''}`}>
 	<div
-	class="bg-card/50 border border-line/50 rounded-lg p-3 mb-2 animate-fade-in"
+	class="bg-card/50 border border-line/50 rounded-xl p-3 mb-2 animate-fade-in"
 		style:animation-delay={animationDelay}
 		aria-label="Loading comment..."
 		role="status"
@@ -35,7 +35,7 @@
 					style:animation-delay={`${delay * 80 + 100}ms`}
 				></div>
 				<div
-					class="h-3 w-6 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-3 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 80 + 150}ms`}
 				></div>
 				<div
@@ -53,11 +53,11 @@
 						style:animation-delay={`${delay * 80 + 120}ms`}
 					></div>
 					<div
-						class="h-2.5 w-12 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-2.5 w-12 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 						style:animation-delay={`${delay * 80 + 170}ms`}
 					></div>
 					<div
-						class="ml-auto h-4 w-4 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+						class="ml-auto h-4 w-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 						style:animation-delay={`${delay * 80 + 220}ms`}
 					></div>
 				</div>
@@ -65,18 +65,18 @@
 				<!-- Content skeleton -->
 				<div class="space-y-1.5">
 					<div
-						class="h-3.5 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-3.5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 						style:animation-delay={`${delay * 80 + 250}ms`}
 					></div>
 					<div
-						class="h-3.5 w-3/4 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-3.5 w-3/4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 						style:animation-delay={`${delay * 80 + 300}ms`}
 					></div>
 				</div>
 
 				<!-- Reply button skeleton -->
 				<div
-					class="h-2.5 w-8 bg-skeleton rounded {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-2.5 w-8 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
 					style:animation-delay={`${delay * 80 + 350}ms`}
 				></div>
 			</div>
@@ -85,7 +85,7 @@
 		<!-- Shimmer effect overlay -->
 		{#if animated}
 			<div
-				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent animate-skeleton-wave rounded-lg"
+				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent animate-skeleton-wave rounded-xl"
 				style:animation-delay={`${delay * 80 + 100}ms`}
 				aria-hidden="true"
 			></div>

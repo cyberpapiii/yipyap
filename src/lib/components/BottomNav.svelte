@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Home, PlusCircle, Bell } from 'lucide-svelte'
+  import { House, PlusCircle, Bell } from 'lucide-svelte'
   import { composeStore } from '$lib/stores/compose'
   export let active: 'home' | 'thread' | 'profile' = 'home'
 
@@ -12,7 +12,7 @@
      style="padding-bottom: calc(env(safe-area-inset-bottom) / 2)">
   <div class="mx-auto max-w-md px-6 py-2 grid grid-cols-3 items-center">
     <a href="/" class="flex flex-col items-center gap-1 text-xs {active==='home' ? 'text-foreground' : 'text-muted-foreground'}">
-      <Home size={20} />
+      <House size={20} />
       <span>Home</span>
     </a>
     <button class="flex flex-col items-center gap-1 text-xs text-foreground" aria-label="Compose" onclick={openComposer}>

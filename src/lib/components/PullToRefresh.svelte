@@ -137,17 +137,17 @@ let shouldTriggerRefresh = $state(false)
 				{#if isRefreshing}
 					<RefreshCw
 						size={20}
-						class="text-primary animate-spin"
+						class="text-accent animate-spin"
 					/>
-					<span class="text-sm font-medium text-primary">
+					<span class="text-sm font-medium text-accent">
 						Refreshing...
 					</span>
 				{:else if shouldTriggerRefresh}
 					<RefreshCw
 						size={20}
-						class="text-primary animate-pull-refresh"
+						class="text-accent animate-pull-refresh"
 					/>
-					<span class="text-sm font-medium text-primary">
+					<span class="text-sm font-medium text-accent">
 						Release to refresh
 					</span>
 				{:else}

@@ -18,9 +18,9 @@
 	}
 
 	const variantClasses = {
-		primary: 'text-primary',
+		primary: 'text-accent',
 		muted: 'text-muted-foreground',
-		accent: 'text-accent-foreground'
+		accent: 'text-accent'
 	}
 
 	const textSizes = {

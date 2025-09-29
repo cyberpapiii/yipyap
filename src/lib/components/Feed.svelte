@@ -141,7 +141,7 @@
 			style:transform={`translateY(-${64 - pullToRefreshY}px)`}
 			style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
 		>
-			<div class="flex items-center gap-2 text-primary">
+			<div class="flex items-center gap-2 text-accent">
 				{#if pullToRefreshY >= PULL_THRESHOLD}
 					<RefreshCw
 						size={20}
@@ -164,7 +164,7 @@
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header -->
-		<div class="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-md py-3 z-10 border-b border-line/60">
+		<div class="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-md py-3 z-10">
 			<h1 class="text-xl font-bold text-foreground">
 				Dimes Square
 				{#if $feedStore.posts.length > 0}
@@ -177,7 +177,7 @@
 				onclick={refreshFeed}
 				disabled={$feedStore.loading || refreshing}
 				class="
-					p-2.5 rounded-lg transition-all duration-200 ease-out
+					p-2.5 rounded-xl transition-all duration-200 ease-out
 					hover:bg-accent active:scale-95 active:bg-accent/70
 					disabled:opacity-50 disabled:cursor-not-allowed
 					touch-manipulation
@@ -195,12 +195,12 @@
 
 		<!-- Error state -->
 		{#if $feedStore.error}
-			<div class="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
+			<div class="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive">
 				<AlertCircle size={20} />
 				<p>{$feedStore.error}</p>
 				<button
 					onclick={refreshFeed}
-					class="ml-auto px-3 py-1 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
+					class="ml-auto px-3 py-1 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
 				>
 					Retry
 				</button>

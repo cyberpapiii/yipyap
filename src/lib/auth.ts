@@ -112,7 +112,7 @@ export function getCachedAnonymousUser(): AnonymousUser | null {
 		if (cached) {
 			const user = JSON.parse(cached) as AnonymousUser
 			// Validate the cached user has required fields
-			if (user.id && user.emoji && user.color && user.device_id) {
+			if (user.id && user.device_id && user.subway_line && user.subway_color) {
 				return user
 			}
 		}
@@ -274,13 +274,31 @@ export function isUserContent(contentUserId: string, currentUser: AnonymousUser 
  * Get display name for anonymous user
  */
 export function getAnonymousDisplayName(user: AnonymousUser): string {
-	const colorNames = {
-		purple: 'Purple',
-		blue: 'Blue',
-		green: 'Green',
-		orange: 'Orange',
-		red: 'Red'
+	// Use subway line as primary identifier
+	const subwayLineNames = {
+		'A': 'A Line',
+		'B': 'B Line',
+		'G': 'G Line',
+		'J': 'J Line',
+		'L': 'L Line',
+		'N': 'N Line',
+		'1': '1 Line',
+		'4': '4 Line',
+		'7': '7 Line',
+		'T': 'T Line'
 	}
 
-	return `${user.emoji} ${colorNames[user.color]} Anonymous`
+	// Fallback to emoji if still available
+	if (user.emoji && user.color) {
+		const colorNames = {
+			purple: 'Purple',
+			blue: 'Blue',
+			green: 'Green',
+			orange: 'Orange',
+			red: 'Red'
+		}
+		return `${user.emoji} ${colorNames[user.color]} Anonymous`
+	}
+
+	return `${subwayLineNames[user.subway_line]} Anonymous`
 }

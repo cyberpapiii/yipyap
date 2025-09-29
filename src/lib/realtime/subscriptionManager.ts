@@ -233,6 +233,8 @@ export class FeedSubscriptionManager {
         id: authorId,
         emoji: (postData.emoji ?? postData.identity_emoji ?? '🎭') as any,
         color: (postData.color ?? postData.identity_color ?? 'purple') as any,
+        subway_line: (postData.subway_line ?? postData.user_subway_line ?? 'A') as any,
+        subway_color: (postData.subway_color ?? postData.user_subway_color ?? 'mta-blue') as any,
         device_id: '',
         created_at: '',
         last_seen_at: ''
@@ -498,6 +500,8 @@ export class ThreadSubscriptionManager {
         id: authorId,
         emoji: (commentData.emoji ?? commentData.identity_emoji ?? '🎭') as any,
         color: (commentData.color ?? commentData.identity_color ?? 'purple') as any,
+        subway_line: (commentData.subway_line ?? commentData.user_subway_line ?? 'A') as any,
+        subway_color: (commentData.subway_color ?? commentData.user_subway_color ?? 'mta-blue') as any,
         device_id: '',
         created_at: '',
         last_seen_at: ''

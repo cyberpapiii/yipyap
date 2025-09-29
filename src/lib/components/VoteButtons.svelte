@@ -10,7 +10,8 @@
 		userVote,
 		onVote,
 		disabled = false,
-		size = 'md'
+		size = 'md',
+		orientation = 'vertical'
 	}: VoteButtonsProps = $props()
 
 	// Animation state
@@ -232,7 +233,7 @@
 	})
 </script>
 
-<div class="flex flex-col items-center gap-2" role="group" aria-label="Vote on this content">
+<div class="{orientation === 'horizontal' ? 'flex flex-row items-center gap-2' : 'flex flex-col items-center gap-2'}" role="group" aria-label="Vote on this content">
 	<!-- Upvote button -->
 	<button
 		class={buttonVariants({

@@ -151,7 +151,7 @@
 	bind:this={cardElement}
 	class="
 		relative overflow-hidden
-	bg-card border border-border rounded-lg p-4
+	bg-card border border-border rounded-2xl p-4
 		transition-all duration-300 ease-out
 		will-change-transform
 		touch-manipulation select-none
@@ -191,6 +191,7 @@
 						You
 					</span>
 				{/if}
+				<!-- More options button -->
 				<button
 					class="
 						ml-auto p-2 -mr-2 rounded-md
@@ -219,105 +220,53 @@
 				{@html formattedContent()}
 			</div>
 
-		</div>
+			<!-- Icon row -->
+			<div class="flex items-center justify-end gap-4">
+				<!-- Comment button -->
+				<button
+					class="
+						flex items-center gap-1.5 px-2 py-1
+						rounded-md transition-all duration-200 ease-out
+						text-sm text-muted-foreground
+						hover:text-foreground hover:bg-accent/50
+						active:scale-90 active:bg-accent/70
+						touch-manipulation
+						focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+					"
+					onclick={handleReply}
+					aria-label={`Reply to post (${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'})`}
+					type="button"
+				>
+					<MessageSquare size={16} />
+					<span class="font-medium">{post.comment_count}</span>
+				</button>
 
-		<!-- Vote buttons -->
-		<div
-			role="none"
-			onclick={(event) => event.stopPropagation()}
-			onkeydown={(event) => event.stopPropagation()}
-		>
-			{#if onVote}
-				<VoteButtons
-					voteScore={post.vote_score}
-					userVote={post.user_vote}
-					onVote={handleVote}
-					size="md"
-				/>
-			{:else}
-				<div class="flex flex-col items-center gap-1">
-					<div class="h-8 w-8 flex items-center justify-center text-muted-foreground">
-						<MessageSquare size={16} />
-					</div>
-					<span class="text-sm text-muted-foreground font-medium tabular-nums">
-						{post.vote_score}
-					</span>
+				<!-- Vote buttons -->
+				<div
+					role="none"
+					onclick={(event) => event.stopPropagation()}
+					onkeydown={(event) => event.stopPropagation()}
+				>
+					{#if onVote}
+						<VoteButtons
+							voteScore={post.vote_score}
+							userVote={post.user_vote}
+							onVote={handleVote}
+							size="sm"
+							orientation="horizontal"
+						/>
+					{:else}
+						<div class="flex items-center gap-2 text-muted-foreground">
+							<MessageSquare size={16} />
+							<span class="text-sm font-medium tabular-nums">
+								{post.vote_score}
+							</span>
+						</div>
+					{/if}
 				</div>
-			{/if}
+			</div>
+
 		</div>
 	</div>
 </article>
 
-<!-- Combined comment button and replies section -->
-{#if showReplies}
-	<div class="mt-2">
-		<!-- First line: Comment button and first reply (if exists) -->
-		<div class="flex items-center justify-between mb-1">
-			<!-- First reply or empty space -->
-			<div class="flex-1">
-				{#if !isInThread && post.replies && post.replies.length > 0}
-					<div class="flex items-center gap-2 text-sm pl-4 border-l-2 border-border/40">
-						<AnonymousAvatar user={post.replies[0].anonymous_user} size="sm" />
-						<div class="flex-1 min-w-0 text-muted-foreground line-clamp-1 selectable">
-							{post.replies[0].content}
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<!-- Comment button -->
-			<button
-				class="
-					flex items-center gap-1.5 px-3 py-2 ml-2
-					rounded-md transition-all duration-300 ease-out
-					text-sm text-muted-foreground
-					hover:text-foreground hover:bg-accent/50 hover:scale-110
-					active:scale-90 active:bg-accent/70
-					touch-manipulation
-					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-					group
-				"
-				onclick={handleReply}
-				aria-label={`Reply to post (${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'})`}
-				type="button"
-			>
-				<MessageSquare size={16} class="flex-shrink-0 icon-hover" />
-				<span class="font-medium">{post.comment_count}</span>
-				<span class="sr-only">{post.comment_count === 1 ? 'reply' : 'replies'}</span>
-			</button>
-		</div>
-
-		<!-- Additional replies -->
-		{#if !isInThread && post.replies && post.replies.length > 1}
-			<div class="pl-4 border-l-2 border-border/40">
-				<div class="space-y-1">
-					{#each post.replies.slice(1, 2) as reply}
-						<div class="flex items-center gap-2 text-sm">
-							<AnonymousAvatar user={reply.anonymous_user} size="sm" />
-							<div class="flex-1 min-w-0 text-muted-foreground line-clamp-1 selectable">
-								{reply.content}
-							</div>
-						</div>
-					{/each}
-					{#if post.comment_count > 2}
-						<button
-							class="
-								text-xs text-primary font-medium
-								px-2 py-1 -mx-2 rounded-md
-								transition-all duration-200 ease-out
-								hover:bg-primary/10 hover:underline
-								active:scale-95
-								touch-manipulation
-								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-							"
-							onclick={openThread}
-							type="button"
-						>
-							View {post.comment_count - 2} more {post.comment_count - 2 === 1 ? 'reply' : 'replies'}
-						</button>
-					{/if}
-				</div>
-			</div>
-		{/if}
-	</div>
-{/if}

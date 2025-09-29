@@ -125,30 +125,6 @@
 
 <div class="min-h-screen bg-background font-sans">
   <div class="max-w-md mx-auto animate-fade-in">
-    <!-- Feed Toggle -->
-    <div class="px-4 pt-4 flex justify-center">
-      <div class="relative inline-flex bg-muted rounded-lg p-1.5">
-        <!-- Sliding indicator -->
-        <div
-          class="absolute top-1.5 bottom-1.5 bg-primary rounded-md transition-all duration-300 ease-out {feedType === 'new' ? 'translate-x-0' : 'translate-x-full'}"
-          style="width: calc(50% - 6px);"
-        ></div>
-
-        <button
-          onclick={() => switchFeed('new')}
-          class="relative z-10 text-lg font-bold px-6 py-2 rounded-md transition-all duration-200 {feedType === 'new' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}"
-        >
-          New <span class="w-3 inline-block text-center">{#if feedType === 'new'}●{/if}</span>
-        </button>
-
-        <button
-          onclick={() => switchFeed('hot')}
-          class="relative z-10 text-lg font-bold px-6 py-2 rounded-md transition-all duration-200 {feedType === 'hot' ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}"
-        >
-          Hot <span class="w-3 inline-block text-center">{#if feedType === 'hot'}●{/if}</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Feed component uses feed stores internally -->
     <Feed
@@ -159,5 +135,36 @@
     />
 
     <ComposeModal onSubmit={onSubmit} />
+  </div>
+
+  <!-- Floating Feed Toggle -->
+  <div class="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-30">
+    <div class="inline-flex bg-card border border-border rounded-full p-1 shadow-lg backdrop-blur-sm gap-1">
+      <button
+        onclick={() => switchFeed('new')}
+        class="text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200"
+        style={feedType === 'new'
+          ? 'background-color: hsl(var(--accent)); color: hsl(var(--accent-foreground));'
+          : ''}
+        class:text-muted-foreground={feedType !== 'new'}
+        class:hover:text-foreground={feedType !== 'new'}
+        class:hover:bg-accent={feedType !== 'new'}
+      >
+        New
+      </button>
+
+      <button
+        onclick={() => switchFeed('hot')}
+        class="text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200"
+        style={feedType === 'hot'
+          ? 'background-color: hsl(var(--accent)); color: hsl(var(--accent-foreground));'
+          : ''}
+        class:text-muted-foreground={feedType !== 'hot'}
+        class:hover:text-foreground={feedType !== 'hot'}
+        class:hover:bg-accent={feedType !== 'hot'}
+      >
+        Hot
+      </button>
+    </div>
   </div>
 </div>
