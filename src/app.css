@@ -196,10 +196,22 @@
   }
 }
 
-/* Custom scrollbar for mobile webkit browsers */
+/* Hide scrollbars */
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Hide scrollbar for all browsers */
+  .custom-scrollbar,
+  .overflow-y-auto {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .custom-scrollbar::-webkit-scrollbar,
+  .overflow-y-auto::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   /* Ensure proper font loading */
