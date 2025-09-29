@@ -65,7 +65,23 @@
 
     initializing = true
     try {
-      // Load feed immediately - layout already initialized user and realtime
+      // Wait for user to be initialized before loading feed
+      // This ensures is_user_post flags are set correctly on first load
+      let currentUserValue = get(cu)
+      if (!currentUserValue) {
+        // Wait up to 2 seconds for user initialization
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 2000)
+          const unsubscribe = cu.subscribe((user) => {
+            if (user) {
+              clearTimeout(timeout)
+              unsubscribe()
+              resolve()
+            }
+          })
+        })
+      }
+
       await switchFeed(saved, { skipPersist: true })
     } finally {
       initializing = false
