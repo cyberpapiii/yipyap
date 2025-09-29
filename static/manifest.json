@@ -4,59 +4,28 @@
   "description": "Anonymous local community for Dimes Square",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "background_color": "#101010",
+  "theme_color": "#101010",
   "orientation": "portrait",
   "scope": "/",
   "lang": "en",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
     },
     {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -64,38 +33,13 @@
       "name": "Hot Feed",
       "short_name": "Hot",
       "description": "View trending posts",
-      "url": "/",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "url": "/"
     },
     {
       "name": "New Feed",
       "short_name": "New",
       "description": "View recent posts",
-      "url": "/new",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Compose",
-      "short_name": "Post",
-      "description": "Create a new post",
-      "url": "/compose",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-feed.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "YipYap Feed"
-    },
-    {
-      "src": "/screenshots/mobile-compose.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Compose Post"
+      "url": "/"
     }
   ],
   "categories": ["social", "lifestyle"],

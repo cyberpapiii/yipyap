@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#101010"/>
+  <g transform="translate(46, 206)">
+    <!-- Y - Red -->
+    <circle cx="35" cy="50" r="35" fill="#EF4444"/>
+    <text x="35" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">Y</text>
+
+    <!-- I - Blue -->
+    <circle cx="105" cy="50" r="35" fill="#3B82F6"/>
+    <text x="105" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">I</text>
+
+    <!-- P - Yellow -->
+    <circle cx="175" cy="50" r="35" fill="#F59E0B"/>
+    <text x="175" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">P</text>
+
+    <!-- Y - Green -->
+    <circle cx="245" cy="50" r="35" fill="#10B981"/>
+    <text x="245" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">Y</text>
+
+    <!-- A - Orange -->
+    <circle cx="315" cy="50" r="35" fill="#F97316"/>
+    <text x="315" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">A</text>
+
+    <!-- P - Brown -->
+    <circle cx="385" cy="50" r="35" fill="#92400E"/>
+    <text x="385" y="50" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">P</text>
+  </g>
+</svg>
