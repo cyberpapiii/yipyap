@@ -518,14 +518,11 @@ export class PostsAPI {
     currentUser: AnonymousUser
   ): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from('posts')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deletion_reason: 'user_deleted'
+      const { error } = await (this.supabase as any)
+        .rpc('rpc_delete_post', {
+          p_user: currentUser.id,
+          p_post: postId
         })
-        .eq('id', postId)
-        .eq('user_id', currentUser.id) // Ensure user owns the post
 
       if (error) throw error
     } catch (error) {
@@ -542,14 +539,11 @@ export class PostsAPI {
     currentUser: AnonymousUser
   ): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from('comments')
-        .update({
-          deleted_at: new Date().toISOString(),
-          deletion_reason: 'user_deleted'
+      const { error } = await (this.supabase as any)
+        .rpc('rpc_delete_comment', {
+          p_user: currentUser.id,
+          p_comment: commentId
         })
-        .eq('id', commentId)
-        .eq('user_id', currentUser.id) // Ensure user owns the comment
 
       if (error) throw error
     } catch (error) {
