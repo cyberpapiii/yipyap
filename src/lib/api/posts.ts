@@ -90,6 +90,7 @@ export class PostsAPI {
 			  .from('post_with_stats')
 			  .select('*')
 			  .is('parent_post_id', null)
+			  .eq('is_deleted', false)  // Filter out deleted posts
 			  .limit(limit)
 			if (feedType === 'hot') {
 				query = query.order('vote_score', { ascending: false }).order('created_at', { ascending: false })
