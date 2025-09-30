@@ -222,26 +222,12 @@
       return
     }
 
-    try {
-      if (replyTo) {
-        await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
-      } else {
-        await api.createPostOptimistic({ content }, user)
-      }
-
-      // Success haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate([10, 50, 10])
-      }
-
-      composeStore.closeModal()
-    } catch (e) {
-      // Error haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate([50, 100, 50])
-      }
-      composeStore.setError('Failed to submit')
+    if (replyTo) {
+      await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
+    } else {
+      await api.createPostOptimistic({ content }, user)
     }
+    // Success animation handled by ComposeModal
   }
 </script>
 

@@ -15,6 +15,8 @@
 	let textareaElement = $state<HTMLTextAreaElement | null>(null)
 	let content = $state('')
 	let isClosing = $state(false)
+	let showSuccess = $state(false)
+	let successPosition = $state({ top: '50%', left: '50%' })
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -33,9 +35,38 @@
 
 		try {
 			await onSubmit(content.trim(), $composeState.replyTo)
-			content = ''
-			composeStore.closeModal()
+
+			// Success haptic feedback
+			if ('vibrate' in navigator) {
+				navigator.vibrate([10, 50, 10])
+			}
+
+			// Capture modal position before closing
+			const modalElement = document.querySelector('.modal-exit') || document.querySelector('.modal-enter')
+			if (modalElement) {
+				const rect = modalElement.getBoundingClientRect()
+				successPosition = {
+					top: `${rect.top + rect.height / 2}px`,
+					left: `${rect.left + rect.width / 2}px`
+				}
+			}
+
+			// Trigger success sequence
+			isClosing = true
+			setTimeout(() => {
+				showSuccess = true
+				setTimeout(() => {
+					content = ''
+					composeStore.closeModal()
+					showSuccess = false
+					isClosing = false
+				}, 800)
+			}, 300)
 		} catch (error) {
+			// Error haptic feedback
+			if ('vibrate' in navigator) {
+				navigator.vibrate([50, 100, 50])
+			}
 			composeStore.setError(error instanceof Error ? error.message : 'Failed to post')
 		}
 	}
@@ -71,10 +102,30 @@
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
 
-	onMount(() => {
-		if (textareaElement) {
+	// Focus the textarea when modal opens
+	$effect(() => {
+		if ($showComposeModal && textareaElement) {
+			// Multiple attempts to ensure focus on mobile
 			textareaElement.focus()
+
+			// Try again after animation starts
+			setTimeout(() => {
+				if (textareaElement) {
+					textareaElement.focus()
+					textareaElement.click()
+				}
+			}, 150)
+
+			// Final attempt after animation completes
+			setTimeout(() => {
+				if (textareaElement) {
+					textareaElement.focus()
+				}
+			}, 450)
 		}
+	})
+
+	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
 		return () => {
 			document.removeEventListener('keydown', handleKeydown)
@@ -103,6 +154,10 @@
 		animation: modal-slide-out 0.25s cubic-bezier(0.4, 0, 1, 1);
 	}
 
+	.modal-success {
+		animation: modal-success 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
 	@keyframes modal-slide-in {
 		0% {
 			transform: translateY(100%) scale(0.9);
@@ -124,16 +179,68 @@
 			opacity: 1;
 		}
 		100% {
-			transform: translateY(100%) scale(0.95);
+			transform: translateY(0) scale(0.3);
 			opacity: 0;
 		}
 	}
+
+	.modal-overlay-exit {
+		animation: overlay-fade-out 0.3s ease-out forwards;
+	}
+
+	@keyframes overlay-fade-out {
+		0% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	.success-indicator {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 101;
+		animation: success-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes success-pop {
+		0% {
+			transform: translate(-50%, -50%) scale(0);
+			opacity: 0;
+		}
+		40% {
+			transform: translate(-50%, -50%) scale(1.1);
+			opacity: 1;
+		}
+		70% {
+			transform: translate(-50%, -50%) scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: translate(-50%, -50%) scale(0.8);
+			opacity: 0;
+		}
+	}
+
 </style>
+
+{#if showSuccess}
+	<!-- Success checkmark -->
+	<div class="success-indicator" style="top: {successPosition.top}; left: {successPosition.left};">
+		<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<circle cx="50" cy="50" r="48" fill="#009952"/>
+			<path d="M30 52L43 65L70 38" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+		</svg>
+	</div>
+{/if}
 
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 sm:pb-4"
+		class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 sm:pb-4 {isClosing ? 'modal-overlay-exit' : ''}"
 		style="z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
