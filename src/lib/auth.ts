@@ -79,13 +79,13 @@ export function generateDeviceFingerprint(): string {
 export function getDeviceId(): string {
 	if (!browser) return ''
 
-	let deviceId = localStorage.getItem('yipyap_device_id')
+	let deviceId = localStorage.getItem('bingbong_device_id')
 
 	if (!deviceId) {
 		// Try to use fingerprint as base
 		const fingerprint = generateDeviceFingerprint()
 		deviceId = fingerprint || crypto.randomUUID()
-		localStorage.setItem('yipyap_device_id', deviceId)
+		localStorage.setItem('bingbong_device_id', deviceId)
 	}
 
 	return deviceId
@@ -108,7 +108,7 @@ export function getCachedAnonymousUser(): AnonymousUser | null {
 	if (!browser) return null
 
 	try {
-		const cached = localStorage.getItem('yipyap_anonymous_user')
+		const cached = localStorage.getItem('bingbong_anonymous_user')
 		if (cached) {
 			const user = JSON.parse(cached) as AnonymousUser
 			// Validate the cached user has required fields
@@ -116,12 +116,12 @@ export function getCachedAnonymousUser(): AnonymousUser | null {
 				return user
 			} else {
 				// Clear invalid cached user (likely from old emoji/color schema)
-				localStorage.removeItem('yipyap_anonymous_user')
+				localStorage.removeItem('bingbong_anonymous_user')
 			}
 		}
 	} catch {
 		// Ignore parsing errors
-		localStorage.removeItem('yipyap_anonymous_user')
+		localStorage.removeItem('bingbong_anonymous_user')
 	}
 
 	return null
@@ -134,7 +134,7 @@ export function cacheAnonymousUser(user: AnonymousUser): void {
 	if (!browser) return
 
 	try {
-		localStorage.setItem('yipyap_anonymous_user', JSON.stringify(user))
+		localStorage.setItem('bingbong_anonymous_user', JSON.stringify(user))
 	} catch {
 		// Ignore storage errors (e.g., quota exceeded)
 	}
@@ -146,8 +146,8 @@ export function cacheAnonymousUser(user: AnonymousUser): void {
 export function clearCachedAnonymousUser(): void {
 	if (!browser) return
 
-	localStorage.removeItem('yipyap_anonymous_user')
-	localStorage.removeItem('yipyap_device_id')
+	localStorage.removeItem('bingbong_anonymous_user')
+	localStorage.removeItem('bingbong_device_id')
 }
 
 /**

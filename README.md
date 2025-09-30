@@ -1,4 +1,4 @@
-# YipYap
+# BingBong
 
 Local-first anonymous social playground built with SvelteKit 5 runes and Supabase realtime.
 

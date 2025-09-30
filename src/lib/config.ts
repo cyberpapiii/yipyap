@@ -1,4 +1,4 @@
-// Configuration constants for YipYap
+// Configuration constants for BingBong
 
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
 
@@ -15,8 +15,8 @@ export const config = {
 		anonKey: supabaseAnonKey
 	},
 	app: {
-		name: 'YipYap',
-		description: 'Anonymous social posting platform',
+		name: 'BingBong',
+		description: 'Anonymous NYC social playground',
 		maxPostLength: 100,
 		maxCommentDepth: 2,
 		postsPerPage: 20,

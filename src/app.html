@@ -15,32 +15,27 @@
 	<meta name="theme-color" content="#101010" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-	<meta name="apple-mobile-web-app-title" content="YipYap" />
+	<meta name="apple-mobile-web-app-title" content="BingBong" />
 	<meta name="mobile-web-app-capable" content="yes" />
 	<meta name="msapplication-TileColor" content="#101010" />
 
 	<!-- iOS Icons -->
-	<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.svg" />
-	<link rel="apple-touch-icon" sizes="180x180" href="%sveltekit.assets%/apple-touch-icon.svg" />
-	<link rel="apple-touch-icon-precomposed" href="%sveltekit.assets%/apple-touch-icon.svg" />
+	<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+	<link rel="apple-touch-icon" sizes="180x180" href="%sveltekit.assets%/apple-touch-icon.png" />
 
-	<!-- Preload critical resources -->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-	<title>YipYap - Dimes Square</title>
-	<meta name="description" content="Anonymous local community for Dimes Square. Share thoughts, vote, discuss." />
+	<title>BingBong - Anonymous NYC Social</title>
+	<meta name="description" content="Local-first anonymous social playground for NYC. Express yourself with subway line identities." />
 
 	<!-- Open Graph -->
-	<meta property="og:title" content="YipYap - Dimes Square" />
-	<meta property="og:description" content="Anonymous local community for Dimes Square" />
+	<meta property="og:title" content="BingBong - Anonymous NYC Social" />
+	<meta property="og:description" content="Local-first anonymous social playground for NYC. Express yourself with subway line identities." />
 	<meta property="og:type" content="website" />
 	<meta property="og:image" content="%sveltekit.assets%/og-image.png" />
 
 	<!-- Twitter -->
 	<meta name="twitter:card" content="summary" />
-	<meta name="twitter:title" content="YipYap - Dimes Square" />
-	<meta name="twitter:description" content="Anonymous local community for Dimes Square" />
+	<meta name="twitter:title" content="BingBong - Anonymous NYC Social" />
+	<meta name="twitter:description" content="Local-first anonymous social playground for NYC" />
 
 	%sveltekit.head%
 </head>
@@ -71,7 +66,7 @@
 
 		// Track app installs
 		window.addEventListener('appinstalled', () => {
-			console.log('YipYap installed');
+			console.log('BingBong installed');
 		});
 
 		// Online/offline handling
