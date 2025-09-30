@@ -11,10 +11,6 @@
 
   onMount(async () => {
     try {
-      // Force dark theme always
-      const root = document.documentElement
-      root.classList.add('dark')
-      root.setAttribute('data-theme', 'dark')
 
       // Initialize anonymous user via helper RPC
       const deviceId = getDeviceId()
