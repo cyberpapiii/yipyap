@@ -17,6 +17,7 @@
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
+	let keyboardHeight = $state(0)
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -41,12 +42,14 @@
 				navigator.vibrate([10, 50, 10])
 			}
 
-			// Capture modal position before closing
+			// Capture modal position before closing (accounting for keyboard)
 			const modalElement = document.querySelector('.modal-exit') || document.querySelector('.modal-enter')
 			if (modalElement) {
 				const rect = modalElement.getBoundingClientRect()
+				// Use visual viewport if available to get true visible position
+				const offsetY = window.visualViewport ? window.visualViewport.offsetTop : 0
 				successPosition = {
-					top: `${rect.top + rect.height / 2}px`,
+					top: `${rect.top + rect.height / 2 + offsetY}px`,
 					left: `${rect.left + rect.width / 2}px`
 				}
 			}
@@ -127,8 +130,26 @@
 
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
+
+		// Handle keyboard visibility
+		function updateKeyboardHeight() {
+			if (window.visualViewport) {
+				const viewportHeight = window.visualViewport.height
+				const windowHeight = window.innerHeight
+				keyboardHeight = windowHeight - viewportHeight
+			}
+		}
+
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', updateKeyboardHeight)
+			updateKeyboardHeight()
+		}
+
 		return () => {
 			document.removeEventListener('keydown', handleKeydown)
+			if (window.visualViewport) {
+				window.visualViewport.removeEventListener('resize', updateKeyboardHeight)
+			}
 		}
 	})
 
@@ -240,15 +261,15 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center p-4 sm:pb-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style="z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);"
+		class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		style="z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + {keyboardHeight}px);"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);">
+		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
