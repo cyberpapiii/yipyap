@@ -17,7 +17,7 @@ export const config = {
 	app: {
 		name: 'BingBong',
 		description: 'Anonymous NYC social playground',
-		maxPostLength: 100,
+		maxPostLength: 500,
 		maxCommentDepth: 2,
 		postsPerPage: 20,
 		commentsPerPage: 50
