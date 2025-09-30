@@ -50,7 +50,9 @@
 	}
 
 	// Handle delete
-	async function handleDelete() {
+	async function handleDelete(e: Event) {
+		e.stopPropagation() // Prevent navigation to thread
+
 		// Warning haptic before confirm
 		if ('vibrate' in navigator) {
 			navigator.vibrate(30)

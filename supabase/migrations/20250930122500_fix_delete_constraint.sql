@@ -1,7 +1,7 @@
--- Migration: Add RPC functions for deleting posts and comments
--- This fixes the delete functionality which was broken after the RLS lockdown in 007_rls_lockdown.sql
+-- Fix delete RPC to comply with posts_score_triggers_deletion constraint
+-- The constraint requires: (score > -5 AND deleted_at IS NULL) OR (score <= -5 AND deleted_at IS NOT NULL)
+-- So when we delete, we must also set score to -5 or lower
 
--- Create RPC function for deleting posts
 CREATE OR REPLACE FUNCTION rpc_delete_post(
   p_user UUID,
   p_post UUID
@@ -12,7 +12,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Soft delete the post (set deleted_at timestamp AND score to -5 for constraint)
+  -- Soft delete the post (set deleted_at timestamp AND set score to -5 to satisfy constraint)
   UPDATE posts
   SET
     deleted_at = NOW(),
@@ -28,7 +28,7 @@ BEGIN
 END;
 $$;
 
--- Create RPC function for deleting comments
+-- Similarly fix comment delete if it has the same constraint
 CREATE OR REPLACE FUNCTION rpc_delete_comment(
   p_user UUID,
   p_comment UUID
@@ -54,11 +54,3 @@ BEGIN
   END IF;
 END;
 $$;
-
--- Grant execute permissions to anonymous users
-GRANT EXECUTE ON FUNCTION rpc_delete_post(UUID, UUID) TO anon;
-GRANT EXECUTE ON FUNCTION rpc_delete_comment(UUID, UUID) TO anon;
-
--- Add comments for documentation
-COMMENT ON FUNCTION rpc_delete_post IS 'Soft delete a post. Only the post owner can delete their own posts.';
-COMMENT ON FUNCTION rpc_delete_comment IS 'Soft delete a comment. Only the comment owner can delete their own comments.';
