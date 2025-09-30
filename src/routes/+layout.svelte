@@ -6,7 +6,7 @@
   import { authStore } from '$lib/stores/auth'
   import { cacheAnonymousUser, getDeviceId } from '$lib/auth'
   import type { AnonymousUser } from '$lib/types'
-  import { Toaster, Button } from '$lib/components/ui'
+  import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/BottomNav.svelte'
 
   onMount(async () => {

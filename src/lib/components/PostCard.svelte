@@ -107,7 +107,8 @@
 
 	const timeAgo = () => formatDistanceToNow(new Date(post.created_at))
 
-	const formattedContent = () => post.content.replace(/\n/g, '<br>')
+	// No longer needed - using plain text with CSS whitespace handling
+	// const formattedContent = () => post.content.replace(/\n/g, '<br>')
 
 	// Touch and mouse event handlers
 	function handleTouchStart(e: TouchEvent) {
@@ -272,9 +273,9 @@
 				</div>
 			</div>
 
-			<!-- Content -->
-			<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed">
-				{@html formattedContent()}
+			<!-- Content (secure plain text with preserved line breaks) -->
+			<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line">
+				{post.content}
 			</div>
 
 			<!-- Icon row -->

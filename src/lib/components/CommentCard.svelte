@@ -79,7 +79,7 @@
 		isPressed = false
 	}
 
-	let formattedContent = $state('')
+	// Removed formattedContent - using plain text with CSS whitespace handling
 	let timeAgo = $state('')
 	let indentClass = $state('')
 	let depthStyles = $state({ opacity: 1, borderColor: '' })
@@ -102,7 +102,6 @@
 	})
 
 	$effect(() => {
-		formattedContent = comment.content.replace(/\n/g, '<br>')
 		timeAgo = formatDistanceToNow(new Date(comment.created_at))
 		const indentLevels = ['', 'ml-2', 'ml-4', 'ml-6']
 		indentClass = indentLevels[Math.min(depth, 3)] || 'ml-6'
@@ -208,8 +207,8 @@
 				</div>
 
 				<!-- Content -->
-				<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed">
-					{@html formattedContent}
+				<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line">
+					{comment.content}
 				</div>
 
 				<!-- Icon row -->

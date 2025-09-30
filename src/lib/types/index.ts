@@ -34,8 +34,8 @@ export interface Database {
     Functions: Record<string, unknown>
     Enums: {
       vote_type: 'up' | 'down'
-      subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
-      subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
+      subway_line: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
+      subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple'
     }
   }
 }
@@ -120,21 +120,21 @@ export interface VoteUpdate {
 export interface AnonymousUser {
   id: string
   device_id: string
-  subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
-  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
+  subway_line: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
+  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple'
   created_at: string
   last_seen_at: string
 }
 
 export interface AnonymousUserInsert {
   device_id: string
-  subway_line: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
-  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
+  subway_line: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
+  subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple'
 }
 
 export interface AnonymousUserUpdate {
-  subway_line?: 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
-  subway_color?: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple' | 'mta-teal'
+  subway_line?: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
+  subway_color?: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple'
   last_seen_at?: string
 }
 
@@ -184,7 +184,7 @@ export interface ComposeState {
 }
 
 // Anonymous Identity Types
-export type SubwayLine = 'A' | 'B' | 'G' | 'J' | 'L' | 'N' | '1' | '4' | '7' | 'T'
+export type SubwayLine = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
 export type AnonymousColor = 'purple' | 'blue' | 'green' | 'orange' | 'red'
 export type AnonymousEmoji = '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
 

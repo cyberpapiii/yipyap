@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte'
+	import { onMount } from 'svelte'
 	import { Loader2, RefreshCw, AlertCircle, ChevronDown } from 'lucide-svelte'
 	import PostCard from './PostCard.svelte'
 	import PostCardSkeleton from './PostCardSkeleton.svelte'

@@ -4,22 +4,43 @@
 
 	let { user, size = 'md', showTooltip = false }: AnonymousAvatarProps = $props()
 
-	// Subway line to color mapping based on MTA colors
+	// Subway line to color mapping based on real NYC MTA colors
 	const subwayLineColors: Record<string, string> = {
-		'A': 'mta-blue',
-		'B': 'mta-orange',
-		'G': 'mta-light-green',
-		'J': 'mta-brown',
-		'L': 'mta-grey',
-		'N': 'mta-yellow',
+		// Red lines (IRT)
 		'1': 'mta-red',
+		'2': 'mta-red',
+		'3': 'mta-red',
+		// Green lines (IRT)
 		'4': 'mta-dark-green',
+		'5': 'mta-dark-green',
+		'6': 'mta-dark-green',
+		// Purple line (IRT)
 		'7': 'mta-purple',
-		'T': 'mta-teal'
+		// Blue lines (IND/BMT)
+		'A': 'mta-blue',
+		'C': 'mta-blue',
+		'E': 'mta-blue',
+		// Orange lines (IND/BMT)
+		'B': 'mta-orange',
+		'D': 'mta-orange',
+		'F': 'mta-orange',
+		'M': 'mta-orange',
+		// Yellow lines (IND/BMT)
+		'N': 'mta-yellow',
+		'Q': 'mta-yellow',
+		'R': 'mta-yellow',
+		'W': 'mta-yellow',
+		// Light green line (IND/BMT)
+		'G': 'mta-light-green',
+		// Brown lines (IND/BMT)
+		'J': 'mta-brown',
+		'Z': 'mta-brown',
+		// Grey line (IND/BMT)
+		'L': 'mta-grey'
 	}
 
 	const avatarVariants = tv({
-		base: 'inline-flex items-center justify-center rounded-full font-bold select-none transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:scale-110 hover:shadow-lg cursor-pointer text-white',
+		base: 'inline-flex items-center justify-center rounded-full font-bold select-none transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 hover:scale-110 hover:shadow-lg cursor-pointer',
 		variants: {
 			size: {
 				sm: 'h-7 w-7 text-base min-h-[28px] min-w-[28px]',
@@ -29,8 +50,14 @@
 		}
 	})
 
+	// Text color based on background (yellow lines need black text)
+	const textColorClass = $derived(() => {
+		const needsBlackText = ['N', 'Q', 'R', 'W'] // Yellow line variants
+		return needsBlackText.includes(user.subway_line) ? 'text-black' : 'text-white'
+	})
+
 	const chipVariants = tv({
-		base: 'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-white font-medium transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 min-h-[32px]',
+		base: 'inline-flex items-center gap-1.5 px-2 py-1 rounded-full font-medium transition-all duration-200 ease-out ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 min-h-[32px]',
 		variants: {
 			size: {
 				sm: 'text-xs px-1.5 py-0.5',
@@ -50,16 +77,15 @@
 	// Enhanced display name with better accessibility
 	const displayName = $derived(() => {
 		const lineNames: Record<string, string> = {
-			'A': 'A Line (Blue)',
-			'B': 'B Line (Orange)',
-			'G': 'G Line (Light Green)',
-			'J': 'J Line (Brown)',
-			'L': 'L Line (Grey)',
-			'N': 'N Line (Yellow)',
-			'1': '1 Line (Red)',
-			'4': '4 Line (Dark Green)',
+			'1': '1 Line (Red)', '2': '2 Line (Red)', '3': '3 Line (Red)',
+			'4': '4 Line (Green)', '5': '5 Line (Green)', '6': '6 Line (Green)',
 			'7': '7 Line (Purple)',
-			'T': 'T Line (Teal)'
+			'A': 'A Line (Blue)', 'C': 'C Line (Blue)', 'E': 'E Line (Blue)',
+			'B': 'B Line (Orange)', 'D': 'D Line (Orange)', 'F': 'F Line (Orange)', 'M': 'M Line (Orange)',
+			'N': 'N Line (Yellow)', 'Q': 'Q Line (Yellow)', 'R': 'R Line (Yellow)', 'W': 'W Line (Yellow)',
+			'G': 'G Line (Light Green)',
+			'J': 'J Line (Brown)', 'Z': 'Z Line (Brown)',
+			'L': 'L Line (Grey)'
 		}
 		return `${lineNames[user.subway_line] || user.subway_line} Anonymous`
 	})
@@ -74,9 +100,8 @@
 			'mta-grey': 'grey',
 			'mta-yellow': 'yellow',
 			'mta-red': 'red',
-			'mta-dark-green': 'dark green',
-			'mta-purple': 'purple',
-			'mta-teal': 'teal'
+			'mta-dark-green': 'green',
+			'mta-purple': 'purple'
 		}
 		const colorName = colorNames[user.subway_color] || 'blue'
 		return `Anonymous user with ${user.subway_line} subway line icon and ${colorName} background`
@@ -85,7 +110,7 @@
 
 {#if showTooltip}
 	<div
-		class="{chipVariants({ size })} {bgColorClass()}"
+		class="{chipVariants({ size })} {bgColorClass()} {textColorClass()}"
 		title={displayName()}
 		role="img"
 		aria-label={accessibleDescription()}
@@ -105,7 +130,7 @@
 	</div>
 {:else}
 	<div
-		class="{avatarVariants({ size })} {bgColorClass()}"
+		class="{avatarVariants({ size })} {bgColorClass()} {textColorClass()}"
 		title={displayName()}
 		role="img"
 		aria-label={accessibleDescription()}

@@ -317,16 +317,50 @@ export class PostsAPI {
 			  : comments || []
 
 				const commentsWithIdentity = await this.attachAnonymousIdentities(commentsWithVotes)
-				const commentsWithReplies = await Promise.all(
-				  commentsWithIdentity.map(async (comment: any) => {
-				    const replies = await this.getCommentReplies(comment.id, currentUser)
-				    return {
-				      ...comment,
-				      is_user_comment: currentUser ? comment.anonymous_user_id === currentUser.id : false,
-				      replies: replies
-				    }
-				  })
-				)
+
+				// PERFORMANCE FIX: Batch fetch all nested replies in one query instead of N+1
+				// This reduces 20+ queries to just 1 query for a typical thread
+				const commentIds = commentsWithIdentity.map(c => c.id)
+				let repliesMap = new Map<string, any[]>()
+
+				if (commentIds.length > 0) {
+					// Fetch ALL nested replies at once
+					const { data: allReplies, error: repliesError } = await this.supabase
+						.from('comment_with_stats')
+						.select('*')
+						.in('parent_comment_id', commentIds)
+						.order('vote_score', { ascending: false })
+						.order('created_at', { ascending: false })
+
+					if (!repliesError && allReplies) {
+						// Add user votes to all replies in one batch
+						const repliesWithVotes = currentUser
+							? await this.addUserVotesToComments(allReplies, currentUser.id)
+							: allReplies
+
+						// Attach identities to all replies in one batch
+						const repliesWithIdentities = await this.attachAnonymousIdentities(repliesWithVotes)
+
+						// Group replies by parent_comment_id
+						for (const reply of repliesWithIdentities) {
+							if (!repliesMap.has(reply.parent_comment_id)) {
+								repliesMap.set(reply.parent_comment_id, [])
+							}
+							repliesMap.get(reply.parent_comment_id)!.push({
+								...reply,
+								is_user_comment: currentUser ? reply.anonymous_user_id === currentUser.id : false,
+								replies: [] // Only one level of nesting
+							})
+						}
+					}
+				}
+
+				// Attach grouped replies to comments (no async needed!)
+				const commentsWithReplies = commentsWithIdentity.map(comment => ({
+					...comment,
+					is_user_comment: currentUser ? comment.anonymous_user_id === currentUser.id : false,
+					replies: repliesMap.get(comment.id) || []
+				}))
 
 			const hasMore = comments?.length === limit
 

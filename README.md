@@ -29,6 +29,18 @@ _(Script example lives in `scripts/generate-supabase-token.mjs`; copy the output
 
 - `npm run check` – static type and Svelte diagnostics.
 - `npm run build` / `npm run preview` – production bundle & local preview.
+- `npm test` – run test suite (API, database, auth tests).
+- `npm run test:e2e` – run end-to-end browser tests.
 - `supabase db reset --yes` – rebuild the local database and replay migrations.
 
 Supabase REST and RPC access is RLS-locked; all writes must go through the RPCs defined under `supabase/migrations/006*_identity.sql`.
+
+## Testing
+
+The app includes a comprehensive test suite covering:
+- API functionality (posts, comments, voting)
+- Database security (RLS policies, permissions)
+- Anonymous authentication
+- End-to-end user flows
+
+See [`tests/README.md`](tests/README.md) for detailed testing documentation.

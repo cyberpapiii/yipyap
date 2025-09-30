@@ -90,15 +90,6 @@ function createFeedStore() {
 			error: null,
 			hasMore: true,
 			cursor: null
-		}),
-
-		// Reset state
-		reset: () => set({
-			posts: [],
-			loading: false,
-			error: null,
-			hasMore: true,
-			cursor: null
 		})
 	}
 }

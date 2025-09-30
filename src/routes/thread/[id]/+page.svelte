@@ -3,7 +3,6 @@
   import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
-  import { Button } from '$lib/components/ui'
   import PostCard from '$lib/components/PostCard.svelte'
   import CommentCard from '$lib/components/CommentCard.svelte'
   import ComposeModal from '$lib/components/ComposeModal.svelte'

@@ -46,12 +46,19 @@ export const threadStore = {
 			error: null
 		})),
 
-	// Add single comment
+	// Add single comment (with duplicate prevention)
 	addComment: (comment: CommentWithStats) =>
-		threadState.update(state => ({
-			...state,
-			comments: [comment, ...state.comments]
-		})),
+		threadState.update(state => {
+			// Check if comment already exists (prevent duplicates from realtime events)
+			const exists = state.comments.some(c => c.id === comment.id)
+			if (exists) {
+				return state
+			}
+			return {
+				...state,
+				comments: [comment, ...state.comments]
+			}
+		}),
 
 	// Update a specific comment
 	updateComment: (commentId: string, updates: Partial<CommentWithStats>) =>

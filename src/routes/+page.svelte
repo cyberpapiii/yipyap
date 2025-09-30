@@ -1,8 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { get } from 'svelte/store'
-  import { Button } from '$lib/components/ui'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/Feed.svelte'
   import ComposeModal from '$lib/components/ComposeModal.svelte'
@@ -11,8 +10,10 @@
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { FeedType } from '$lib/types'
   import { ensureAnonymousUser } from '$lib/auth'
+  import { PostsAPI } from '$lib/api/posts'
 
   const api = createRealtimeAPI(supabase as any)
+  const postsApi = new PostsAPI(supabase as any)
   const cu = currentUserStore
 
   let feedType = $state<FeedType>('hot')
@@ -85,6 +86,35 @@
       await switchFeed(saved, { skipPersist: true })
     } finally {
       initializing = false
+    }
+
+    // Refresh feed when page becomes visible (e.g., returning from thread page)
+    // This ensures comment counts and other updates are reflected
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && browser) {
+        const currentFeed = feedUtils.getFeedStore(feedType)
+        const posts = get(currentFeed).posts
+
+        // Only refresh if we have posts and aren't already loading
+        if (posts.length > 0 && !get(currentFeed).loading) {
+          try {
+            // Fetch fresh data for visible posts to update comment counts
+            const user = get(cu)
+            const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user)
+
+            // Update the feed store with fresh data
+            currentFeed.setPosts(freshData.data)
+          } catch (error) {
+            console.error('Error refreshing feed on visibility change:', error)
+          }
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   })
 
