@@ -7,12 +7,23 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
 
 	<!-- Color scheme - force dark only -->
-	<meta name="color-scheme" content="dark" />
+	<meta name="color-scheme" content="only dark" />
 	<meta name="supported-color-schemes" content="dark" />
+
+	<!-- Aggressive dark mode enforcement - prevents iOS light mode flash -->
+	<style>
+		html, body {
+			background-color: #101010 !important;
+			color: #fafafa !important;
+			color-scheme: only dark !important;
+		}
+		* {
+			color-scheme: only dark !important;
+		}
+	</style>
 
 	<!-- PWA Meta Tags -->
 	<link rel="manifest" href="%sveltekit.assets%/manifest.json" />
-	<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)" />
 	<meta name="theme-color" content="#101010" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />

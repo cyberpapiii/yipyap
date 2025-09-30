@@ -8,6 +8,7 @@ const withOpacityValue = (variable) => ({ opacityValue }) => {
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
+  darkMode: false, // Disable dark mode variants - app is dark-only
   theme: {
     extend: {
       colors: {

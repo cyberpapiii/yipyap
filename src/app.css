@@ -29,36 +29,74 @@
     --vote-down-hover: 0 72% 58%;
     --radius: 0.5rem;
 
-    color-scheme: only dark;
+    color-scheme: only dark !important;
   }
 
+  /* Force dark mode colors on all elements - prevents iOS light mode adaptation */
   html,
   body {
-    color-scheme: only dark;
+    color-scheme: only dark !important;
+    background-color: #101010 !important;
+    color: #fafafa !important;
+  }
+
+  /* Ensure all text elements inherit proper dark mode colors */
+  * {
+    color-scheme: only dark !important;
   }
 }
 
-/* Custom utilities to fix Tailwind V4 CSS variable issue */
+/* Custom utilities - hardcoded dark colors to prevent system adaptation */
 @layer utilities {
-  /* Background utilities - Force #101010 everywhere */
+  /* Background utilities - Hardcoded #101010 everywhere */
   .bg-background {
-    background-color: hsl(var(--background));
+    background-color: #101010 !important;
   }
 
   .bg-background\/95 {
-    background-color: hsl(var(--background) / 0.95);
+    background-color: rgba(16, 16, 16, 0.95) !important;
   }
 
   .bg-background\/90 {
-    background-color: hsl(var(--background) / 0.9);
+    background-color: rgba(16, 16, 16, 0.9) !important;
   }
 
   .bg-background\/80 {
-    background-color: hsl(var(--background) / 0.8);
+    background-color: rgba(16, 16, 16, 0.8) !important;
   }
 
   .bg-background\/60 {
-    background-color: hsl(var(--background) / 0.6);
+    background-color: rgba(16, 16, 16, 0.6) !important;
+  }
+
+  /* Text color utilities - Hardcoded colors */
+  .text-foreground {
+    color: #fafafa !important;
+  }
+
+  .text-muted-foreground {
+    color: #a3a3a3 !important;
+  }
+
+  .text-card-foreground {
+    color: #fafafa !important;
+  }
+
+  /* Card backgrounds */
+  .bg-card {
+    background-color: #101010 !important;
+  }
+
+  .bg-card\/60 {
+    background-color: rgba(16, 16, 16, 0.6) !important;
+  }
+
+  .bg-card\/80 {
+    background-color: rgba(16, 16, 16, 0.8) !important;
+  }
+
+  .bg-card\/90 {
+    background-color: rgba(16, 16, 16, 0.9) !important;
   }
 
   /* Border utilities */
