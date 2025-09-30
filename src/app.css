@@ -165,6 +165,10 @@
     background-color: #008EB7; /* T (SIR) */
   }
 
+  .bg-T {
+    background-color: #008EB7; /* T (SIR) - alias */
+  }
+
   /* Vote button border colors */
   .border-vote-up {
     border-color: hsl(var(--vote-up));
@@ -297,7 +301,7 @@
   }
 }
 
-/* Toast container positioning */
+/* Toast container positioning - center at top */
 .toast-container {
   position: fixed;
   top: 1rem;
@@ -308,6 +312,21 @@
 
 .toast-container > * {
   pointer-events: auto;
+}
+
+/* Center sonner toasts */
+[data-sonner-toaster] {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+[data-sonner-toaster][data-x-position='center'] {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
 }
 
 /* High contrast mode support */

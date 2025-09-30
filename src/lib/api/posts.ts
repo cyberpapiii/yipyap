@@ -8,7 +8,9 @@ import type {
   PaginatedResponse,
   FeedType,
   AnonymousUser,
+  CommunityType,
 } from '$lib/types'
+import { getSubwayLinesForCommunity } from '$lib/config/communities'
 
 /**
  * API functions for posts and comments
@@ -83,21 +85,46 @@ export class PostsAPI {
 		feedType: FeedType,
 		cursor?: string,
 		limit = 20,
-		currentUser?: AnonymousUser | null
+		currentUser?: AnonymousUser | null,
+		community: CommunityType = 'nyc'
 	): Promise<PaginatedResponse<PostWithStats>> {
 		try {
-			let query = (this.supabase as any)
-			  .from('post_with_stats')
-			  .select('*')
-			  .is('parent_post_id', null)
-			  .eq('is_deleted', false)  // Filter out deleted posts
-			  .limit(limit)
+			// Build query with community filtering
+			const subwayLines = getSubwayLinesForCommunity(community)
+
+			// If filtering by community, we need to JOIN with anonymous_users table
+			let query: any
+
+			if (community === 'nyc' || subwayLines.length === 0) {
+				// No filtering - use simple query
+				query = (this.supabase as any)
+				  .from('post_with_stats')
+				  .select('*')
+				  .is('parent_post_id', null)
+				  .eq('is_deleted', false)
+				  .limit(limit)
+			} else {
+				// Filter by community - use denormalized user_subway_line field
+				// This avoids JOIN and relationship ambiguity with PGRST201 error
+				query = (this.supabase as any)
+				  .from('post_with_stats')
+				  .select('*')
+				  .is('parent_post_id', null)
+				  .eq('is_deleted', false)
+				  .in('user_subway_line', subwayLines)
+				  .limit(limit)
+			}
+
+			// Apply ordering
 			if (feedType === 'hot') {
 				query = query.order('vote_score', { ascending: false }).order('created_at', { ascending: false })
 			} else {
 				query = query.order('created_at', { ascending: false })
 			}
+
+			// Apply cursor pagination
 			if (cursor) query = query.lt('created_at', cursor)
+
 			const { data: posts, error } = await query
 			if (error) throw error
 			return await this.enrichPosts(posts || [], limit, currentUser)
@@ -181,7 +208,7 @@ export class PostsAPI {
 						: allReplies
 
 					// Attach anonymous identities to replies
-					const repliesWithIdentities = await this.attachAnonymousIdentities(repliesWithVotes)
+					const repliesWithIdentities = await this.attachAnonymousIdentities(repliesWithVotes) as any[]
 
 					// Group by post_id and take top 2 per post
 					for (const reply of repliesWithIdentities) {

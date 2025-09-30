@@ -9,14 +9,17 @@ import { OptimisticUpdateManager } from '$lib/realtime/optimisticUpdates'
 import { hotFeed, newFeed, feedUtils, activeFeedType } from './feeds'
 import { threadStore } from './thread'
 import { currentUser } from './auth'
+import { communityStore } from './community'
 
 import type {
   Database,
   PostWithStats,
   CommentWithStats,
   AnonymousUser,
-  FeedType
+  FeedType,
+  CommunityType
 } from '$lib/types'
+import { isLineInCommunity } from '$lib/config/communities'
 
 export interface RealtimeState {
   isInitialized: boolean
@@ -153,10 +156,22 @@ function createRealtimeStore() {
 
       const unsubscribe = feedSubscriptionManager.subscribeToFeedPosts(
         feedType,
-        // Handle new posts
+        // Handle new posts - filter by community
         (newPost: PostWithStats) => {
           console.log(`New ${feedType} post received:`, newPost.id)
-          feedStore.addPost(newPost)
+
+          // Check if post belongs to current community filter
+          const currentCommunity = get(communityStore).selectedCommunity
+          const postBelongsToCommunity = isLineInCommunity(
+            newPost.anonymous_user.subway_line,
+            currentCommunity
+          )
+
+          if (postBelongsToCommunity) {
+            feedStore.addPost(newPost)
+          } else {
+            console.log(`Post ${newPost.id} filtered out (community: ${currentCommunity})`)
+          }
         },
         // Handle post updates
         (postId: string, updates: Partial<PostWithStats>) => {

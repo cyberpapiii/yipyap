@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { PostWithStats, FeedState, FeedType } from '$lib/types'
+import type { PostWithStats, FeedState, FeedType, CommunityType } from '$lib/types'
 
 // Create feed store
 function createFeedStore() {
@@ -8,7 +8,8 @@ function createFeedStore() {
 		loading: false,
 		error: null,
 		hasMore: true,
-		cursor: null
+		cursor: null,
+		community: 'nyc'
 	})
 
 	return {
@@ -83,14 +84,25 @@ function createFeedStore() {
 				}
 			}),
 
-		// Clear all posts
-		clear: () => set({
+		// Set community filter (clears posts)
+		setCommunity: (community: CommunityType) => update(state => ({
 			posts: [],
 			loading: false,
 			error: null,
 			hasMore: true,
-			cursor: null
-		})
+			cursor: null,
+			community
+		})),
+
+		// Clear all posts
+		clear: () => update(state => ({
+			posts: [],
+			loading: false,
+			error: null,
+			hasMore: true,
+			cursor: null,
+			community: state.community
+		}))
 	}
 }
 

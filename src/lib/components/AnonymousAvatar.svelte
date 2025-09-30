@@ -36,7 +36,9 @@
 		'J': 'mta-brown',
 		'Z': 'mta-brown',
 		// Grey line (IND/BMT)
-		'L': 'mta-grey'
+		'L': 'mta-grey',
+		// Teal line (SIR)
+		'T': 'mta-teal'
 	}
 
 	const avatarVariants = tv({
@@ -85,7 +87,8 @@
 			'N': 'N Line (Yellow)', 'Q': 'Q Line (Yellow)', 'R': 'R Line (Yellow)', 'W': 'W Line (Yellow)',
 			'G': 'G Line (Light Green)',
 			'J': 'J Line (Brown)', 'Z': 'Z Line (Brown)',
-			'L': 'L Line (Grey)'
+			'L': 'L Line (Grey)',
+			'T': 'T Line (Teal)'
 		}
 		return `${lineNames[user.subway_line] || user.subway_line} Anonymous`
 	})
@@ -101,7 +104,8 @@
 			'mta-yellow': 'yellow',
 			'mta-red': 'red',
 			'mta-dark-green': 'green',
-			'mta-purple': 'purple'
+			'mta-purple': 'purple',
+			'mta-teal': 'teal'
 		}
 		const colorName = colorNames[user.subway_color] || 'blue'
 		return `Anonymous user with ${user.subway_line} subway line icon and ${colorName} background`

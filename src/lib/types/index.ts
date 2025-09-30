@@ -31,7 +31,43 @@ export interface Database {
         Row: CommentWithStats
       }
     }
-    Functions: Record<string, unknown>
+    Functions: {
+      rpc_get_notifications: {
+        Args: {
+          p_user: string
+          p_limit?: number
+          p_offset?: number
+          p_unread_only?: boolean
+        }
+        Returns: Notification[]
+      }
+      rpc_get_unread_count: {
+        Args: {
+          p_user: string
+        }
+        Returns: number
+      }
+      rpc_mark_notification_read: {
+        Args: {
+          p_user: string
+          p_notification: string
+        }
+        Returns: boolean
+      }
+      rpc_mark_all_notifications_read: {
+        Args: {
+          p_user: string
+        }
+        Returns: number
+      }
+      rpc_delete_notification: {
+        Args: {
+          p_user: string
+          p_notification: string
+        }
+        Returns: boolean
+      }
+    }
     Enums: {
       vote_type: 'up' | 'down'
       subway_line: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
@@ -122,6 +158,7 @@ export interface AnonymousUser {
   device_id: string
   subway_line: '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
   subway_color: 'mta-blue' | 'mta-orange' | 'mta-light-green' | 'mta-brown' | 'mta-grey' | 'mta-yellow' | 'mta-red' | 'mta-dark-green' | 'mta-purple'
+  total_karma?: number
   created_at: string
   last_seen_at: string
 }
@@ -160,6 +197,7 @@ export interface FeedState {
   error: string | null
   hasMore: boolean
   cursor: string | null
+  community: CommunityType
 }
 
 export interface ThreadState {
@@ -184,7 +222,7 @@ export interface ComposeState {
 }
 
 // Anonymous Identity Types
-export type SubwayLine = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'W' | 'Z'
+export type SubwayLine = '1' | '2' | '3' | '4' | '5' | '6' | '7' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'J' | 'L' | 'M' | 'N' | 'Q' | 'R' | 'T' | 'W' | 'Z'
 export type AnonymousColor = 'purple' | 'blue' | 'green' | 'orange' | 'red'
 export type AnonymousEmoji = '🎭' | '🦄' | '🚀' | '🌟' | '🔥' | '💫' | '🎨' | '🌈' | '⚡' | '🎪'
 
@@ -196,6 +234,25 @@ export interface AnonymousIdentity {
 // Feed Types
 export type FeedType = 'hot' | 'new'
 export type SortOrder = 'hot' | 'new' | 'top'
+
+// Community Types
+export type CommunityType =
+  | 'nyc'
+  | 'blue'
+  | 'orange'
+  | 'yellow'
+  | 'red'
+  | 'green'
+  | 'purple'
+  | 'turquoise'
+  | 'lime'
+  | 'gray'
+  | 'brown'
+
+export interface CommunityState {
+  selectedCommunity: CommunityType
+  isPickerOpen: boolean
+}
 
 // Navigation Types
 export interface NavItem {
@@ -271,6 +328,31 @@ export interface AppError {
   message: string
   code?: string
   details?: any
+}
+
+// Notification Types
+export interface Notification {
+  id: string
+  user_id: string
+  type: 'reply_to_post' | 'reply_to_comment' | 'milestone_5' | 'milestone_10' | 'milestone_25'
+  post_id: string
+  comment_id: string | null
+  read: boolean
+  actor_user_id: string | null
+  actor_subway_line: string | null
+  actor_subway_color: string | null
+  preview_content: string | null
+  created_at: string
+  read_at: string | null
+}
+
+export interface NotificationState {
+  notifications: Notification[]
+  unreadCount: number
+  loading: boolean
+  error: string | null
+  hasMore: boolean
+  cursor: string | null
 }
 
 // Utility Types

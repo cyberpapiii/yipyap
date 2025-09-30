@@ -3,8 +3,10 @@
 	import { Loader2, RefreshCw, AlertCircle, ChevronDown } from 'lucide-svelte'
 	import PostCard from './PostCard.svelte'
 	import PostCardSkeleton from './PostCardSkeleton.svelte'
+	import CommunitySelector from './CommunitySelector.svelte'
 	import type { FeedType, PostWithStats } from '$lib/types'
 	import { feedUtils } from '$lib/stores'
+	import { communityStore } from '$lib/stores/community'
 
 	let {
 		feedType,
@@ -37,6 +39,11 @@
 	const SCROLL_TOP_THRESHOLD = 5
 
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
+
+	// Handle community picker
+	function handleOpenPicker() {
+		communityStore.openPicker()
+	}
 
 	// Handle infinite scroll
 	function handleScroll() {
@@ -253,16 +260,11 @@
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header -->
 		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 z-10">
-			<div class="flex flex-col gap-1">
-				<h1 class="text-3xl font-bold text-foreground">
-					Dimes Square
-				</h1>
-				{#if $feedStore.posts.length > 0}
-					<span class="text-base text-muted-foreground">
-						{$feedStore.posts.length} {$feedStore.posts.length === 1 ? 'post' : 'posts'}
-					</span>
-				{/if}
-			</div>
+			<CommunitySelector
+				selectedCommunity={$communityStore.selectedCommunity}
+				postCount={$feedStore.posts.length}
+				onClick={handleOpenPicker}
+			/>
 			<button
 				onclick={refreshFeed}
 				disabled={$feedStore.loading || refreshing}

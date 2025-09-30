@@ -4,8 +4,8 @@
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/Feed.svelte'
-  import ComposeModal from '$lib/components/ComposeModal.svelte'
   import { composeStore, feedUtils, activeFeedType, realtime, anonymousUser as currentUserStore } from '$lib/stores'
+  import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { FeedType } from '$lib/types'
@@ -100,7 +100,8 @@
           try {
             // Fetch fresh data for visible posts to update comment counts
             const user = get(cu)
-            const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user)
+            const community = get(communityStore).selectedCommunity
+            const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
 
             // Update the feed store with fresh data
             currentFeed.setPosts(freshData.data)
@@ -148,9 +149,10 @@
 
     try {
       const currentUser = get(cu) || undefined
+      const community = get(communityStore).selectedCommunity
       const response = cursor
-        ? await api.getFeedPosts(type, cursor, 20, currentUser)
-        : await api.loadFeedWithRealtime(type, undefined, 20, currentUser)
+        ? await api.getFeedPosts(type, cursor, 20, currentUser, community)
+        : await api.loadFeedWithRealtime(type, undefined, 20, currentUser, community)
 
       if (cursor) {
         feedStore.addPosts(response.data, response.hasMore, response.nextCursor)
@@ -207,28 +209,6 @@
     }
   }
 
-  async function onSubmit(content: string, replyTo?: any) {
-    let user = get(cu)
-    if (!user) {
-      try {
-        user = await ensureAnonymousUser(supabase as any) || undefined
-      } catch (error) {
-        console.error('Failed to bootstrap anonymous user for submit', error)
-      }
-    }
-
-    if (!user) {
-      composeStore.setError('Unable to create anonymous identity. Please try again.')
-      return
-    }
-
-    if (replyTo) {
-      await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
-    } else {
-      await api.createPostOptimistic({ content }, user)
-    }
-    // Success animation handled by ComposeModal
-  }
 </script>
 
 <div
@@ -248,8 +228,6 @@
       onDelete={onDelete}
       onLoadMore={loadMore}
     />
-
-    <ComposeModal onSubmit={onSubmit} />
   </div>
 
   <!-- Floating Feed Toggle -->

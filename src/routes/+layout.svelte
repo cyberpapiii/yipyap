@@ -1,13 +1,59 @@
 <script lang="ts">
   import '../app.css'
   import { onMount } from 'svelte'
+  import { get } from 'svelte/store'
+  import { page } from '$app/stores'
   import { supabase } from '$lib/supabase'
   import { realtime } from '$lib/stores/realtime'
   import { authStore } from '$lib/stores/auth'
-  import { cacheAnonymousUser, getDeviceId } from '$lib/auth'
+  import { cacheAnonymousUser, getDeviceId, ensureAnonymousUser } from '$lib/auth'
   import type { AnonymousUser } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/BottomNav.svelte'
+  import ComposeModal from '$lib/components/ComposeModal.svelte'
+  import CommunityPicker from '$lib/components/CommunityPicker.svelte'
+  import { composeStore, anonymousUser as currentUserStore } from '$lib/stores'
+  import { createRealtimeAPI } from '$lib/api/realtime'
+  import { notificationsStore } from '$lib/stores/notifications'
+  import { communityStore } from '$lib/stores/community'
+
+  const api = createRealtimeAPI(supabase as any)
+  const cu = currentUserStore
+
+  // Determine active nav based on current route
+  $: activePage = $page.url.pathname === '/notifications' ? 'profile' :
+                  $page.url.pathname.startsWith('/thread') ? 'thread' :
+                  'home'
+
+  function handleSelectCommunity(community: any) {
+    communityStore.selectCommunity(community)
+  }
+
+  function handleClosePicker() {
+    communityStore.closePicker()
+  }
+
+  async function onSubmit(content: string, replyTo?: any) {
+    let user = get(cu)
+    if (!user) {
+      try {
+        user = await ensureAnonymousUser(supabase as any) || undefined
+      } catch (error) {
+        console.error('Failed to bootstrap anonymous user for submit', error)
+      }
+    }
+
+    if (!user) {
+      composeStore.setError('Unable to create anonymous identity. Please try again.')
+      return
+    }
+
+    if (replyTo) {
+      await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
+    } else {
+      await api.createPostOptimistic({ content }, user)
+    }
+  }
 
   onMount(async () => {
     try {
@@ -32,6 +78,15 @@
 
       // Initialize realtime system
       await realtime.initialize(supabase as any)
+
+      // Initialize notifications store
+      notificationsStore.initialize(supabase as any)
+
+      // Fetch initial unread count
+      await notificationsStore.fetchUnreadCount()
+
+      // Subscribe to realtime notification updates
+      notificationsStore.subscribeToRealtime()
     } catch (e) {
       console.error('App init failed:', e)
     }
@@ -61,8 +116,9 @@
       </svg>
     </a>
   </div>
-  <Toaster />
 </header>
+
+<Toaster position="top-center" />
 
 <main class="min-h-screen pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem)">
   <slot />
@@ -74,4 +130,14 @@
      style="background: linear-gradient(to top, rgba(16, 16, 16, 1) 0%, rgba(16, 16, 16, 0.8) 40%, transparent 100%); padding-bottom: env(safe-area-inset-bottom)">
 </div>
 
-<BottomNav active="home" />
+<BottomNav active={activePage} />
+
+<ComposeModal onSubmit={onSubmit} />
+
+<!-- Community Picker Modal - rendered at root level -->
+<CommunityPicker
+  isOpen={$communityStore.isPickerOpen}
+  selectedCommunity={$communityStore.selectedCommunity}
+  onSelect={handleSelectCommunity}
+  onClose={handleClosePicker}
+/>
