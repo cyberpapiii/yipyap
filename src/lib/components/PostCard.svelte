@@ -52,19 +52,19 @@
 	// Handle delete
 	async function handleDelete(e: Event) {
 		e.stopPropagation() // Prevent navigation to thread
+		e.preventDefault()
 
-		// Warning haptic before confirm
+		// Delete action haptic
 		if ('vibrate' in navigator) {
-			navigator.vibrate(30)
+			navigator.vibrate([10, 50, 10])
 		}
 
-		if (confirm('Are you sure you want to delete this post?')) {
-			// Delete action haptic
-			if ('vibrate' in navigator) {
-				navigator.vibrate([10, 50, 10])
-			}
+		try {
 			await onDelete?.(post.id)
+		} catch (error) {
+			console.error('Delete error:', error)
 		}
+
 		showOptionsMenu = false
 	}
 
