@@ -89,7 +89,8 @@
 	let timeAgo = $state('')
 	let indentClass = $state('')
 	let depthStyles = $state({ opacity: 1, borderColor: '' })
-	let showNestedReplies = $state(depth < maxDepth)
+	// Collapse nested replies by default, show on tap
+	let showNestedReplies = $state(false)
 
 	// Click outside handler to close options menu
 	function handleClickOutside(e: Event) {
@@ -278,26 +279,45 @@
 		</div>
 	</div>
 
-	<!-- Nested replies with staggered animation -->
-	{#if showNestedReplies && comment.replies && comment.replies.length > 0}
-		<div class="space-y-0.5 animate-fade-in" style:animation-delay={`${(depth + 1) * 150}ms`}>
-			{#each comment.replies as reply, index}
-				<div
-					class="animate-slide-up"
-					style:animation-delay={`${(depth + 1) * 150 + index * 100}ms`}
-				>
-					<!-- svelte-ignore svelte_self_deprecated -->
-					<svelte:self
-						comment={reply}
-						depth={depth + 1}
-						{maxDepth}
-						{onVote}
-						{onReply}
-						{onDelete}
-					/>
-				</div>
-			{/each}
-		</div>
+	<!-- Show/Hide replies toggle button -->
+	{#if comment.replies && comment.replies.length > 0}
+		{#if !showNestedReplies}
+			<button
+				onclick={() => showNestedReplies = true}
+				class="ml-2 mt-2 text-xs text-accent hover:text-accent/80 font-medium transition-colors flex items-center gap-1"
+			>
+				<span>↓</span>
+				<span>Show {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}</span>
+			</button>
+		{:else}
+			<!-- Nested replies with staggered animation -->
+			<div class="space-y-0.5 animate-fade-in" style:animation-delay={`${(depth + 1) * 150}ms`}>
+				{#each comment.replies as reply, index}
+					<div
+						class="animate-slide-up"
+						style:animation-delay={`${(depth + 1) * 150 + index * 100}ms`}
+					>
+						<!-- svelte-ignore svelte_self_deprecated -->
+						<svelte:self
+							comment={reply}
+							depth={depth + 1}
+							{maxDepth}
+							{onVote}
+							{onReply}
+							{onDelete}
+						/>
+					</div>
+				{/each}
+			</div>
+			<!-- Hide replies button -->
+			<button
+				onclick={() => showNestedReplies = false}
+				class="ml-2 mt-2 text-xs text-muted-foreground hover:text-accent font-medium transition-colors flex items-center gap-1"
+			>
+				<span>↑</span>
+				<span>Hide replies</span>
+			</button>
+		{/if}
 	{:else if comment.reply_count > 0}
 		<div class="ml-2 text-xs text-muted-foreground font-medium opacity-60">
 			{comment.reply_count} more {comment.reply_count === 1 ? 'reply' : 'replies'}
