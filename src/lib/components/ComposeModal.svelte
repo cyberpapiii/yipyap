@@ -17,7 +17,6 @@
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
-	let keyboardHeight = $state(0)
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -42,14 +41,12 @@
 				navigator.vibrate([10, 50, 10])
 			}
 
-			// Capture modal position before closing (accounting for keyboard)
+			// Capture modal position before closing
 			const modalElement = document.querySelector('.modal-exit') || document.querySelector('.modal-enter')
 			if (modalElement) {
 				const rect = modalElement.getBoundingClientRect()
-				// Use visual viewport if available to get true visible position
-				const offsetY = window.visualViewport ? window.visualViewport.offsetTop : 0
 				successPosition = {
-					top: `${rect.top + rect.height / 2 + offsetY}px`,
+					top: `${rect.top + rect.height / 2}px`,
 					left: `${rect.left + rect.width / 2}px`
 				}
 			}
@@ -63,8 +60,6 @@
 					composeStore.closeModal()
 					showSuccess = false
 					isClosing = false
-					// Reset state after success animation
-					keyboardHeight = 0
 					successPosition = { top: '50%', left: '50%' }
 				}, 800)
 			}, 300)
@@ -85,9 +80,6 @@
 				composeStore.closeModal()
 				content = ''
 				isClosing = false
-				// Reset keyboard height to prevent positioning issues on next open
-				keyboardHeight = 0
-				// Reset success position to default
 				successPosition = { top: '50%', left: '50%' }
 			}, 250) // Match exit animation duration
 		}
@@ -112,12 +104,9 @@
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
 
-	// Focus the textarea when modal opens and reset keyboard height
+	// Focus the textarea when modal opens
 	$effect(() => {
 		if ($showComposeModal && textareaElement) {
-			// Reset keyboard height when modal opens (in case of stale state)
-			keyboardHeight = 0
-
 			// Multiple attempts to ensure focus on mobile
 			textareaElement.focus()
 
@@ -141,30 +130,8 @@
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
 
-		// Handle keyboard visibility
-		function updateKeyboardHeight() {
-			// Only update keyboard height if modal is actually open
-			if (window.visualViewport && $showComposeModal) {
-				const viewportHeight = window.visualViewport.height
-				const windowHeight = window.innerHeight
-				const newHeight = windowHeight - viewportHeight
-				// Only update if there's meaningful change (avoid micro-adjustments)
-				if (Math.abs(newHeight - keyboardHeight) > 10) {
-					keyboardHeight = newHeight
-				}
-			}
-		}
-
-		if (window.visualViewport) {
-			window.visualViewport.addEventListener('resize', updateKeyboardHeight)
-			updateKeyboardHeight()
-		}
-
 		return () => {
 			document.removeEventListener('keydown', handleKeydown)
-			if (window.visualViewport) {
-				window.visualViewport.removeEventListener('resize', updateKeyboardHeight)
-			}
 		}
 	})
 
@@ -276,7 +243,7 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
+		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 pb-0 {isClosing ? 'modal-overlay-exit' : ''}"
 		style="z-index: 100;"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
@@ -284,7 +251,7 @@
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-lg max-h-[70vh] px-4 flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-radius: 1rem;">
+		<div class="rounded-t-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-bottom: none; padding-bottom: env(safe-area-inset-bottom);">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
