@@ -276,7 +276,7 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		class="fixed inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
 		style="z-index: 100;"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
@@ -284,7 +284,7 @@
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);">
+		<div class="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-lg max-h-[70vh] px-4 flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-radius: 1rem;">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
