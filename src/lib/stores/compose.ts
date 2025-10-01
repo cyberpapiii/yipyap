@@ -56,7 +56,9 @@ export const composeStore = {
 			type,
 			id: item.id,
 			content: item.content,
-			author: item.anonymous_user
+			author: item.anonymous_user,
+			// For comments, include the post_id so we know which post the comment belongs to
+			post_id: type === 'comment' && 'post_id' in item ? item.post_id : undefined
 		}
 		composeStore.openModal(replyTo)
 	}

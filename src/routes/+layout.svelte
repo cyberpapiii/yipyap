@@ -50,7 +50,22 @@
 
     try {
       if (replyTo) {
-        await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
+        // Determine correct postId and parentCommentId based on reply type
+        if (replyTo.type === 'comment') {
+          // Replying to a comment: use comment's post_id and comment's id as parent
+          await api.createCommentOptimistic({
+            content,
+            postId: replyTo.post_id,
+            parentCommentId: replyTo.id
+          }, user)
+        } else {
+          // Replying to a post: use post's id and no parent
+          await api.createCommentOptimistic({
+            content,
+            postId: replyTo.id,
+            parentCommentId: null
+          }, user)
+        }
       } else {
         await api.createPostOptimistic({ content }, user)
       }
