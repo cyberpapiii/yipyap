@@ -248,10 +248,6 @@
 						>
 							<span class="font-medium">Reply</span>
 						</button>
-					{:else if onReply && depth >= 1}
-						<span class="text-xs text-muted-foreground italic px-2">
-							Max reply depth reached
-						</span>
 					{/if}
 
 					<!-- Vote buttons -->
