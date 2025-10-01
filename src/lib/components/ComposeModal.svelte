@@ -244,7 +244,7 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 pb-0 {isClosing ? 'modal-overlay-exit' : ''}"
 		style="z-index: 100;"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
