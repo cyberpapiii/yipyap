@@ -513,7 +513,25 @@ function createRealtimeStore() {
         throw new Error('No current user')
       }
 
-      // Apply optimistic update
+      // Ensure thread-specific identity before creating comment
+      // This makes optimistic and real comment use the same subway line
+      try {
+        const { data: threadIdentity } = await supabaseClient.rpc('rpc_ensure_thread_identity', {
+          user_uuid: user.id,
+          post_uuid: commentData.postId
+        })
+
+        // Use thread-specific identity if available
+        if (threadIdentity) {
+          user.subway_line = threadIdentity.subway_line
+          user.subway_color = threadIdentity.subway_color
+        }
+      } catch (error) {
+        console.warn('Failed to ensure thread identity, using global identity:', error)
+        // Continue anyway with global identity
+      }
+
+      // Apply optimistic update with thread-specific identity
       const operationId = optimisticUpdateManager.applyOptimisticComment(
         commentData,
         user,
