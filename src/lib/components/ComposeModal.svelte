@@ -277,14 +277,14 @@
 	<!-- Modal overlay -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style="z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + {keyboardHeight}px);"
+		style="z-index: 100;"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);">
+		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); transform: translateY(-{keyboardHeight / 2}px); transition: transform 0.2s ease-out;">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
