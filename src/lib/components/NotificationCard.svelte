@@ -93,8 +93,6 @@
 	style="background-color: {bgColor};"
 	onclick={handleClick}
 	onkeydown={handleKeydown}
-	role="button"
-	tabindex="0"
 	aria-label={actionText()}
 >
 	<div class="notification-content">

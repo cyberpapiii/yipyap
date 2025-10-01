@@ -214,10 +214,6 @@
 		animation: modal-slide-out 0.25s cubic-bezier(0.4, 0, 1, 1);
 	}
 
-	.modal-success {
-		animation: modal-success 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
 	@keyframes modal-slide-in {
 		0% {
 			transform: translateY(100%) scale(0.9);
