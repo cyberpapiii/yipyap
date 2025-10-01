@@ -275,25 +275,23 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal overlay - pure background, no flex positioning -->
+	<!-- Modal overlay with padding for keyboard -->
 	<div
-		class="fixed inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
-		style="z-index: 100;"
-		onclick={handleClose}
+		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		style="z-index: 100; padding-bottom: {keyboardHeight}px;"
+		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
-	</div>
-
-	<!-- Modal content - independently positioned at bottom, pushed up by keyboard -->
-	<div
-		class="fixed left-0 right-0 mx-auto w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-		style="z-index: 101; bottom: {keyboardHeight}px; background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom);"
-		onclick={(e) => e.stopPropagation()}
-		role="dialog"
-		tabindex="-1"
-	>
+		<!-- Modal content -->
+		<div
+			class="w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom);"
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+			tabindex="-1"
+		>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
