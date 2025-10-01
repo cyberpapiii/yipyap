@@ -1,7 +1,7 @@
 {
-  "name": "YipYap",
-  "short_name": "YipYap",
-  "description": "Anonymous local community for Dimes Square with subway line identities",
+  "name": "BingBong",
+  "short_name": "BingBong",
+  "description": "Anonymous NYC social playground",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101010",
