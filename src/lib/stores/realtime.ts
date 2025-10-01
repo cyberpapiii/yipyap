@@ -529,8 +529,9 @@ function createRealtimeStore() {
         // Confirm operation
         optimisticUpdateManager.confirmOperation(operationId, realComment)
 
-        // Update store with real data
-        threadStore.updateComment(`optimistic_${operationId}`, realComment)
+        // Replace optimistic comment with real comment (remove old, add new with real ID)
+        threadStore.removeComment(`optimistic_${operationId}`)
+        threadStore.addComment(realComment)
 
         console.log(`Comment creation confirmed: ${operationId}`)
         return realComment

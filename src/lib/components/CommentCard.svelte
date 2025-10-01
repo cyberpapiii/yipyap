@@ -230,8 +230,8 @@
 
 				<!-- Icon row -->
 				<div class="flex items-center justify-end gap-4">
-					<!-- Reply button -->
-					{#if onReply}
+					<!-- Reply button (only show if depth < 1, max depth is 1) -->
+					{#if onReply && depth < 1}
 						<button
 							class="
 								flex items-center gap-1.5 px-2 py-1
@@ -248,6 +248,10 @@
 						>
 							<span class="font-medium">Reply</span>
 						</button>
+					{:else if onReply && depth >= 1}
+						<span class="text-xs text-muted-foreground italic px-2">
+							Max reply depth reached
+						</span>
 					{/if}
 
 					<!-- Vote buttons -->

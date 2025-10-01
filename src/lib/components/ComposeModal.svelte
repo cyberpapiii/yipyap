@@ -137,11 +137,23 @@
 		}
 	}
 
-	// Character count
+	// Character count and validation
 	const maxLength = 500
 	const charCount = $derived.by(() => content.length)
+	const trimmedLength = $derived.by(() => content.trim().length)
 	const isOverLimit = $derived.by(() => charCount > maxLength)
-	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
+	const validationMessage = $derived.by(() => {
+		if (trimmedLength === 0 && content.length > 0) {
+			return 'Content cannot be only whitespace'
+		}
+		if (charCount > maxLength) {
+			return `Content exceeds limit by ${charCount - maxLength} characters`
+		}
+		return null
+	})
+	const canSubmit = $derived.by(() => {
+		return trimmedLength >= 1 && trimmedLength <= maxLength && !$composeState.isSubmitting
+	})
 	const submitLabel = $derived.by(() => ($composeState.replyTo ? 'Reply' : 'Post'))
 	const submittingLabel = $derived.by(() => ($composeState.replyTo ? 'Replying...' : 'Posting...'))
 	const replyIdentityLabel = $derived.by(() => {
@@ -453,6 +465,13 @@
 					{#if $composeState.error}
 						<div class="mb-3 p-3 bg-destructive/10 rounded-xl text-sm text-destructive" style="border: 1px solid rgba(220, 38, 38, 0.2);">
 							{$composeState.error}
+						</div>
+					{/if}
+
+					<!-- Validation warning -->
+					{#if validationMessage && !$composeState.error}
+						<div class="mb-3 p-3 bg-yellow-500/10 rounded-xl text-sm text-yellow-500" style="border: 1px solid rgba(234, 179, 8, 0.2);">
+							⚠️ {validationMessage}
 						</div>
 					{/if}
 
