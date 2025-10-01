@@ -46,7 +46,7 @@ export const threadStore = {
 			error: null
 		})),
 
-	// Add single comment (with duplicate prevention)
+	// Add single comment (with duplicate prevention and proper nesting)
 	addComment: (comment: CommentWithStats) =>
 		threadState.update(state => {
 			// Check if comment already exists (prevent duplicates from realtime events)
@@ -54,6 +54,16 @@ export const threadStore = {
 			if (exists) {
 				return state
 			}
+
+			// If comment has a parent, nest it under the parent
+			if (comment.parent_comment_id) {
+				return {
+					...state,
+					comments: addCommentToParent(state.comments, comment.parent_comment_id, comment)
+				}
+			}
+
+			// Otherwise, add as top-level comment
 			return {
 				...state,
 				comments: [comment, ...state.comments]
@@ -137,4 +147,29 @@ function removeCommentRecursively(
 			}
 			return comment
 		})
+}
+
+// Helper function to add a comment to its parent's replies array
+function addCommentToParent(
+	comments: CommentWithStats[],
+	parentId: string,
+	newComment: CommentWithStats
+): CommentWithStats[] {
+	return comments.map(comment => {
+		// Found the parent - add new comment to its replies
+		if (comment.id === parentId) {
+			return {
+				...comment,
+				replies: [newComment, ...(comment.replies || [])]
+			}
+		}
+		// Keep searching in nested replies
+		if (comment.replies && comment.replies.length > 0) {
+			return {
+				...comment,
+				replies: addCommentToParent(comment.replies, parentId, newComment)
+			}
+		}
+		return comment
+	})
 }
