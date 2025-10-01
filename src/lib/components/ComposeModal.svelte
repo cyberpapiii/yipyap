@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment'
 	import { X, Send, Loader2 } from 'lucide-svelte'
 	import { onMount } from 'svelte'
 	import AnonymousAvatar from './AnonymousAvatar.svelte'
@@ -17,6 +18,7 @@
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
+	let keyboardHeight = $state(0)
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -103,6 +105,38 @@
 	const charCount = $derived.by(() => content.length)
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
+
+	// Track keyboard height with visualViewport
+	$effect(() => {
+		if (!$showComposeModal || !browser) return
+
+		function handleViewportChange() {
+			if (window.visualViewport) {
+				const vvHeight = window.visualViewport.height
+				const windowHeight = window.innerHeight
+				const newKeyboardHeight = Math.max(0, windowHeight - vvHeight)
+
+				// Only update if meaningful change (avoid micro-adjustments)
+				if (Math.abs(newKeyboardHeight - keyboardHeight) > 10) {
+					keyboardHeight = newKeyboardHeight
+				}
+			}
+		}
+
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener('resize', handleViewportChange)
+			window.visualViewport.addEventListener('scroll', handleViewportChange)
+			handleViewportChange() // Initial calculation
+		}
+
+		return () => {
+			if (window.visualViewport) {
+				window.visualViewport.removeEventListener('resize', handleViewportChange)
+				window.visualViewport.removeEventListener('scroll', handleViewportChange)
+			}
+			keyboardHeight = 0
+		}
+	})
 
 	// Focus the textarea when modal opens
 	$effect(() => {
@@ -241,17 +275,25 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal overlay -->
+	<!-- Modal overlay - pure background, no flex positioning -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 pb-0 {isClosing ? 'modal-overlay-exit' : ''}"
+		class="fixed inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
 		style="z-index: 100;"
-		onclick={(e) => e.target === e.currentTarget && handleClose()}
+		onclick={handleClose}
 		role="button"
 		tabindex="0"
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
-		<!-- Modal content -->
-		<div class="rounded-t-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-bottom: none; padding-bottom: env(safe-area-inset-bottom);">
+	</div>
+
+	<!-- Modal content - independently positioned at bottom, pushed up by keyboard -->
+	<div
+		class="fixed left-0 right-0 mx-auto w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-t-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+		style="z-index: 101; bottom: {keyboardHeight}px; background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-bottom: none; padding-bottom: env(safe-area-inset-bottom);"
+		onclick={(e) => e.stopPropagation()}
+		role="dialog"
+		tabindex="-1"
+	>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
@@ -330,6 +372,5 @@
 						</div>
 				</div>
 			</form>
-		</div>
 	</div>
 {/if}
