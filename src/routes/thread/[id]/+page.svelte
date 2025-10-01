@@ -3,9 +3,9 @@
   import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
+  import { RefreshCw, ChevronDown } from 'lucide-svelte'
   import PostCard from '$lib/components/PostCard.svelte'
   import CommentCard from '$lib/components/CommentCard.svelte'
-  import ComposeModal from '$lib/components/ComposeModal.svelte'
   import { composeStore, threadStore, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { CommentWithStats, ComposeState, PostWithStats } from '$lib/types'
@@ -20,6 +20,19 @@
   let postId = $state('')
   let initializing = $state(false)
   let loadError: string | null = $state(null)
+
+  // Pull to refresh state
+  let threadContainer: HTMLElement
+  let refreshing = $state(false)
+  let pullToRefreshY = $state(0)
+  let isPulling = $state(false)
+  let startY = 0
+  let currentY = 0
+
+  // Pull to refresh constants
+  const PULL_THRESHOLD = 80
+  const MAX_PULL = 120
+  const SCROLL_TOP_THRESHOLD = 5
 
   onMount(async () => {
     if (!browser) return
@@ -39,6 +52,23 @@
       loadError = error instanceof Error ? error.message : 'Failed to load thread'
     } finally {
       initializing = false
+    }
+
+    // Setup touch event listeners
+    if (threadContainer) {
+      threadContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
+      threadContainer.addEventListener('touchmove', handleTouchMove, { passive: false })
+      threadContainer.addEventListener('touchend', handleTouchEnd)
+      threadContainer.addEventListener('touchcancel', handleTouchCancel)
+    }
+
+    return () => {
+      if (threadContainer) {
+        threadContainer.removeEventListener('touchstart', handleTouchStart)
+        threadContainer.removeEventListener('touchmove', handleTouchMove)
+        threadContainer.removeEventListener('touchend', handleTouchEnd)
+        threadContainer.removeEventListener('touchcancel', handleTouchCancel)
+      }
     }
   })
 
@@ -157,22 +187,170 @@
       alert('Failed to delete comment. Please try again.')
     }
   }
+
+  // Pull to refresh handlers
+  function resetPullState() {
+    isPulling = false
+    pullToRefreshY = 0
+  }
+
+  function getGlobalScrollTop() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return 0
+    const doc = document.documentElement
+    const body = document.body
+    return (
+      window.scrollY ??
+      doc?.scrollTop ??
+      body?.scrollTop ??
+      0
+    )
+  }
+
+  function isAtTop() {
+    const containerTop = threadContainer ? threadContainer.scrollTop : 0
+    if (containerTop > SCROLL_TOP_THRESHOLD) return false
+
+    const globalTop = getGlobalScrollTop()
+    return globalTop <= SCROLL_TOP_THRESHOLD
+  }
+
+  async function refreshThread() {
+    if ($thread.loading || refreshing) {
+      resetPullState()
+      return
+    }
+
+    refreshing = true
+    // Haptic feedback for refresh
+    if ('vibrate' in navigator) {
+      navigator.vibrate(15)
+    }
+
+    try {
+      await hydrateThread(postId)
+      // Haptic feedback on completion
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10)
+      }
+    } finally {
+      refreshing = false
+      pullToRefreshY = 0
+      isPulling = false
+    }
+  }
+
+  function handleTouchStart(e: TouchEvent) {
+    if ($thread.loading || refreshing) return
+    if (e.touches.length !== 1) return
+
+    startY = e.touches[0].clientY
+    currentY = startY
+    pullToRefreshY = 0
+    isPulling = isAtTop()
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (e.touches.length !== 1) return
+    currentY = e.touches[0].clientY
+    const deltaY = currentY - startY
+
+    if ($thread.loading || refreshing) {
+      resetPullState()
+      return
+    }
+
+    const atTop = isAtTop()
+
+    if (!isPulling) {
+      if (deltaY > 0 && atTop) {
+        isPulling = true
+        startY = currentY
+        pullToRefreshY = 0
+      }
+      return
+    }
+
+    if (!atTop) {
+      resetPullState()
+      return
+    }
+
+    if (deltaY > 0) {
+      e.preventDefault()
+      pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+    } else {
+      resetPullState()
+    }
+  }
+
+  function handleTouchEnd() {
+    if (!isPulling) return
+
+    isPulling = false
+
+    if (pullToRefreshY >= PULL_THRESHOLD) {
+      refreshThread()
+    } else {
+      pullToRefreshY = 0
+    }
+  }
+
+  function handleTouchCancel() {
+    resetPullState()
+  }
 </script>
 
 <svelte:head>
   <title>Thread</title>
 </svelte:head>
 
-{#if initializing || $thread.loading}
-  <div class="max-w-2xl mx-auto p-4 space-y-4">
-    <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
-    <div class="h-40 rounded-xl bg-muted animate-pulse"></div>
-  </div>
-{:else if loadError}
-  <div class="p-8 text-center text-destructive">{loadError}</div>
-{:else if $thread.post}
-  {@const post = $thread.post!}
-  <div class="max-w-2xl mx-auto p-4 space-y-6 animate-fade-in">
+<div
+  bind:this={threadContainer}
+  class="min-h-screen bg-background overscroll-y-none"
+  style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
+  style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
+>
+  <!-- Pull to refresh indicator -->
+  {#if pullToRefreshY > 0}
+    <div
+      class="absolute top-0 left-0 right-0 z-20 flex items-center justify-center backdrop-blur-sm"
+      style:height="80px"
+      style:background="linear-gradient(to bottom, rgba(16, 16, 16, 0.95) 0%, rgba(16, 16, 16, 0.8) 50%, transparent 100%)"
+      style:transform={`translateY(-${80 - pullToRefreshY}px)`}
+      style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
+      style:border-bottom="2px solid #6B6B6B"
+    >
+      <div class="flex items-center gap-2 text-accent">
+        {#if pullToRefreshY >= PULL_THRESHOLD}
+          <RefreshCw
+            size={20}
+            class={refreshing ? 'animate-spin' : 'animate-pull-refresh'}
+          />
+          <span class="text-sm font-medium">
+            {refreshing ? 'Refreshing...' : 'Release to refresh'}
+          </span>
+        {:else}
+          <ChevronDown
+            size={20}
+            class="transition-transform duration-200"
+            style={`transform: rotate(${Math.min(pullToRefreshY / PULL_THRESHOLD * 180, 180)}deg)`}
+          />
+          <span class="text-sm font-medium">Pull to refresh</span>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  {#if initializing || $thread.loading}
+    <div class="max-w-2xl mx-auto p-4 space-y-4">
+      <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
+      <div class="h-40 rounded-xl bg-muted animate-pulse"></div>
+    </div>
+  {:else if loadError}
+    <div class="p-8 text-center text-destructive">{loadError}</div>
+  {:else if $thread.post}
+    {@const post = $thread.post!}
+    <div class="max-w-2xl mx-auto p-4 space-y-6 animate-fade-in">
     <a href="/" class="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 flex items-center gap-1 group w-fit">
       <span class="transition-transform duration-200 group-hover:-translate-x-1">←</span>
       <span>Back</span>
@@ -208,8 +386,9 @@
         No replies yet. Be the first to join the conversation.
       </div>
     {/if}
-  </div>
-{/if}
+    </div>
+  {/if}
+</div>
 
 <!-- Floating reply text box -->
 <div class="fixed bottom-20 left-4 right-4 max-w-2xl mx-auto z-10 pb-4">
@@ -222,5 +401,3 @@
     </button>
   </div>
 </div>
-
-<ComposeModal onSubmit={onSubmit} />

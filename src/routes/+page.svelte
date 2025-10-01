@@ -23,6 +23,15 @@
   let touchEndX = 0
   let isSwiping = $state(false)
 
+  // Watch for community changes and reload feed
+  $effect(() => {
+    const community = $communityStore.selectedCommunity
+    if (browser && !initializing) {
+      // Reload current feed when community changes
+      loadFeed(feedType)
+    }
+  })
+
   // Swipe handling
   function handleTouchStart(e: TouchEvent) {
     touchStartX = e.touches[0].clientX

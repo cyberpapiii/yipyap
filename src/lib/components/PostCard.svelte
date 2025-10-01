@@ -13,6 +13,7 @@
 	let isHovered = $state(false)
 	let rippleElements: HTMLElement[] = []
 	let showOptionsMenu = $state(false)
+	let isExpanded = $state(false)
 
 	let {
 		post,
@@ -22,6 +23,11 @@
 		onReply,
 		onDelete
 	}: PostCardProps = $props()
+
+	// Truncation logic
+	const TRUNCATE_LENGTH = 280
+	const shouldTruncate = $derived(post.content.length > TRUNCATE_LENGTH && !isInThread && !isExpanded)
+	const displayContent = $derived(shouldTruncate ? post.content.slice(0, TRUNCATE_LENGTH) + '...' : post.content)
 
 	// Enhanced navigation with haptic feedback
 	function openThread() {
@@ -276,9 +282,20 @@
 			</div>
 
 			<!-- Content (secure plain text with preserved line breaks) -->
-			<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line">
-				{post.content}
+			<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line break-words overflow-wrap-anywhere">
+				{displayContent}
 			</div>
+
+			<!-- See more button -->
+			{#if shouldTruncate}
+				<button
+					onclick={(e) => { e.stopPropagation(); isExpanded = true }}
+					class="text-sm text-accent hover:text-accent/80 font-medium transition-colors"
+					type="button"
+				>
+					See more
+				</button>
+			{/if}
 
 			<!-- Icon row -->
 			<div class="flex items-center justify-end gap-4">

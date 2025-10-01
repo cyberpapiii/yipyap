@@ -259,7 +259,7 @@
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header -->
-		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 z-10">
+		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
 			<CommunitySelector
 				selectedCommunity={$communityStore.selectedCommunity}
 				postCount={$feedStore.posts.length}

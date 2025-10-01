@@ -28,7 +28,7 @@
 <button
 	onclick={handleClick}
 	class="
-		flex flex-col items-start gap-1
+		flex flex-col items-start gap-1 mt-2
 		transition-all duration-200 ease-out
 		hover:opacity-80 active:scale-[0.98]
 		touch-manipulation

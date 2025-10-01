@@ -18,6 +18,12 @@
 	// Animation state
 	let isHovered = $state(false)
 	let isPressed = $state(false)
+	let isExpanded = $state(false)
+
+	// Truncation logic
+	const TRUNCATE_LENGTH = 280
+	const shouldTruncate = $derived(comment.content.length > TRUNCATE_LENGTH && !isExpanded)
+	const displayContent = $derived(shouldTruncate ? comment.content.slice(0, TRUNCATE_LENGTH) + '...' : comment.content)
 	let showOptionsMenu = $state(false)
 
 	// Handle vote
@@ -207,9 +213,20 @@
 				</div>
 
 				<!-- Content -->
-				<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line">
-					{comment.content}
+				<div class="prose prose-sm max-w-none text-foreground mb-3 selectable leading-relaxed whitespace-pre-line break-words overflow-wrap-anywhere">
+					{displayContent}
 				</div>
+
+				<!-- See more button -->
+				{#if shouldTruncate}
+					<button
+						onclick={(e) => { e.stopPropagation(); isExpanded = true }}
+						class="text-sm text-accent hover:text-accent/80 font-medium transition-colors mb-3"
+						type="button"
+					>
+						See more
+					</button>
+				{/if}
 
 				<!-- Icon row -->
 				<div class="flex items-center justify-end gap-4">

@@ -7,10 +7,21 @@
 	import AnonymousAvatar from '$lib/components/AnonymousAvatar.svelte'
 	import SubwayLinePicker from '$lib/components/SubwayLinePicker.svelte'
 	import NotificationCard from '$lib/components/NotificationCard.svelte'
+	import { RefreshCw, ChevronDown } from 'lucide-svelte'
 
 	let user = $state(get(currentUser))
 	let showLinePicker = $state(false)
 	let isUpdating = $state(false)
+	let refreshing = $state(false)
+	let pullToRefreshY = $state(0)
+	let isPulling = $state(false)
+	let startY = 0
+	let currentY = 0
+	let feedOpacity = $state(1)
+
+	const PULL_THRESHOLD = 80
+	const MAX_PULL = 120
+	const SCROLL_TOP_THRESHOLD = 5
 
 	// Subway line to color mapping
 	const subwayLineColors: Record<string, string> = {
@@ -42,9 +53,17 @@
 			notificationsStore.subscribeToRealtime()
 		}
 
+		// Add touch event listeners with passive: false
+		document.addEventListener('touchstart', handleTouchStart, { passive: true })
+		document.addEventListener('touchmove', handleTouchMove, { passive: false })
+		document.addEventListener('touchend', handleTouchEnd, { passive: true })
+
 		return () => {
 			unsubscribe()
 			notificationsStore.unsubscribeFromRealtime()
+			document.removeEventListener('touchstart', handleTouchStart)
+			document.removeEventListener('touchmove', handleTouchMove)
+			document.removeEventListener('touchend', handleTouchEnd)
 		}
 	})
 
@@ -111,9 +130,103 @@
 		const currentCount = $notificationsStore.notifications.length
 		await notificationsStore.fetchNotifications(currentCount, 20, false)
 	}
+
+	async function refreshNotifications() {
+		if (refreshing || !user) return
+
+		refreshing = true
+		feedOpacity = 0.5
+		if ('vibrate' in navigator) {
+			navigator.vibrate(15)
+		}
+
+		try {
+			await notificationsStore.fetchNotifications(0, 20, false)
+			await notificationsStore.fetchUnreadCount()
+			if ('vibrate' in navigator) {
+				navigator.vibrate(10)
+			}
+		} finally {
+			feedOpacity = 1
+			refreshing = false
+			pullToRefreshY = 0
+			isPulling = false
+		}
+	}
+
+	function handleTouchStart(e: TouchEvent) {
+		if (e.touches.length !== 1) return
+		startY = e.touches[0].clientY
+		currentY = startY
+		const scrollTop = window.scrollY || document.documentElement.scrollTop
+		isPulling = scrollTop <= SCROLL_TOP_THRESHOLD
+	}
+
+	function handleTouchMove(e: TouchEvent) {
+		if (e.touches.length !== 1) return
+		currentY = e.touches[0].clientY
+		const deltaY = currentY - startY
+		const scrollTop = window.scrollY || document.documentElement.scrollTop
+
+		if (!isPulling && deltaY > 0 && scrollTop <= SCROLL_TOP_THRESHOLD) {
+			isPulling = true
+			startY = currentY
+			pullToRefreshY = 0
+			return
+		}
+
+		if (isPulling && scrollTop <= SCROLL_TOP_THRESHOLD && deltaY > 0) {
+			e.preventDefault()
+			pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+		} else {
+			isPulling = false
+			pullToRefreshY = 0
+		}
+	}
+
+	function handleTouchEnd() {
+		if (!isPulling) return
+		isPulling = false
+
+		if (pullToRefreshY >= PULL_THRESHOLD) {
+			refreshNotifications()
+		} else {
+			pullToRefreshY = 0
+		}
+	}
 </script>
 
-<div class="min-h-screen bg-background pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem)">
+<div
+	class="min-h-screen bg-background pb-24"
+	style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem); transform: translateY({pullToRefreshY * 0.3}px); transition: {!isPulling ? 'transform 0.3s ease-out' : ''}"
+>
+	<!-- Pull to refresh indicator -->
+	{#if pullToRefreshY > 0}
+		<div
+			class="absolute top-0 left-0 right-0 z-20 flex items-center justify-center backdrop-blur-sm"
+			style="height: 80px; background: linear-gradient(to bottom, rgba(16, 16, 16, 0.95) 0%, rgba(16, 16, 16, 0.8) 50%, transparent 100%); transform: translateY(-{80 - pullToRefreshY}px); transition: {!isPulling ? 'transform 0.3s ease-out' : ''}; border-bottom: 2px solid #6B6B6B"
+		>
+			<div class="flex items-center gap-2 text-accent">
+				{#if pullToRefreshY >= PULL_THRESHOLD}
+					<RefreshCw
+						size={20}
+						class={refreshing ? 'animate-spin' : ''}
+					/>
+					<span class="text-sm font-medium">
+						{refreshing ? 'Refreshing...' : 'Release to refresh'}
+					</span>
+				{:else}
+					<ChevronDown
+						size={20}
+						class="transition-transform duration-200"
+						style="transform: rotate({Math.min(pullToRefreshY / PULL_THRESHOLD * 180, 180)}deg)"
+					/>
+					<span class="text-sm font-medium">Pull to refresh</span>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	<div class="max-w-md mx-auto">
 		<!-- Profile Section -->
 		{#if user}
@@ -147,7 +260,7 @@
 		{/if}
 
 		<!-- Notifications Section -->
-		<div class="p-4">
+		<div class="p-4" style="opacity: {feedOpacity}; transition: opacity 0.3s ease-out;">
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-3xl font-bold">Notifications</h2>
 				{#if $notificationsStore.unreadCount > 0}
