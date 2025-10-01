@@ -41,14 +41,12 @@
 				navigator.vibrate([10, 50, 10])
 			}
 
-			// Capture modal position before closing (accounting for keyboard)
+			// Capture modal position before closing
 			const modalElement = document.querySelector('.modal-exit') || document.querySelector('.modal-enter')
 			if (modalElement) {
 				const rect = modalElement.getBoundingClientRect()
-				// Use visual viewport if available to get true visible position
-				const offsetY = window.visualViewport ? window.visualViewport.offsetTop : 0
 				successPosition = {
-					top: `${rect.top + rect.height / 2 + offsetY}px`,
+					top: `${rect.top + rect.height / 2}px`,
 					left: `${rect.left + rect.width / 2}px`
 				}
 			}
@@ -62,8 +60,6 @@
 					composeStore.closeModal()
 					showSuccess = false
 					isClosing = false
-					// Reset state after success animation
-					keyboardHeight = 0
 					successPosition = { top: '50%', left: '50%' }
 				}, 800)
 			}, 300)
