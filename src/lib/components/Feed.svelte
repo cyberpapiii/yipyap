@@ -226,10 +226,10 @@
 	style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
 	style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
 >
-	<!-- Pull to refresh indicator -->
+	<!-- Pull to refresh indicator - Page elements layer: z-1-99 -->
 	{#if pullToRefreshY > 0}
 		<div
-			class="absolute top-0 left-0 right-0 z-20 flex items-center justify-center backdrop-blur-sm"
+			class="absolute top-0 left-0 right-0 z-30 flex items-center justify-center backdrop-blur-sm"
 			style:height="80px"
 			style:background="linear-gradient(to bottom, rgba(16, 16, 16, 0.95) 0%, rgba(16, 16, 16, 0.8) 50%, transparent 100%)"
 			style:transform={`translateY(-${80 - pullToRefreshY}px)`}
@@ -258,7 +258,7 @@
 	{/if}
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
-		<!-- Feed header -->
+		<!-- Feed header - Page elements layer: z-1-99 (sticky header at z-10) -->
 		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
 			<CommunitySelector
 				selectedCommunity={$communityStore.selectedCommunity}

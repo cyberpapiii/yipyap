@@ -239,8 +239,8 @@
     />
   </div>
 
-  <!-- Floating Feed Toggle -->
-  <div class="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-30">
+  <!-- Floating Feed Toggle - Page elements layer: z-1-99 -->
+  <div class="fixed bottom-28 left-1/2 transform -translate-x-1/2 z-50">
     <div class="inline-flex bg-card border border-border rounded-full p-1 shadow-lg backdrop-blur-sm gap-1">
       <button
         onclick={() => switchFeed('new')}

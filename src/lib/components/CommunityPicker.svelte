@@ -108,10 +108,10 @@
 </style>
 
 {#if isOpen}
-	<!-- Overlay -->
+	<!-- Overlay - Modal layer: z-1000-1999 (CommunityPicker at z-1100, above ComposeModal) -->
 	<div
 		class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 backdrop-enter"
-		style="z-index: 9999;"
+		style="z-index: 1100;"
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"

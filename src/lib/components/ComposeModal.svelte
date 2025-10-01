@@ -13,7 +13,14 @@
 		onSubmit: (content: string, replyTo?: ComposeState['replyTo']) => Promise<void>
 	} = $props()
 
+	// Animation timing constants
+	const MODAL_ENTER_DURATION_MS = 400
+	const MODAL_EXIT_DURATION_MS = 250
+	const SUCCESS_DELAY_MS = 300
+	const SUCCESS_ANIMATION_DURATION_MS = 800
+
 	let textareaElement = $state<HTMLTextAreaElement | null>(null)
+	let modalContainerElement = $state<HTMLDivElement | null>(null)
 	let content = $state('')
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
@@ -65,17 +72,16 @@
 				navigator.vibrate([10, 50, 10])
 			}
 
-			// Capture modal position before closing
-			const modalElement = document.querySelector('.modal-exit') || document.querySelector('.modal-enter')
-			if (modalElement) {
-				const rect = modalElement.getBoundingClientRect()
+			// Capture modal position using Svelte binding before closing
+			if (modalContainerElement) {
+				const rect = modalContainerElement.getBoundingClientRect()
 				successPosition = {
 					top: `${rect.top + rect.height / 2}px`,
 					left: `${rect.left + rect.width / 2}px`
 				}
 			}
 
-			// Trigger success sequence
+			// Trigger success sequence with timing constants
 			isClosing = true
 			setTimeout(() => {
 				showSuccess = true
@@ -85,8 +91,8 @@
 					showSuccess = false
 					isClosing = false
 					successPosition = { top: '50%', left: '50%' }
-				}, 800)
-			}, 300)
+				}, SUCCESS_ANIMATION_DURATION_MS)
+			}, SUCCESS_DELAY_MS)
 		} catch (error) {
 			// Error haptic feedback
 			if ('vibrate' in navigator) {
@@ -105,7 +111,7 @@
 				content = ''
 				isClosing = false
 				successPosition = { top: '50%', left: '50%' }
-			}, 250) // Match exit animation duration
+			}, MODAL_EXIT_DURATION_MS) // Use timing constant
 		}
 	}
 
@@ -137,25 +143,16 @@
 	})
 
 	// Focus the textarea when modal opens
+	// Simplified: Initial focus + single retry instead of three attempts
 	$effect(() => {
 		if ($showComposeModal && textareaElement) {
-			// Multiple attempts to ensure focus on mobile
+			// Initial focus attempt
 			textareaElement.focus()
 
-			// Try again after animation starts
+			// Single retry after animation has started (200ms gives enough time for layout)
 			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus()
-					textareaElement.click()
-				}
-			}, 150)
-
-			// Final attempt after animation completes
-			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus()
-				}
-			}, 450)
+				textareaElement?.focus()
+			}, 200)
 		}
 	})
 
@@ -206,6 +203,7 @@
 </script>
 
 <style>
+	/* Animation durations match constants: MODAL_ENTER_DURATION_MS=400ms, MODAL_EXIT_DURATION_MS=250ms */
 	.modal-enter {
 		animation: modal-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
@@ -253,12 +251,13 @@
 		}
 	}
 
+	/* Success animation duration matches SUCCESS_ANIMATION_DURATION_MS=800ms */
 	.success-indicator {
 		position: fixed;
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		z-index: 101;
+		z-index: 1001; /* Modal layer: success animation above modal backdrop */
 		animation: success-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
@@ -281,6 +280,27 @@
 		}
 	}
 
+	/* WCAG 2.3.3 Level A: Reduced Motion Support */
+	/* Disable/reduce animations for users with motion sensitivity */
+	@media (prefers-reduced-motion: reduce) {
+		.modal-enter,
+		.modal-exit {
+			animation: none !important;
+			transition: opacity 0.2s ease;
+		}
+
+		.modal-overlay-exit {
+			animation: none !important;
+			transition: opacity 0.2s ease;
+		}
+
+		.success-indicator {
+			animation: none !important;
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+	}
+
 </style>
 
 {#if showSuccess}
@@ -294,17 +314,15 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal overlay -->
+	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px);`}
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px);`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
-		role="button"
-		tabindex="0"
-		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
 		<div
+			bind:this={modalContainerElement}
 			class="w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
 			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 			role="dialog"
@@ -318,7 +336,7 @@
 				<button
 					onclick={handleClose}
 					disabled={$composeState.isSubmitting}
-					class="p-2 hover:bg-accent rounded-xl transition-colors disabled:opacity-50"
+					class="p-2 hover:bg-accent rounded-xl transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 					aria-label="Close"
 				>
 					<X size={24} />
@@ -368,14 +386,19 @@
 
 					<!-- Actions -->
 						<div class="flex items-center justify-between">
-							<span class="text-sm font-medium {isOverLimit ? 'text-destructive' : 'text-muted-foreground'}">
+							<!-- WCAG 4.1.3: Screen reader announces character count changes -->
+							<span
+								class="text-sm font-medium {isOverLimit ? 'text-destructive' : 'text-muted-foreground'}"
+								aria-live="polite"
+								role="status"
+							>
 								{charCount}/{maxLength}
 							</span>
 							<Button
 								type="submit"
 								variant="default"
 								disabled={!canSubmit}
-								class="gap-2 btn-primary text-base px-6 py-2"
+								class="gap-2 btn-primary text-base px-6 py-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 							>
 								{#if $composeState.isSubmitting}
 									<Loader2 size={18} class="animate-spin" />

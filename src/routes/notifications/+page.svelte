@@ -206,10 +206,10 @@
 	class="min-h-screen bg-background pb-24"
 	style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem); transform: translateY({pullToRefreshY * 0.3}px); transition: {!isPulling ? 'transform 0.3s ease-out' : ''}"
 >
-	<!-- Pull to refresh indicator -->
+	<!-- Pull to refresh indicator - Page elements layer: z-1-99 -->
 	{#if pullToRefreshY > 0}
 		<div
-			class="absolute top-0 left-0 right-0 z-20 flex items-center justify-center backdrop-blur-sm"
+			class="absolute top-0 left-0 right-0 z-30 flex items-center justify-center backdrop-blur-sm"
 			style="height: 80px; background: linear-gradient(to bottom, rgba(16, 16, 16, 0.95) 0%, rgba(16, 16, 16, 0.8) 50%, transparent 100%); transform: translateY(-{80 - pullToRefreshY}px); transition: {!isPulling ? 'transform 0.3s ease-out' : ''}; border-bottom: 2px solid #6B6B6B"
 		>
 			<div class="flex items-center gap-2 text-accent">

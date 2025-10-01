@@ -180,13 +180,13 @@
 							<MoreHorizontal size={16} />
 						</button>
 
-						<!-- Options dropdown menu -->
+						<!-- Options dropdown menu - Page elements layer: z-1-99 -->
 						{#if showOptionsMenu}
 							<div
 								class="
 									absolute top-full right-0 mt-1 min-w-32
 									bg-card border border-border rounded-xl shadow-lg
-									py-1 z-10 animate-fade-in
+									py-1 z-20 animate-fade-in
 								"
 								role="menu"
 							>

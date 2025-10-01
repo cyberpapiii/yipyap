@@ -310,10 +310,10 @@
   style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
   style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
 >
-  <!-- Pull to refresh indicator -->
+  <!-- Pull to refresh indicator - Page elements layer: z-1-99 -->
   {#if pullToRefreshY > 0}
     <div
-      class="absolute top-0 left-0 right-0 z-20 flex items-center justify-center backdrop-blur-sm"
+      class="absolute top-0 left-0 right-0 z-30 flex items-center justify-center backdrop-blur-sm"
       style:height="80px"
       style:background="linear-gradient(to bottom, rgba(16, 16, 16, 0.95) 0%, rgba(16, 16, 16, 0.8) 50%, transparent 100%)"
       style:transform={`translateY(-${80 - pullToRefreshY}px)`}
@@ -390,8 +390,8 @@
   {/if}
 </div>
 
-<!-- Floating reply text box -->
-<div class="fixed bottom-20 left-4 right-4 max-w-2xl mx-auto z-10 pb-4">
+<!-- Floating reply text box - Page elements layer: z-1-99 -->
+<div class="fixed bottom-20 left-4 right-4 max-w-2xl mx-auto z-50 pb-4">
   <div class="bg-card border border-border rounded-2xl shadow-lg">
     <button
       class="w-full text-left text-muted-foreground text-sm p-3 rounded-xl hover:bg-accent/50 transition-colors"

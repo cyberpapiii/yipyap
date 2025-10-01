@@ -93,7 +93,8 @@
   })
 </script>
 
-<header class="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1);">
+<header class="sticky top-0 z-90 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1);">
+  <!-- Navigation layer: z-100-199 (header at z-90) -->
   <div class="mx-auto max-w-md px-4 h-12 flex items-center justify-center">
     <a href="/" class="flex items-center" aria-label="BingBong home">
       <svg width="188" height="19" viewBox="0 0 188 19" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -125,8 +126,8 @@
   <div class="h-24"></div>
 </main>
 
-<!-- Gradient overlay above bottom nav -->
-<div class="fixed bottom-0 left-0 right-0 h-48 pointer-events-none z-20"
+<!-- Gradient overlay above bottom nav - Page elements layer: z-1-99 -->
+<div class="fixed bottom-0 left-0 right-0 h-48 pointer-events-none z-40"
      style="background: linear-gradient(to top, rgba(16, 16, 16, 1) 0%, rgba(16, 16, 16, 0.8) 40%, transparent 100%); padding-bottom: env(safe-area-inset-bottom)">
 </div>
 
