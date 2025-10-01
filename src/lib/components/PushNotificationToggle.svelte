@@ -185,18 +185,26 @@
 		</div>
 	{/if}
 
-	<!-- Help text for unsupported states -->
-	{#if !status.supported && status.isIOSPWA === false}
-		<div class="mt-3 pt-3" style="border-top: 1px solid rgba(107, 107, 107, 0.1);">
+	<!-- Debug info and help text -->
+	<div class="mt-3 pt-3" style="border-top: 1px solid rgba(107, 107, 107, 0.1);">
+		{#if !status.supported}
 			<p class="text-xs" style="color: #6B6B6B;">
 				{#if !('serviceWorker' in navigator)}
 					Your browser does not support push notifications.
-				{:else if status.isIOSPWA === false && /iPad|iPhone|iPod/.test(navigator.userAgent)}
+				{:else if !status.isIOSPWA && /iPad|iPhone|iPod/.test(navigator.userAgent)}
 					On iOS, add YipYap to your Home Screen to enable push notifications.
 				{:else}
 					Push notifications are not supported on this device.
 				{/if}
 			</p>
-		</div>
-	{/if}
+		{:else if !status.serviceWorkerActive}
+			<p class="text-xs" style="color: #FF6B6B;">
+				Service Worker not active. Try refreshing the page.
+			</p>
+		{:else if !canToggle() && status.permission !== 'denied'}
+			<p class="text-xs" style="color: #6B6B6B;">
+				Loading... Please wait.
+			</p>
+		{/if}
+	</div>
 </div>
