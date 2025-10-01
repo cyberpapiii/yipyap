@@ -419,7 +419,7 @@ async function syncOfflineComments() {
   }
 }
 
-// Enhanced Push notification handler
+// Enhanced Push notification handler with iOS support
 self.addEventListener('push', (event) => {
   console.log('[ServiceWorker] Push received');
 
@@ -433,22 +433,30 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Determine notification URL based on type
+  let notificationUrl = '/';
+  if (data.postId) {
+    notificationUrl = `/thread/${data.postId}`;
+  } else if (data.url) {
+    notificationUrl = data.url;
+  }
+
   const options = {
     body: data.body || 'You have a new notification',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icon-192.png',
+    badge: '/badge-96.png',
     tag: data.tag || `yipyap-${Date.now()}`,
     data: {
-      url: data.url || '/',
+      url: notificationUrl,
       postId: data.postId,
+      commentId: data.commentId,
       notificationId: data.notificationId,
       timestamp: Date.now()
     },
     actions: [
       {
         action: 'view',
-        title: 'View',
-        icon: '/icons/icon-96x96.png'
+        title: 'View'
       },
       {
         action: 'dismiss',
@@ -466,14 +474,11 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'YipYap', options)
       .then(() => {
         console.log('[ServiceWorker] Notification shown successfully');
-        
-        // Track notification analytics
-        if (data.trackingId) {
-          fetch('/api/analytics/notification-shown', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trackingId: data.trackingId })
-          }).catch(() => {}); // Fail silently
+
+        // Mark notification as delivered in database
+        if (data.notificationId) {
+          // We could track delivery here if needed
+          console.log('[ServiceWorker] Notification delivered:', data.notificationId);
         }
       })
       .catch(error => {
@@ -482,18 +487,19 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Enhanced Notification click handler
+// Enhanced Notification click handler with iOS support
 self.addEventListener('notificationclick', (event) => {
   console.log('[ServiceWorker] Notification click:', event.action);
 
   event.notification.close();
 
+  // Dismiss action - just close the notification
   if (event.action === 'dismiss') {
     return;
   }
 
   const urlToOpen = event.notification.data?.url || '/';
-  const postId = event.notification.data?.postId;
+  const notificationId = event.notification.data?.notificationId;
 
   event.waitUntil(
     clients.matchAll({
@@ -504,12 +510,13 @@ self.addEventListener('notificationclick', (event) => {
       for (const client of clientList) {
         const clientUrl = new URL(client.url);
         const targetUrl = new URL(urlToOpen, self.location.origin);
-        
+
         if (clientUrl.origin === targetUrl.origin) {
           // Navigate existing client to the target URL
           client.postMessage({
             type: 'NAVIGATE',
-            url: targetUrl.pathname + targetUrl.search + targetUrl.hash
+            url: targetUrl.pathname + targetUrl.search + targetUrl.hash,
+            notificationId: notificationId
           });
           return client.focus();
         }
@@ -520,19 +527,9 @@ self.addEventListener('notificationclick', (event) => {
         return clients.openWindow(urlToOpen);
       }
     }).then(() => {
-      // Track notification click analytics
-      const trackingId = event.notification.data?.trackingId;
-      if (trackingId) {
-        fetch('/api/analytics/notification-clicked', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            trackingId, 
-            action: event.action || 'view',
-            postId 
-          })
-        }).catch(() => {}); // Fail silently
-      }
+      console.log('[ServiceWorker] Notification action completed');
+    }).catch(error => {
+      console.error('[ServiceWorker] Notification click handler error:', error);
     })
   );
 });
@@ -540,16 +537,7 @@ self.addEventListener('notificationclick', (event) => {
 // Handle notification close events
 self.addEventListener('notificationclose', (event) => {
   console.log('[ServiceWorker] Notification closed');
-  
-  // Track notification dismissal analytics
-  const trackingId = event.notification.data?.trackingId;
-  if (trackingId) {
-    fetch('/api/analytics/notification-dismissed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trackingId })
-    }).catch(() => {}); // Fail silently
-  }
+  // User dismissed notification without action
 });
 
 // Message handler for client communication

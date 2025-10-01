@@ -4,12 +4,15 @@
 	import { currentUser, authStore } from '$lib/stores/auth'
 	import { supabase } from '$lib/supabase'
 	import { notificationsStore } from '$lib/stores/notifications'
+	import { getDeviceId } from '$lib/auth'
 	import AnonymousAvatar from '$lib/components/AnonymousAvatar.svelte'
 	import SubwayLinePicker from '$lib/components/SubwayLinePicker.svelte'
+	import PushNotificationToggle from '$lib/components/PushNotificationToggle.svelte'
 	import NotificationCard from '$lib/components/NotificationCard.svelte'
 	import { RefreshCw, ChevronDown } from 'lucide-svelte'
 
 	let user = $state(get(currentUser))
+	let deviceId = $state('')
 	let showLinePicker = $state(false)
 	let isUpdating = $state(false)
 	let refreshing = $state(false)
@@ -37,6 +40,9 @@
 	}
 
 	onMount(async () => {
+		// Get device ID
+		deviceId = getDeviceId()
+
 		// Initialize notifications store
 		notificationsStore.initialize(supabase)
 
@@ -236,7 +242,7 @@
 				<!-- Profile Card -->
 				<button
 					onclick={openLinePicker}
-					class="w-full p-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+					class="w-full p-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] mb-3"
 					style="background-color: #1E1E1E; border: 1px solid rgba(107, 107, 107, 0.1);"
 				>
 					<div class="flex items-center gap-4">
@@ -256,6 +262,13 @@
 						</div>
 					</div>
 				</button>
+
+				<!-- Push Notification Toggle -->
+				<PushNotificationToggle
+					{supabase}
+					userId={user.id}
+					{deviceId}
+				/>
 			</div>
 		{/if}
 

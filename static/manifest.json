@@ -1,7 +1,7 @@
 {
-  "name": "BingBong",
-  "short_name": "BingBong",
-  "description": "Anonymous NYC social playground with subway line identities",
+  "name": "YipYap",
+  "short_name": "YipYap",
+  "description": "Anonymous local community for Dimes Square with subway line identities",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101010",
@@ -47,8 +47,15 @@
       "short_name": "New",
       "description": "View recent posts",
       "url": "/"
+    },
+    {
+      "name": "Notifications",
+      "short_name": "Alerts",
+      "description": "View your notifications",
+      "url": "/notifications"
     }
   ],
   "categories": ["social", "lifestyle"],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "gcm_sender_id": "103953800507"
 }
