@@ -16,11 +16,72 @@ interface NotificationPayload {
   notificationId?: string
 }
 
+interface WebhookPayload {
+  type: 'INSERT' | 'UPDATE' | 'DELETE'
+  table: string
+  record: {
+    id: string
+    user_id: string
+    post_id?: string
+    comment_id?: string
+    type: string
+    actor_user_id?: string
+    actor_subway_line?: string
+    actor_subway_color?: string
+    preview_content?: string
+    created_at: string
+    read: boolean
+  }
+  schema: string
+  old_record: any
+}
+
 interface PushSubscription {
   id: string
   endpoint: string
   keys_p256dh: string
   keys_auth: string
+}
+
+/**
+ * Build notification title and body from database notification record
+ */
+function buildNotificationContent(record: WebhookPayload['record']): { title: string; body: string } {
+  const actorLine = record.actor_subway_line || 'Someone'
+  const preview = record.preview_content || 'You have a new notification'
+
+  switch (record.type) {
+    case 'reply_to_post':
+      return {
+        title: `${actorLine} Line replied to your post`,
+        body: preview
+      }
+    case 'reply_to_comment':
+      return {
+        title: `${actorLine} Line replied to your comment`,
+        body: preview
+      }
+    case 'milestone_5':
+      return {
+        title: 'Your post is heating up!',
+        body: 'Your post reached 5 upvotes'
+      }
+    case 'milestone_10':
+      return {
+        title: 'Your post is popular!',
+        body: 'Your post reached 10 upvotes'
+      }
+    case 'milestone_25':
+      return {
+        title: 'Your post is trending!',
+        body: 'Your post reached 25 upvotes'
+      }
+    default:
+      return {
+        title: 'New notification',
+        body: preview
+      }
+  }
 }
 
 serve(async (req) => {
@@ -30,15 +91,87 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
-    const payload: NotificationPayload = await req.json()
-    console.log('[SendPush] Received payload:', payload)
+    // Parse request - handle three formats:
+    // 1. Supabase webhook (production): { type, table, record, schema }
+    // 2. Direct JSON (testing): { userId, title, body, ... }
+    // 3. Query params (legacy): ?userId=...&title=...
+    let payload: NotificationPayload
+
+    const url = new URL(req.url)
+    const hasQueryParams = url.searchParams.has('userId')
+
+    // Try to parse as JSON first
+    let bodyData: any
+    try {
+      bodyData = await req.json()
+    } catch {
+      bodyData = null
+    }
+
+    // Check if it's a Supabase webhook payload
+    if (bodyData && bodyData.type && bodyData.table && bodyData.record) {
+      console.log('[SendPush] Received Supabase webhook')
+      const webhookData = bodyData as WebhookPayload
+
+      // Only process INSERT events on notifications table
+      if (webhookData.type !== 'INSERT' || webhookData.table !== 'notifications') {
+        console.log('[SendPush] Ignoring non-INSERT event or wrong table')
+        return new Response(
+          JSON.stringify({ success: true, message: 'Event ignored' }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      const record = webhookData.record
+      const { title, body } = buildNotificationContent(record)
+
+      payload = {
+        userId: record.user_id,
+        title,
+        body,
+        postId: record.post_id,
+        commentId: record.comment_id,
+        notificationId: record.id
+      }
+
+      console.log('[SendPush] Webhook payload parsed:', payload)
+    } else if (hasQueryParams) {
+      // Legacy: Query parameters
+      console.log('[SendPush] Received webhook via query params')
+      payload = {
+        userId: url.searchParams.get('userId') || '',
+        title: url.searchParams.get('title') || '',
+        body: url.searchParams.get('body') || '',
+        postId: url.searchParams.get('postId') || undefined,
+        commentId: url.searchParams.get('commentId') || undefined,
+        notificationId: url.searchParams.get('notificationId') || undefined
+      }
+    } else if (bodyData && bodyData.userId) {
+      // Direct API call with JSON body
+      console.log('[SendPush] Received direct API call via JSON body')
+      payload = bodyData as NotificationPayload
+    } else {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid request format. Expected webhook payload, JSON body, or query params'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('[SendPush] Processing notification for user:', payload.userId)
 
     const { userId, title, body, postId, commentId, notificationId } = payload
 
     if (!userId || !title || !body) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: userId, title, body' }),
+        JSON.stringify({ error: 'Missing required fields: userId, title, body', receivedPayload: payload }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

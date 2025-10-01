@@ -247,13 +247,28 @@ SELECT * FROM net._http_response ORDER BY created DESC LIMIT 1;
 
 ### For Production
 
-- [ ] Apply migration `20251001020000_fix_push_notification_system.sql`
-- [ ] Configure edge_function_config table with production URLs
-- [ ] Deploy updated service worker (`npm run build`)
-- [ ] Test with real comment on production
-- [ ] Verify push notification received on mobile device
-- [ ] Monitor edge function logs for errors
-- [ ] Check pg_net._http_response for delivery status
+- [x] Apply migration `20251001020000_fix_push_notification_system.sql`
+- [x] Apply migration `20251001030000_configure_production.sql`
+- [x] Configure edge_function_config table with production URLs
+- [x] Deploy updated service worker (`npm run build`)
+- [x] Add PUBLIC_VAPID_KEY to Vercel environment variables
+- [x] Deploy updated edge function with webhook payload support
+- [x] **Configure Database Webhook in Supabase Dashboard:**
+  - Table: notifications
+  - Events: Insert
+  - Type: HTTP Request
+  - URL: https://nacbcypcopzbyxgbiips.supabase.co/functions/v1/send-push-notification
+  - Headers: Authorization (service role), Content-Type
+  - **HTTP Parameters: LEAVE EMPTY** (Supabase auto-sends webhook payload)
+- [x] Test with real comment on production
+- [x] Verify push notification received on mobile device ✅
+
+### Critical Discovery
+
+**Supabase Database Webhooks do NOT support template variables like `{{ record.xxx }}`**. Instead:
+- Leave HTTP Parameters empty
+- Supabase automatically sends a structured webhook payload: `{ type, table, record, schema, old_record }`
+- The edge function extracts data from `payload.record`
 
 ### For Local Development
 

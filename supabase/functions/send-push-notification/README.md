@@ -4,7 +4,9 @@ Supabase Edge Function for sending Web Push notifications to YipYap users.
 
 ## Overview
 
-This Edge Function is called automatically by a database trigger when new notifications are created. It fetches push subscriptions for the target user and sends Web Push notifications to all their registered devices.
+This Edge Function is triggered automatically by **Supabase Database Webhooks** when new notifications are created. It fetches push subscriptions for the target user and sends Web Push notifications to all their registered devices.
+
+**Architecture**: Database INSERT → Webhook → Edge Function → Web Push API → User's Device
 
 ## Deployment
 
@@ -31,13 +33,33 @@ Automatically available:
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key (bypasses RLS)
 
-## API
+## Input Formats
 
-### POST /send-push-notification
+The function accepts three payload formats:
 
-Sends push notifications to all devices registered for a user.
+### 1. Supabase Webhook (Production)
 
-**Request Body:**
+Automatically sent by Supabase webhook on notification INSERT:
+
+```json
+{
+  "type": "INSERT",
+  "table": "notifications",
+  "record": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "type": "reply_to_post | reply_to_comment | milestone_*",
+    "actor_subway_line": "A",
+    "preview_content": "Reply text...",
+    "post_id": "uuid",
+    "comment_id": "uuid"
+  }
+}
+```
+
+### 2. Direct JSON (Testing)
+
+For manual testing and development:
 
 ```json
 {
@@ -48,6 +70,12 @@ Sends push notifications to all devices registered for a user.
   "commentId": "uuid (optional)",
   "notificationId": "uuid (optional)"
 }
+```
+
+### 3. Query Parameters (Legacy)
+
+```
+?userId=uuid&title=Title&body=Body&postId=uuid
 ```
 
 **Response:**
@@ -86,9 +114,9 @@ curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/send-push
   }'
 ```
 
-### From Database Trigger
+### From Database Webhook
 
-The function is automatically called by the `trigger_send_push_notification()` database trigger when notifications are inserted.
+The function is automatically called by Supabase Database Webhook when notifications are inserted. Configure webhook in Dashboard: Database → Webhooks → Create webhook on `notifications` table.
 
 ### From Application Code
 
