@@ -174,19 +174,34 @@
 			const scrollX = window.scrollX
 
 			// Store original styles
+			const originalBodyPosition = document.body.style.position
+			const originalBodyTop = document.body.style.top
+			const originalBodyLeft = document.body.style.left
+			const originalBodyWidth = document.body.style.width
 			const originalBodyOverflow = document.body.style.overflow
 			const originalDocumentOverflow = document.documentElement.style.overflow
-			const originalBodyHeight = document.body.style.height
 
-			// Lock scroll with overflow hidden (avoids position fixed layout issues)
+			// iOS-specific: Use position fixed on body for reliable scroll lock
+			document.body.style.position = 'fixed'
+			document.body.style.top = `-${scrollY}px`
+			document.body.style.left = `-${scrollX}px`
+			document.body.style.width = '100%'
 			document.body.style.overflow = 'hidden'
-			document.body.style.height = '100%'
 			document.documentElement.style.overflow = 'hidden'
 
-			// Prevent programmatic scroll attempts
+			// Track if we should ignore scroll events (during keyboard open)
+			let isKeyboardOpening = false
+			let keyboardOpenTimeout: ReturnType<typeof setTimeout> | null = null
+
+			// Prevent programmatic scroll attempts, but allow iOS keyboard scroll
 			const preventScroll = (e: Event) => {
-				// Restore scroll position if it changes
-				window.scrollTo(scrollX, scrollY)
+				// Don't fight iOS during keyboard opening (first 500ms after focus)
+				if (isKeyboardOpening) return
+
+				// Restore scroll position if it changes after keyboard is open
+				if (window.scrollY !== scrollY || window.scrollX !== scrollX) {
+					window.scrollTo(scrollX, scrollY)
+				}
 			}
 
 			// Monitor and prevent any scroll changes
@@ -203,40 +218,47 @@
 			}
 			document.addEventListener('touchmove', preventDocumentTouch, { passive: false })
 
+			// Focus textarea immediately and allow iOS to handle keyboard scroll
+			if (textareaElement) {
+				isKeyboardOpening = true
+
+				// Focus without preventScroll to allow iOS keyboard to work properly
+				requestAnimationFrame(() => {
+					if (textareaElement) {
+						textareaElement.focus()
+					}
+				})
+
+				// After keyboard opening animation completes, re-enable scroll lock
+				keyboardOpenTimeout = setTimeout(() => {
+					isKeyboardOpening = false
+				}, 500)
+			}
+
 			return () => {
+				// Clear keyboard timeout
+				if (keyboardOpenTimeout) {
+					clearTimeout(keyboardOpenTimeout)
+				}
+
 				// Remove event listeners
 				window.removeEventListener('scroll', preventScroll)
 				document.removeEventListener('scroll', preventScroll)
 				document.removeEventListener('touchmove', preventDocumentTouch)
 
 				// Restore original styles
+				document.body.style.position = originalBodyPosition
+				document.body.style.top = originalBodyTop
+				document.body.style.left = originalBodyLeft
+				document.body.style.width = originalBodyWidth
 				document.body.style.overflow = originalBodyOverflow
-				document.body.style.height = originalBodyHeight
 				document.documentElement.style.overflow = originalDocumentOverflow
 
-				// Restore scroll position
-				window.scrollTo(scrollX, scrollY)
+				// Restore scroll position after layout is restored
+				requestAnimationFrame(() => {
+					window.scrollTo(scrollX, scrollY)
+				})
 			}
-		}
-	})
-
-	// Focus the textarea when modal opens
-	// Delayed to ensure scroll lock is applied first and prevent iOS auto-scroll
-	$effect(() => {
-		if ($showComposeModal && textareaElement) {
-			// Delay initial focus until after scroll lock is applied (50ms)
-			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus({ preventScroll: true })
-				}
-			}, 50)
-
-			// Single retry after animation has started (200ms gives enough time for layout)
-			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus({ preventScroll: true })
-				}
-			}, 200)
 		}
 	})
 
@@ -245,9 +267,20 @@
 
 		let viewport: VisualViewport | null = null
 		baselineInnerHeight = browser ? window.innerHeight : 0
+		let rafId: number | null = null
 
+		// Throttled update using requestAnimationFrame to prevent vibration
 		const updateOffset = () => {
-			keyboardOffset = calculateKeyboardOffset(viewport)
+			// Cancel any pending update
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId)
+			}
+
+			// Schedule update on next frame
+			rafId = requestAnimationFrame(() => {
+				keyboardOffset = calculateKeyboardOffset(viewport)
+				rafId = null
+			})
 		}
 
 		if (browser && window.visualViewport) {
@@ -260,6 +293,10 @@
 		window.addEventListener('resize', updateOffset)
 
 		return () => {
+			// Cancel any pending animation frame
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId)
+			}
 			document.removeEventListener('keydown', handleKeydown)
 			if (viewport) {
 				viewport.removeEventListener('resize', updateOffset)
@@ -401,7 +438,7 @@
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none;`}
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; transition: padding-bottom 0.32s cubic-bezier(0.4, 0.0, 0.2, 1); will-change: padding-bottom;`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 	>
 		<!-- Modal content -->
