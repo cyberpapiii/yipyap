@@ -110,12 +110,27 @@
   function beginReply(target?: CommentWithStats | PostWithStats) {
     const threadState = get(thread)
     const post = threadState.post
-    if (!post) return
+    if (!post) {
+      console.error('Cannot reply: Post not found')
+      return
+    }
 
+    // Validate target has required properties
     if (target && 'post_id' in target) {
+      // Replying to a comment
+      if (!target.id || !target.content || !target.anonymous_user) {
+        console.error('Cannot reply: Invalid comment data', target)
+        return
+      }
       composeStore.setupReply(target, 'comment')
     } else {
-      composeStore.setupReply(target ?? post, 'post')
+      // Replying to the post
+      const replyTarget = target ?? post
+      if (!replyTarget.id || !replyTarget.content || !replyTarget.anonymous_user) {
+        console.error('Cannot reply: Invalid post data', replyTarget)
+        return
+      }
+      composeStore.setupReply(replyTarget, 'post')
     }
   }
 
@@ -132,16 +147,25 @@
       throw new Error('Reply cannot be empty.')
     }
 
-    if (replyTo?.type === 'comment') {
-      await api.createCommentOptimistic(
-        { content: contentValue, postId: post.id, parentCommentId: replyTo.id },
-        user
-      )
-    } else {
-      await api.createCommentOptimistic(
-        { content: contentValue, postId: post.id },
-        user
-      )
+    try {
+      if (replyTo?.type === 'comment') {
+        await api.createCommentOptimistic(
+          { content: contentValue, postId: post.id, parentCommentId: replyTo.id },
+          user
+        )
+      } else {
+        await api.createCommentOptimistic(
+          { content: contentValue, postId: post.id },
+          user
+        )
+      }
+    } catch (error: any) {
+      // Check for foreign key violation (post was deleted)
+      if (error?.code === '23503' && error?.details?.includes('post_id')) {
+        throw new Error('This post has been deleted. Redirecting to home...')
+      }
+      // Re-throw other errors
+      throw error
     }
   }
 

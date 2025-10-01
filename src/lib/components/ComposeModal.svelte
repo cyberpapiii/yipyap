@@ -98,7 +98,16 @@
 			if ('vibrate' in navigator) {
 				navigator.vibrate([50, 100, 50])
 			}
-			composeStore.setError(error instanceof Error ? error.message : 'Failed to post')
+			const errorMessage = error instanceof Error ? error.message : 'Failed to post'
+			composeStore.setError(errorMessage)
+
+			// If post was deleted, redirect to home after showing error
+			if (errorMessage.includes('has been deleted')) {
+				setTimeout(() => {
+					composeStore.closeModal()
+					window.location.href = '/'
+				}, 2000)
+			}
 		}
 	}
 
