@@ -63,6 +63,9 @@
 					composeStore.closeModal()
 					showSuccess = false
 					isClosing = false
+					// Reset state after success animation
+					keyboardHeight = 0
+					successPosition = { top: '50%', left: '50%' }
 				}, 800)
 			}, 300)
 		} catch (error) {
@@ -82,6 +85,10 @@
 				composeStore.closeModal()
 				content = ''
 				isClosing = false
+				// Reset keyboard height to prevent positioning issues on next open
+				keyboardHeight = 0
+				// Reset success position to default
+				successPosition = { top: '50%', left: '50%' }
 			}, 250) // Match exit animation duration
 		}
 	}
@@ -105,9 +112,12 @@
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
 
-	// Focus the textarea when modal opens
+	// Focus the textarea when modal opens and reset keyboard height
 	$effect(() => {
 		if ($showComposeModal && textareaElement) {
+			// Reset keyboard height when modal opens (in case of stale state)
+			keyboardHeight = 0
+
 			// Multiple attempts to ensure focus on mobile
 			textareaElement.focus()
 
@@ -133,10 +143,15 @@
 
 		// Handle keyboard visibility
 		function updateKeyboardHeight() {
-			if (window.visualViewport) {
+			// Only update keyboard height if modal is actually open
+			if (window.visualViewport && $showComposeModal) {
 				const viewportHeight = window.visualViewport.height
 				const windowHeight = window.innerHeight
-				keyboardHeight = windowHeight - viewportHeight
+				const newHeight = windowHeight - viewportHeight
+				// Only update if there's meaningful change (avoid micro-adjustments)
+				if (Math.abs(newHeight - keyboardHeight) > 10) {
+					keyboardHeight = newHeight
+				}
 			}
 		}
 
