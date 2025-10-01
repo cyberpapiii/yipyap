@@ -117,7 +117,7 @@
 			opacity,
 			borderColor: depth > 0 ? `hsl(0 0% 20% / ${opacity})` : ''
 		}
-		showNestedReplies = depth < maxDepth
+		// Removed auto-expansion: replies now stay collapsed by default
 	})
 </script>
 
