@@ -67,6 +67,13 @@ export const threadStore = {
 			comments: updateCommentsRecursively(state.comments, commentId, updates)
 		})),
 
+	// Remove a specific comment (for rollback)
+	removeComment: (commentId: string) =>
+		threadState.update(state => ({
+			...state,
+			comments: removeCommentRecursively(state.comments, commentId)
+		})),
+
 	// Update thread post
 	updatePost: (updates: Partial<PostWithStats>) =>
 		threadState.update(state => ({
@@ -112,4 +119,22 @@ function updateCommentsRecursively(
 		}
 		return comment
 	})
+}
+
+// Helper function to remove comments recursively (for rollback)
+function removeCommentRecursively(
+	comments: CommentWithStats[],
+	commentId: string
+): CommentWithStats[] {
+	return comments
+		.filter(comment => comment.id !== commentId)
+		.map(comment => {
+			if (comment.replies && comment.replies.length > 0) {
+				return {
+					...comment,
+					replies: removeCommentRecursively(comment.replies, commentId)
+				}
+			}
+			return comment
+		})
 }

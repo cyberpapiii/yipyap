@@ -542,8 +542,8 @@ function createRealtimeStore() {
         optimisticUpdateManager.rollbackOperation(operationId, (operation) => {
           if (operation.type === 'comment') {
             const commentOp = operation as any
-            // Remove optimistic comment - would need a remove method in thread store
-            console.warn('Comment removal not implemented in thread store')
+            // Remove optimistic comment from thread store
+            threadStore.removeComment(commentOp.data.id)
           }
         })
 
