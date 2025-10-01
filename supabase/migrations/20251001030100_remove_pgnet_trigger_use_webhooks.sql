@@ -20,8 +20,9 @@
 -- 3. Keeps delivery log table for monitoring
 -- ============================================================================
 
--- 1. Drop the old trigger that tried to use pg_net
+-- 1. Drop ALL triggers that depend on the function we're removing
 DROP TRIGGER IF EXISTS trigger_send_push_notification ON notifications;
+DROP TRIGGER IF EXISTS on_notification_created ON notifications;
 
 -- 2. Drop the old function that tried to use pg_net.http_post
 DROP FUNCTION IF EXISTS trigger_send_push_notification();
