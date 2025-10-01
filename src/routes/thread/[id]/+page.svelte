@@ -6,7 +6,7 @@
   import { RefreshCw, ChevronDown } from 'lucide-svelte'
   import PostCard from '$lib/components/PostCard.svelte'
   import CommentCard from '$lib/components/CommentCard.svelte'
-  import { composeStore, threadStore, realtime, anonymousUser as currentUserStore } from '$lib/stores'
+  import { composeStore, showComposeModal, threadStore, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { CommentWithStats, ComposeState, PostWithStats } from '$lib/types'
   import { supabase } from '$lib/supabase'
@@ -307,7 +307,7 @@
 <div
   bind:this={threadContainer}
   class="min-h-screen bg-background overscroll-y-none"
-  style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
+  style:transform={$showComposeModal ? '' : `translateY(${pullToRefreshY * 0.3}px)`}
   style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
 >
   <!-- Pull to refresh indicator - Page elements layer: z-1-99 -->
