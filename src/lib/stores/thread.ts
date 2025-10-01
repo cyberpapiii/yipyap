@@ -49,8 +49,8 @@ export const threadStore = {
 	// Add single comment (with duplicate prevention and proper nesting)
 	addComment: (comment: CommentWithStats) =>
 		threadState.update(state => {
-			// Check if comment already exists (prevent duplicates from realtime events)
-			const exists = state.comments.some(c => c.id === comment.id)
+			// Check if comment already exists in top-level OR nested replies (prevent duplicates)
+			const exists = commentExistsRecursively(state.comments, comment.id)
 			if (exists) {
 				return state
 			}
@@ -147,6 +147,24 @@ function removeCommentRecursively(
 			}
 			return comment
 		})
+}
+
+// Helper function to check if comment exists recursively (including nested replies)
+function commentExistsRecursively(
+	comments: CommentWithStats[],
+	commentId: string
+): boolean {
+	for (const comment of comments) {
+		if (comment.id === commentId) {
+			return true
+		}
+		if (comment.replies && comment.replies.length > 0) {
+			if (commentExistsRecursively(comment.replies, commentId)) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Helper function to add a comment to its parent's replies array
