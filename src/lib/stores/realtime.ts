@@ -140,7 +140,7 @@ function createRealtimeStore() {
      */
     async subscribeToFeed(feedType: FeedType): Promise<void> {
       if (!feedSubscriptionManager || !get(state).isInitialized) {
-        console.warn('Cannot subscribe to feed - real-time not initialized')
+        console.debug('Skipping feed subscription until real-time initializes')
         return
       }
 
