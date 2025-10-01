@@ -112,46 +112,47 @@
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
 
-	// Focus the textarea when modal opens and reset keyboard height
+	// Focus the textarea when modal opens - delayed to prevent jerky animation
 	$effect(() => {
 		if ($showComposeModal && textareaElement) {
-			// Reset keyboard height when modal opens (in case of stale state)
-			keyboardHeight = 0
+			// Don't reset keyboard height to 0 - keep previous value for smooth transition
+			// Only reset when modal is actually closed (see handleClose)
 
-			// Multiple attempts to ensure focus on mobile
-			textareaElement.focus()
-
-			// Try again after animation starts
+			// Delay focus until after initial animation starts (300ms)
+			// This prevents the keyboard from opening during the slide-in animation
 			setTimeout(() => {
-				if (textareaElement) {
+				if (textareaElement && $showComposeModal) {
+					textareaElement.focus()
+				}
+			}, 300)
+
+			// Second attempt for stubborn mobile keyboards
+			setTimeout(() => {
+				if (textareaElement && $showComposeModal) {
 					textareaElement.focus()
 					textareaElement.click()
 				}
-			}, 150)
-
-			// Final attempt after animation completes
-			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus()
-				}
-			}, 450)
+			}, 500)
 		}
 	})
 
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
 
-		// Handle keyboard visibility
+		// Handle keyboard visibility with smooth animation
 		function updateKeyboardHeight() {
 			// Only update keyboard height if modal is actually open
 			if (window.visualViewport && $showComposeModal) {
-				const viewportHeight = window.visualViewport.height
-				const windowHeight = window.innerHeight
-				const newHeight = windowHeight - viewportHeight
-				// Only update if there's meaningful change (avoid micro-adjustments)
-				if (Math.abs(newHeight - keyboardHeight) > 10) {
-					keyboardHeight = newHeight
-				}
+				requestAnimationFrame(() => {
+					if (!window.visualViewport) return
+					const viewportHeight = window.visualViewport.height
+					const windowHeight = window.innerHeight
+					const newHeight = Math.max(0, windowHeight - viewportHeight)
+					// Only update if there's meaningful change (avoid micro-adjustments)
+					if (Math.abs(newHeight - keyboardHeight) > 10) {
+						keyboardHeight = newHeight
+					}
+				})
 			}
 		}
 
@@ -284,7 +285,7 @@
 		onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && handleClose()}
 	>
 		<!-- Modal content -->
-		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); transform: translateY(-{keyboardHeight / 2}px); transition: transform 0.2s ease-out;">
+		<div class="rounded-2xl w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl {isClosing ? 'modal-exit' : 'modal-enter'}" style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); transform: translateY(-{keyboardHeight / 2}px); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4">
 				<h2 class="text-2xl font-bold">
