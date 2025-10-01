@@ -57,19 +57,20 @@
 	<div style="display: contents">%sveltekit.body%</div>
 
 	<script>
-		// PWA install prompt handling
-    // Clean up any legacy service workers (e.g., /sw.js from older setup)
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (const reg of regs) {
-          // If an old worker with a different filename is controlling, unregister it
-          if (reg.active && reg.active.scriptURL.endsWith('/sw.js')) {
-            reg.unregister().catch(() => {})
-          }
-        }
-      }).catch(() => {})
-    }
+		// Register service worker for push notifications
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('/service-worker.js')
+					.then(registration => {
+						console.log('Service Worker registered:', registration.scope)
+					})
+					.catch(error => {
+						console.error('Service Worker registration failed:', error)
+					})
+			})
+		}
 
+		// PWA install prompt handling
 		let deferredPrompt;
 		window.addEventListener('beforeinstallprompt', (e) => {
 			e.preventDefault();
