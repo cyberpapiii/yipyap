@@ -18,6 +18,29 @@
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
+	let keyboardOffset = $state(0)
+	let baselineInnerHeight = 0
+	const KEYBOARD_THRESHOLD = 120
+
+	function calculateKeyboardOffset(viewport?: VisualViewport | null) {
+		if (!browser) return 0
+		const target = viewport ?? (browser ? window.visualViewport : null)
+		if (!target) return 0
+		const diff = window.innerHeight - target.height - target.offsetTop
+		if (diff > KEYBOARD_THRESHOLD) {
+			return diff
+		}
+
+		// Fallback when the keyboard causes innerHeight to shrink but no visual viewport diff
+		if (!baselineInnerHeight) {
+			baselineInnerHeight = window.innerHeight
+		}
+		if (window.innerHeight > baselineInnerHeight) {
+			baselineInnerHeight = window.innerHeight
+		}
+		const fallbackDiff = baselineInnerHeight - window.innerHeight
+		return fallbackDiff > KEYBOARD_THRESHOLD ? fallbackDiff : 0
+	}
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -104,6 +127,14 @@
 	const charCount = $derived.by(() => content.length)
 	const isOverLimit = $derived.by(() => charCount > maxLength)
 	const canSubmit = $derived.by(() => content.trim().length > 0 && !isOverLimit && !$composeState.isSubmitting)
+	const submitLabel = $derived.by(() => ($composeState.replyTo ? 'Reply' : 'Post'))
+	const submittingLabel = $derived.by(() => ($composeState.replyTo ? 'Replying...' : 'Posting...'))
+	const replyIdentityLabel = $derived.by(() => {
+		const replyTo = $composeState.replyTo
+		if (!replyTo) return ''
+		const line = replyTo.author?.subway_line
+		return line ? `${line} Anonymous` : 'Anonymous'
+	})
 
 	// Focus the textarea when modal opens
 	$effect(() => {
@@ -131,9 +162,34 @@
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
 
+		let viewport: VisualViewport | null = null
+		baselineInnerHeight = browser ? window.innerHeight : 0
+
+		const updateOffset = () => {
+			keyboardOffset = calculateKeyboardOffset(viewport)
+		}
+
+		if (browser && window.visualViewport) {
+			viewport = window.visualViewport
+			viewport.addEventListener('resize', updateOffset)
+			viewport.addEventListener('scroll', updateOffset)
+			updateOffset()
+		}
+
+		window.addEventListener('resize', updateOffset)
+
 		return () => {
 			document.removeEventListener('keydown', handleKeydown)
+			if (viewport) {
+				viewport.removeEventListener('resize', updateOffset)
+				viewport.removeEventListener('scroll', updateOffset)
+			}
+			window.removeEventListener('resize', updateOffset)
 		}
+	})
+
+	$effect(() => {
+		keyboardOffset = $showComposeModal ? calculateKeyboardOffset() : 0
 	})
 
 	// Update content when it changes
@@ -244,8 +300,8 @@
 {#if $showComposeModal}
 	<!-- Modal overlay -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 pb-0 {isClosing ? 'modal-overlay-exit' : ''}"
-		style="z-index: 100;"
+		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		style={`z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px);`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 		role="button"
 		tabindex="0"
@@ -253,7 +309,7 @@
 	>
 		<!-- Modal content -->
 		<div
-			class="w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			class="w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
 			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 			role="dialog"
 			tabindex="-1"
@@ -280,7 +336,7 @@
 						<AnonymousAvatar user={$composeState.replyTo.author} size="sm" />
 						<div class="flex-1 min-w-0">
 							<p class="text-sm text-muted-foreground mb-1">
-								Replying to {$composeState.replyTo.author.emoji} Anonymous
+								Replying to {replyIdentityLabel}
 							</p>
 							<p class="text-sm text-foreground line-clamp-2 selectable">
 								{$composeState.replyTo.content}
@@ -291,9 +347,9 @@
 			{/if}
 
 			<!-- Form -->
-			<form onsubmit={handleSubmit} class="flex-1 flex flex-col">
+			<form onsubmit={handleSubmit} class="flex-1 flex flex-col overflow-hidden">
 				<!-- Textarea -->
-				<div class="flex-1 p-4">
+				<div class="flex-1 p-4 overflow-y-auto">
 					<textarea
 						bind:this={textareaElement}
 						bind:value={content}
@@ -306,7 +362,7 @@
 				</div>
 
 				<!-- Footer -->
-				<div class="p-4">
+				<div class="p-4" style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)">
 					<!-- Error message -->
 					{#if $composeState.error}
 						<div class="mb-3 p-3 bg-destructive/10 rounded-xl text-sm text-destructive" style="border: 1px solid rgba(220, 38, 38, 0.2);">
@@ -327,10 +383,10 @@
 							>
 								{#if $composeState.isSubmitting}
 									<Loader2 size={18} class="animate-spin" />
-									<span>Posting...</span>
+									<span>{submittingLabel}</span>
 								{:else}
 									<Send size={18} />
-									<span>Post</span>
+									<span>{submitLabel}</span>
 								{/if}
 							</Button>
 						</div>
