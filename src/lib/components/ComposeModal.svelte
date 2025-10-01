@@ -288,8 +288,8 @@
 
 	<!-- Modal content - independently positioned at bottom, pushed up by keyboard -->
 	<div
-		class="fixed left-0 right-0 mx-auto w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-t-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-		style="z-index: 101; bottom: {keyboardHeight}px; background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); border-bottom: none; padding-bottom: env(safe-area-inset-bottom);"
+		class="fixed left-0 right-0 mx-auto w-full max-w-lg max-h-[70vh] flex flex-col shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+		style="z-index: 101; bottom: {keyboardHeight}px; background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom);"
 		onclick={(e) => e.stopPropagation()}
 		role="dialog"
 		tabindex="-1"
