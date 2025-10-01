@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
 	import { X, Send, Loader2 } from 'lucide-svelte'
-	import { onMount } from 'svelte'
+	import { onMount, tick } from 'svelte'
 	import AnonymousAvatar from './AnonymousAvatar.svelte'
 	import { Button } from '$lib/components/ui'
 	import { composeStore, showComposeModal, composeState } from '$lib/stores'
@@ -218,28 +218,16 @@
 			}
 			document.addEventListener('touchmove', preventDocumentTouch, { passive: false })
 
-			// Focus textarea immediately and allow iOS to handle keyboard scroll
-			if (textareaElement) {
-				isKeyboardOpening = true
-
-				// Focus without preventScroll to allow iOS keyboard to work properly
-				requestAnimationFrame(() => {
-					if (textareaElement) {
-						textareaElement.focus()
-					}
-				})
-
-				// After keyboard opening animation completes, re-enable scroll lock
-				keyboardOpenTimeout = setTimeout(() => {
-					isKeyboardOpening = false
-				}, 500)
-			}
+			// Focus textarea on the next DOM update cycle.
+			// This ensures the element is rendered and focusable.
+			// Using { preventScroll: true } is critical to stop iOS from scrolling the background page.
+			tick().then(() => {
+				if (textareaElement) {
+					textareaElement.focus({ preventScroll: true })
+				}
+			})
 
 			return () => {
-				// Clear keyboard timeout
-				if (keyboardOpenTimeout) {
-					clearTimeout(keyboardOpenTimeout)
-				}
 
 				// Remove event listeners
 				window.removeEventListener('scroll', preventScroll)
@@ -438,7 +426,7 @@
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; transition: padding-bottom 0.32s cubic-bezier(0.4, 0.0, 0.2, 1); will-change: padding-bottom;`}
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom;`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 	>
 		<!-- Modal content -->
