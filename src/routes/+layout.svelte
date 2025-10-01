@@ -48,10 +48,19 @@
       return
     }
 
-    if (replyTo) {
-      await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
-    } else {
-      await api.createPostOptimistic({ content }, user)
+    try {
+      if (replyTo) {
+        await api.createCommentOptimistic({ content, postId: replyTo.id, parentCommentId: null }, user)
+      } else {
+        await api.createPostOptimistic({ content }, user)
+      }
+    } catch (error: any) {
+      // Check for foreign key violation (post was deleted)
+      if (error?.code === '23503' && error?.details?.includes('post_id')) {
+        throw new Error('This post has been deleted. Redirecting to home...')
+      }
+      // Re-throw other errors
+      throw error
     }
   }
 
