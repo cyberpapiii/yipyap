@@ -177,3 +177,77 @@ async function precacheUrls(urls) {
     await cache.addAll(urls);
   } catch (error) {}
 }
+
+// Push notification event - Display notification when received
+self.addEventListener('push', (event) => {
+  console.log('[Service Worker] Push notification received:', event);
+
+  let notificationData = {
+    title: 'YipYap',
+    body: 'You have a new notification',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: 'default',
+    requireInteraction: false,
+    data: { url: '/' }
+  };
+
+  // Parse push data if available
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        tag: data.tag || notificationData.tag,
+        requireInteraction: data.requireInteraction || false,
+        data: data.data || notificationData.data,
+        timestamp: data.timestamp || Date.now()
+      };
+    } catch (error) {
+      console.error('[Service Worker] Error parsing push data:', error);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      requireInteraction: notificationData.requireInteraction,
+      data: notificationData.data,
+      timestamp: notificationData.timestamp,
+      vibrate: [200, 100, 200] // Vibration pattern
+    })
+  );
+});
+
+// Notification click event - Handle when user clicks notification
+self.addEventListener('notificationclick', (event) => {
+  console.log('[Service Worker] Notification clicked:', event.notification.tag);
+
+  event.notification.close();
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((windowClients) => {
+      // Check if there's already a window open
+      for (const client of windowClients) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});

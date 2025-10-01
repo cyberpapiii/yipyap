@@ -18,7 +18,7 @@ const { subscribe, update } = writable<Notification[]>([])
 // Auto-remove timeout handlers
 const timeoutHandlers = new Map<string, NodeJS.Timeout>()
 
-export const notifications = {
+export const toastNotifications = {
   subscribe,
 
   // Add a notification
@@ -35,7 +35,7 @@ export const notifications = {
     // Auto-remove after duration (unless duration is 0)
     if (fullNotification.duration && fullNotification.duration > 0) {
       const timeout = setTimeout(() => {
-        notifications.remove(id)
+        toastNotifications.remove(id)
       }, fullNotification.duration)
 
       timeoutHandlers.set(id, timeout)
@@ -69,22 +69,22 @@ export const notifications = {
 
   // Convenience methods for different types
   success: (title: string, message?: string, options?: Partial<Notification>) =>
-    notifications.add({ type: 'success', title, message, ...options }),
+    toastNotifications.add({ type: 'success', title, message, ...options }),
 
   error: (title: string, message?: string, options?: Partial<Notification>) =>
-    notifications.add({ type: 'error', title, message, duration: 8000, ...options }),
+    toastNotifications.add({ type: 'error', title, message, duration: 8000, ...options }),
 
   warning: (title: string, message?: string, options?: Partial<Notification>) =>
-    notifications.add({ type: 'warning', title, message, ...options }),
+    toastNotifications.add({ type: 'warning', title, message, ...options }),
 
   info: (title: string, message?: string, options?: Partial<Notification>) =>
-    notifications.add({ type: 'info', title, message, ...options })
+    toastNotifications.add({ type: 'info', title, message, ...options })
 }
 
 // Export for voting service integration
 export const voteNotifications = {
   voteFailed: (error: string) => {
-    notifications.error(
+    toastNotifications.error(
       'Vote Failed',
       `Your vote could not be saved: ${error}`,
       {
@@ -102,7 +102,7 @@ export const voteNotifications = {
 
   voteSuccess: (voteType: 'up' | 'down', itemType: 'post' | 'comment') => {
     const action = voteType === 'up' ? 'upvoted' : 'downvoted'
-    notifications.success(
+    toastNotifications.success(
       `${itemType === 'post' ? 'Post' : 'Comment'} ${action}`,
       undefined,
       { duration: 2000 }
@@ -110,7 +110,7 @@ export const voteNotifications = {
   },
 
   networkError: () => {
-    notifications.error(
+    toastNotifications.error(
       'Connection Issue',
       'Please check your internet connection and try again',
       {

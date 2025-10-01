@@ -3,7 +3,7 @@
 	import type { VoteButtonsProps } from '$lib/types'
 	import { tv } from 'tailwind-variants'
 	import { onMount } from 'svelte'
-	import { voteNotifications } from '$lib/services/notifications'
+	import { voteNotifications } from '$lib/services/toastNotifications'
 
 	let {
 		voteScore,
