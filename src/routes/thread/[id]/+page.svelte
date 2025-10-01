@@ -240,6 +240,8 @@
   }
 
   function handleTouchStart(e: TouchEvent) {
+    // Disable pull-to-refresh when compose modal is open
+    if ($showComposeModal) return
     if ($thread.loading || refreshing) return
     if (e.touches.length !== 1) return
 
@@ -250,6 +252,11 @@
   }
 
   function handleTouchMove(e: TouchEvent) {
+    // Disable pull-to-refresh when compose modal is open
+    if ($showComposeModal) {
+      resetPullState()
+      return
+    }
     if (e.touches.length !== 1) return
     currentY = e.touches[0].clientY
     const deltaY = currentY - startY
@@ -284,6 +291,11 @@
   }
 
   function handleTouchEnd() {
+    // Disable pull-to-refresh when compose modal is open
+    if ($showComposeModal) {
+      resetPullState()
+      return
+    }
     if (!isPulling) return
 
     isPulling = false
@@ -298,6 +310,13 @@
   function handleTouchCancel() {
     resetPullState()
   }
+
+  // Reset pull-to-refresh state whenever compose modal opens
+  $effect(() => {
+    if ($showComposeModal) {
+      resetPullState()
+    }
+  })
 </script>
 
 <svelte:head>

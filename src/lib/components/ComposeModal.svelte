@@ -142,16 +142,79 @@
 		return line ? `${line} Anonymous` : 'Anonymous'
 	})
 
+	// Lock body scroll when modal is open to prevent iOS scroll-to-focus behavior
+	// Uses overflow hidden instead of position fixed to avoid layout shifts
+	$effect(() => {
+		if (!browser) return
+
+		if ($showComposeModal) {
+			// Store the current scroll position
+			const scrollY = window.scrollY
+			const scrollX = window.scrollX
+
+			// Store original styles
+			const originalBodyOverflow = document.body.style.overflow
+			const originalDocumentOverflow = document.documentElement.style.overflow
+			const originalBodyHeight = document.body.style.height
+
+			// Lock scroll with overflow hidden (avoids position fixed layout issues)
+			document.body.style.overflow = 'hidden'
+			document.body.style.height = '100%'
+			document.documentElement.style.overflow = 'hidden'
+
+			// Prevent programmatic scroll attempts
+			const preventScroll = (e: Event) => {
+				// Restore scroll position if it changes
+				window.scrollTo(scrollX, scrollY)
+			}
+
+			// Monitor and prevent any scroll changes
+			window.addEventListener('scroll', preventScroll, { passive: true })
+			document.addEventListener('scroll', preventScroll, { passive: true })
+
+			// Also block touchmove on the document (but allow it on the modal)
+			const preventDocumentTouch = (e: TouchEvent) => {
+				// Only prevent if touching outside the modal
+				const target = e.target as HTMLElement
+				if (!target.closest('[role="dialog"]')) {
+					e.preventDefault()
+				}
+			}
+			document.addEventListener('touchmove', preventDocumentTouch, { passive: false })
+
+			return () => {
+				// Remove event listeners
+				window.removeEventListener('scroll', preventScroll)
+				document.removeEventListener('scroll', preventScroll)
+				document.removeEventListener('touchmove', preventDocumentTouch)
+
+				// Restore original styles
+				document.body.style.overflow = originalBodyOverflow
+				document.body.style.height = originalBodyHeight
+				document.documentElement.style.overflow = originalDocumentOverflow
+
+				// Restore scroll position
+				window.scrollTo(scrollX, scrollY)
+			}
+		}
+	})
+
 	// Focus the textarea when modal opens
-	// Simplified: Initial focus + single retry instead of three attempts
+	// Delayed to ensure scroll lock is applied first and prevent iOS auto-scroll
 	$effect(() => {
 		if ($showComposeModal && textareaElement) {
-			// Initial focus attempt
-			textareaElement.focus()
+			// Delay initial focus until after scroll lock is applied (50ms)
+			setTimeout(() => {
+				if (textareaElement) {
+					textareaElement.focus({ preventScroll: true })
+				}
+			}, 50)
 
 			// Single retry after animation has started (200ms gives enough time for layout)
 			setTimeout(() => {
-				textareaElement?.focus()
+				if (textareaElement) {
+					textareaElement.focus({ preventScroll: true })
+				}
 			}, 200)
 		}
 	})
@@ -317,7 +380,7 @@
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px);`}
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none;`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 	>
 		<!-- Modal content -->
