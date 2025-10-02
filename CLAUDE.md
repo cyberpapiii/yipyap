@@ -290,11 +290,17 @@ onDestroy(() => {
 
 ### Optimistic Voting
 ```typescript
-import { voteOnPost } from '$lib/services/voting'
+import { createRealtimeAPI } from '$lib/api/realtime'
+import { supabase } from '$lib/supabase'
+import { get } from 'svelte/store'
+import { currentUser } from '$lib/stores/auth'
+
+const api = createRealtimeAPI(supabase)
+const user = get(currentUser)
 
 async function handleVote(postId: string, newVote: 'up' | 'down' | null) {
-  await voteOnPost(postId, newVote, currentUser, feedStore)
-  // Optimistic update happens immediately
+  await api.voteOnPostOptimistic(postId, newVote, user)
+  // Optimistic update happens immediately via realtime store
   // Rollback on error with toast notification
 }
 ```
