@@ -160,6 +160,15 @@ function createRealtimeStore() {
         (newPost: PostWithStats) => {
           console.log(`New ${feedType} post received:`, newPost.id)
 
+          // Check if post already exists (from optimistic update)
+          const currentPosts = get(feedStore)
+          const postExists = currentPosts.posts.some(p => p.id === newPost.id)
+
+          if (postExists) {
+            console.log(`Post ${newPost.id} already exists, skipping duplicate`)
+            return
+          }
+
           // Check if post belongs to current community filter
           const currentCommunity = get(communityStore).selectedCommunity
           const postBelongsToCommunity = isLineInCommunity(

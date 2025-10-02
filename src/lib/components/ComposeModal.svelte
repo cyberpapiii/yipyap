@@ -67,6 +67,9 @@
 		try {
 			await onSubmit(content.trim(), $composeState.replyTo)
 
+			// Reset submitting state immediately after success
+			composeStore.setSubmitting(false)
+
 			// Success haptic feedback
 			if ('vibrate' in navigator) {
 				navigator.vibrate([10, 50, 10])
