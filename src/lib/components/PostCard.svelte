@@ -6,6 +6,11 @@
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { goto } from '$app/navigation'
 	import { onMount } from 'svelte'
+	import { currentUser } from '$lib/stores/auth'
+
+	// Admin user ID
+	const ADMIN_USER_ID = '784e1453-e77f-491c-ad61-d76c3f1d0f2d'
+	const isAdmin = $derived($currentUser?.id === ADMIN_USER_ID)
 
 	// Enhanced interaction state
 	let cardElement: HTMLElement
@@ -263,7 +268,7 @@
 							"
 							role="menu"
 						>
-							{#if post.is_user_post && onDelete}
+							{#if (post.is_user_post || isAdmin) && onDelete}
 								<button
 									class="
 										w-full px-3 py-2 text-left text-sm

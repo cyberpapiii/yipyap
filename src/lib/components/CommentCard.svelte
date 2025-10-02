@@ -5,6 +5,11 @@
 	import AnonymousAvatar from './AnonymousAvatar.svelte'
 	import type { CommentCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
+	import { currentUser } from '$lib/stores/auth'
+
+	// Admin user ID
+	const ADMIN_USER_ID = '784e1453-e77f-491c-ad61-d76c3f1d0f2d'
+	const isAdmin = $derived($currentUser?.id === ADMIN_USER_ID)
 
 	let {
 		comment,
@@ -191,7 +196,7 @@
 								"
 								role="menu"
 							>
-								{#if comment.is_user_comment && onDelete}
+								{#if (comment.is_user_comment || isAdmin) && onDelete}
 									<button
 										class="
 											w-full px-3 py-2 text-left text-sm
