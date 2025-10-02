@@ -532,7 +532,7 @@
 				</div>
 
 				<!-- Footer -->
-				<div class="p-4" style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)">
+				<div class="px-4 pt-4 pb-4">
 					<!-- Error message -->
 					{#if $composeState.error}
 						<div class="mb-3 p-3 bg-destructive/10 rounded-xl text-sm text-destructive" style="border: 1px solid rgba(220, 38, 38, 0.2);">
