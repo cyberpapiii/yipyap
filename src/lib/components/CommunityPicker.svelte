@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
 	import { Check, X } from 'lucide-svelte'
 	import type { CommunityType } from '$lib/types'
 	import { getAllCommunities, getCommunity } from '$lib/config/communities'
@@ -50,10 +49,26 @@
 		}
 	}
 
-	onMount(() => {
+	// Lock body scroll when picker is open
+	$effect(() => {
 		if (isOpen) {
+			// Store original overflow
+			const originalBodyOverflow = document.body.style.overflow
+			const originalDocumentOverflow = document.documentElement.style.overflow
+
+			// Lock scroll
+			document.body.style.overflow = 'hidden'
+			document.documentElement.style.overflow = 'hidden'
+
+			// Add keydown listener
 			document.addEventListener('keydown', handleKeydown)
+
 			return () => {
+				// Restore scroll
+				document.body.style.overflow = originalBodyOverflow
+				document.documentElement.style.overflow = originalDocumentOverflow
+
+				// Remove listener
 				document.removeEventListener('keydown', handleKeydown)
 			}
 		}
@@ -141,7 +156,10 @@
 			</div>
 
 			<!-- Communities list -->
-			<div class="p-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+			<div
+				class="p-4 overflow-y-auto custom-scrollbar flex-1 min-h-0"
+				style="overscroll-behavior: contain; -webkit-overflow-scrolling: touch;"
+			>
 				<div class="space-y-2">
 					{#each communities as community}
 						{@const isSelected = community.id === selectedCommunity}
