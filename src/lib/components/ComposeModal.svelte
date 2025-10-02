@@ -108,6 +108,11 @@
 					window.location.href = '/'
 				}, 2000)
 			}
+		} finally {
+			// Only reset submitting state if an error occurred and we are not already closing
+			if ($composeState.error && !isClosing) {
+				composeStore.setSubmitting(false)
+			}
 		}
 	}
 
