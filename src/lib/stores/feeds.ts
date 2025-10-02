@@ -62,6 +62,18 @@ function createFeedStore() {
 
 		// Replace a post with new data while preserving position
 			replacePost: (postId: string, newPost: PostWithStats) => update(state => {
+			// Check if the new post already exists (race condition with realtime)
+			const newPostExists = state.posts.some(p => p.id === newPost.id)
+
+			if (newPostExists) {
+				// New post already added by realtime, just remove the old one
+				return {
+					...state,
+					posts: state.posts.filter(post => post.id !== postId)
+				}
+			}
+
+			// Replace the old post with the new one
 			let replaced = false
 			const posts = state.posts.map(post => {
 				if (post.id === postId) {
@@ -72,6 +84,7 @@ function createFeedStore() {
 			})
 
 			if (!replaced) {
+				// Old post not found, add new post to top
 				return {
 					...state,
 					posts: [newPost, ...state.posts]

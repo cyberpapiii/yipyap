@@ -29,6 +29,10 @@
 	let baselineInnerHeight = 0
 	const KEYBOARD_THRESHOLD = 120
 
+	// Track pending timeouts for cleanup
+	let pendingSuccessTimeout: ReturnType<typeof setTimeout> | null = null
+	let pendingAnimationTimeout: ReturnType<typeof setTimeout> | null = null
+
 	function calculateKeyboardOffset(viewport?: VisualViewport | null) {
 		if (!browser) return 0
 		const target = viewport ?? (browser ? window.visualViewport : null)
@@ -67,9 +71,6 @@
 		try {
 			await onSubmit(content.trim(), $composeState.replyTo)
 
-			// Reset submitting state immediately after success
-			composeStore.setSubmitting(false)
-
 			// Success haptic feedback
 			if ('vibrate' in navigator) {
 				navigator.vibrate([10, 50, 10])
@@ -84,25 +85,46 @@
 				}
 			}
 
+			// Reset submitting state BEFORE starting close animation
+			composeStore.setSubmitting(false)
+
 			// Trigger success sequence with timing constants
 			isClosing = true
-			setTimeout(() => {
+			pendingSuccessTimeout = setTimeout(() => {
 				showSuccess = true
-				setTimeout(() => {
+				pendingAnimationTimeout = setTimeout(() => {
 					content = ''
 					composeStore.closeModal()
 					showSuccess = false
 					isClosing = false
 					successPosition = { top: '50%', left: '50%' }
+					pendingSuccessTimeout = null
+					pendingAnimationTimeout = null
 				}, SUCCESS_ANIMATION_DURATION_MS)
 			}, SUCCESS_DELAY_MS)
 		} catch (error) {
+			// Clean up any pending timeouts
+			if (pendingSuccessTimeout) {
+				clearTimeout(pendingSuccessTimeout)
+				pendingSuccessTimeout = null
+			}
+			if (pendingAnimationTimeout) {
+				clearTimeout(pendingAnimationTimeout)
+				pendingAnimationTimeout = null
+			}
+
+			// Reset animation state
+			isClosing = false
+			showSuccess = false
+
 			// Error haptic feedback
 			if ('vibrate' in navigator) {
 				navigator.vibrate([50, 100, 50])
 			}
+
 			const errorMessage = error instanceof Error ? error.message : 'Failed to post'
 			composeStore.setError(errorMessage)
+			composeStore.setSubmitting(false)
 
 			// If post was deleted, redirect to home after showing error
 			if (errorMessage.includes('has been deleted')) {
@@ -111,17 +133,25 @@
 					window.location.href = '/'
 				}, 2000)
 			}
-		} finally {
-			// Only reset submitting state if an error occurred and we are not already closing
-			if ($composeState.error && !isClosing) {
-				composeStore.setSubmitting(false)
-			}
 		}
 	}
 
 	// Handle close
 	function handleClose() {
 		if (!$composeState.isSubmitting && !isClosing) {
+			// Clean up any pending success animations
+			if (pendingSuccessTimeout) {
+				clearTimeout(pendingSuccessTimeout)
+				pendingSuccessTimeout = null
+			}
+			if (pendingAnimationTimeout) {
+				clearTimeout(pendingAnimationTimeout)
+				pendingAnimationTimeout = null
+			}
+
+			// Reset animation state
+			showSuccess = false
+
 			isClosing = true
 			setTimeout(() => {
 				composeStore.closeModal()
@@ -293,6 +323,15 @@
 			if (rafId !== null) {
 				cancelAnimationFrame(rafId)
 			}
+
+			// Clean up pending timeouts
+			if (pendingSuccessTimeout) {
+				clearTimeout(pendingSuccessTimeout)
+			}
+			if (pendingAnimationTimeout) {
+				clearTimeout(pendingAnimationTimeout)
+			}
+
 			document.removeEventListener('keydown', handleKeydown)
 			if (viewport) {
 				viewport.removeEventListener('resize', updateOffset)
