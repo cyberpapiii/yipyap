@@ -2,6 +2,7 @@ import { browser } from '$app/environment'
 import type { AnonymousUser, AnonymousEmoji, AnonymousColor } from '$lib/types'
 import { get } from 'svelte/store'
 import { authStore, currentUser } from '$lib/stores'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Anonymous authentication utilities for YipYap
@@ -172,7 +173,7 @@ export async function initializeAuth(): Promise<AnonymousUser | null> {
 /**
  * Refresh anonymous user from server
  */
-export async function refreshAnonymousUser(supabase: any): Promise<AnonymousUser | null> {
+export async function refreshAnonymousUser(supabase: SupabaseClient): Promise<AnonymousUser | null> {
 	try {
 		const deviceId = getDeviceId()
 		if (!deviceId) return null
@@ -199,7 +200,7 @@ export async function refreshAnonymousUser(supabase: any): Promise<AnonymousUser
 /**
  * Ensure an anonymous user exists for this device, creating one if needed.
  */
-export async function ensureAnonymousUser(supabase: any): Promise<AnonymousUser | null> {
+export async function ensureAnonymousUser(supabase: SupabaseClient): Promise<AnonymousUser | null> {
 	const existing = get(currentUser)
 	if (existing) {
 		return existing
@@ -210,7 +211,7 @@ export async function ensureAnonymousUser(supabase: any): Promise<AnonymousUser 
 		return null
 	}
 
-	const { data, error } = await (supabase as any).rpc('get_or_create_user', {
+	const { data, error } = await supabase.rpc('get_or_create_user', {
 		device_id_param: device
 	})
 
@@ -233,7 +234,7 @@ export async function ensureAnonymousUser(supabase: any): Promise<AnonymousUser 
  * Update anonymous user identity (emoji/color)
  */
 export async function updateAnonymousIdentity(
-	supabase: any,
+	supabase: SupabaseClient,
 	emoji?: AnonymousEmoji,
 	color?: AnonymousColor
 ): Promise<AnonymousUser | null> {

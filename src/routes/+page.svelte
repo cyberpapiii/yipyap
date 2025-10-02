@@ -196,8 +196,6 @@
 
   async function onDelete(postId: string) {
     const user = get(cu)
-    console.log('onDelete called with postId:', postId)
-    console.log('Current user:', user)
 
     if (!user) {
       console.error('No user found!')
@@ -205,13 +203,10 @@
     }
 
     try {
-      console.log('Calling api.deletePost...')
       await api.deletePost(postId, user)
-      console.log('Delete API call successful')
 
       // Refresh the current feed to remove the deleted post
       await loadFeed(feedType)
-      console.log('Feed refreshed')
     } catch (error) {
       console.error('Failed to delete post:', error)
       alert('Failed to delete post. Please try again.')

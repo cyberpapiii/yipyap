@@ -42,7 +42,7 @@ export class PostsAPI {
       return new Map()
     }
 
-    const { data, error } = await (this.supabase as any)
+    const { data, error } = await this.supabase
       .from('anonymous_users')
       .select('id, device_id, subway_line, subway_color, created_at, last_seen_at')
       .in('id', uniqueIds)
@@ -97,7 +97,7 @@ export class PostsAPI {
 
 			if (community === 'nyc' || subwayLines.length === 0) {
 				// No filtering - use simple query
-				query = (this.supabase as any)
+				query = this.supabase
 				  .from('post_with_stats')
 				  .select('*')
 				  .is('parent_post_id', null)
@@ -106,7 +106,7 @@ export class PostsAPI {
 			} else {
 				// Filter by community - use denormalized user_subway_line field
 				// This avoids JOIN and relationship ambiguity with PGRST201 error
-				query = (this.supabase as any)
+				query = this.supabase
 				  .from('post_with_stats')
 				  .select('*')
 				  .is('parent_post_id', null)
@@ -131,7 +131,7 @@ export class PostsAPI {
 		} catch (error: any) {
 			if (error?.code === 'PGRST205') {
 				if (feedType === 'hot') {
-					const { data: hot, error: err } = await (this.supabase as any)
+					const { data: hot, error: err } = await this.supabase
 					  .from('hot_posts')
 					  .select('*')
 					  .eq('community', 'dimes_square')
@@ -154,7 +154,7 @@ export class PostsAPI {
 					}))
 					return await this.enrichPosts(mapped, limit, currentUser)
 				} else {
-					const { data: posts, error: err } = await (this.supabase as any)
+					const { data: posts, error: err } = await this.supabase
 					  .from('posts')
 					  .select('*')
 					  .eq('community', 'dimes_square')
@@ -193,7 +193,7 @@ export class PostsAPI {
 		if (withAnon.length > 0) {
 			try {
 				const postIds = withAnon.map(p => p.id)
-				const { data: allReplies, error } = await (this.supabase as any)
+				const { data: allReplies, error } = await this.supabase
 					.from('comment_with_stats')
 					.select('*')
 					.in('post_id', postIds)
@@ -250,7 +250,7 @@ export class PostsAPI {
 		currentUser?: AnonymousUser | null
 	): Promise<PostWithStats | null> {
 		try {
-			const { data: post, error } = await (this.supabase as any)
+			const { data: post, error } = await this.supabase
 				.from('post_with_stats')
 				.select('*')
 				.eq('id', postId)
@@ -276,7 +276,7 @@ export class PostsAPI {
 				}
 		} catch (error: any) {
 			if (error?.code === 'PGRST205') {
-				const { data: p, error: err } = await (this.supabase as any)
+				const { data: p, error: err } = await this.supabase
 				  .from('posts')
 				  .select('*')
 				  .eq('id', postId)
@@ -464,7 +464,7 @@ export class PostsAPI {
   ): Promise<PostWithStats> {
     try {
       // 1. Use RPC to respect RLS and server-side validations
-      const { data: created, error } = await (this.supabase as any)
+      const { data: created, error } = await this.supabase
         .rpc('rpc_create_post', {
           p_user: currentUser.id,
           p_content: data.content
@@ -510,7 +510,7 @@ export class PostsAPI {
   ): Promise<CommentWithStats> {
     try {
       // Use RPC to respect RLS and validations
-      const { data: created, error } = await (this.supabase as any)
+      const { data: created, error } = await this.supabase
         .rpc('rpc_create_comment', {
           p_user: currentUser.id,
           p_post: data.postId,
@@ -561,7 +561,7 @@ export class PostsAPI {
 
     try {
       const v = this.voteToInt(voteType)
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .rpc('rpc_vote_post', { p_user: currentUser.id, p_post: postId, p_vote: v })
       if (error) throw error
     } catch (error) {
@@ -584,7 +584,7 @@ export class PostsAPI {
 
     try {
       const v = this.voteToInt(voteType)
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .rpc('rpc_vote_comment', { p_user: currentUser.id, p_comment: commentId, p_vote: v })
       if (error) throw error
     } catch (error) {
@@ -601,7 +601,7 @@ export class PostsAPI {
     currentUser: AnonymousUser
   ): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .rpc('rpc_delete_post', {
           p_user: currentUser.id,
           p_post: postId
@@ -622,7 +622,7 @@ export class PostsAPI {
     currentUser: AnonymousUser
   ): Promise<void> {
     try {
-      const { error } = await (this.supabase as any)
+      const { error } = await this.supabase
         .rpc('rpc_delete_comment', {
           p_user: currentUser.id,
           p_comment: commentId

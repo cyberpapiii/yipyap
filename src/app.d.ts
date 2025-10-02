@@ -2,6 +2,7 @@
 // for information about these interfaces
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { AnonymousUser } from '$lib/types'
 
 declare global {
 	namespace App {
@@ -12,12 +13,12 @@ declare global {
 		}
 		interface Locals {
 			supabase: SupabaseClient
-			getAnonymousUser(): Promise<any | null>
+			getAnonymousUser(): Promise<AnonymousUser | null>
 			getDeviceId(): string
 		}
 		interface PageData {
 			supabase: SupabaseClient
-			anonymousUser?: any | null
+			anonymousUser?: AnonymousUser | null
 		}
 		interface PageState {
 			// Navigation state

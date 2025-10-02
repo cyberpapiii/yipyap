@@ -49,7 +49,6 @@
 		// Subscribe to current user updates
 		const unsubscribe = currentUser.subscribe(value => {
 			user = value
-			console.log('Current user updated:', user)
 		})
 
 		// Fetch initial notifications
@@ -95,15 +94,12 @@
 		closeLinePicker()
 
 		try {
-			console.log('Updating subway line for user:', user.id, 'to:', newLine)
-
 			// Call RPC to update subway line
 			const { data, error } = await supabase.rpc('rpc_update_subway_line', {
 				p_user: user.id,
 				p_subway_line: newLine
 			})
 
-			console.log('RPC response:', { data, error })
 			if (error) throw error
 
 			// Update local user state
