@@ -463,20 +463,41 @@ export class PostsAPI {
     currentUser: AnonymousUser
   ): Promise<PostWithStats> {
     try {
-      // Use RPC to respect RLS and server-side validations
+      // 1. Use RPC to respect RLS and server-side validations
       const { data: created, error } = await (this.supabase as any)
         .rpc('rpc_create_post', {
           p_user: currentUser.id,
           p_content: data.content
-        })
-      if (error) throw error
+        });
+      if (error) throw error;
 
-      const fullPost = await this.getPost(created.id, currentUser)
-      if (!fullPost) throw new Error('Failed to retrieve created post')
-      return fullPost
+      // 2. Fetch the single created post directly from the view
+      const { data: newPost, error: fetchError } = await this.supabase
+        .from('post_with_stats')
+        .select('*')
+        .eq('id', created.id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const typedPost = newPost as PostWithStats | null;
+      if (!typedPost) {
+        throw new Error('Failed to retrieve created post');
+      }
+
+      // 3. Manually enrich the post with identity and vote info (for consistency)
+      const identities = await this.getAnonymousProfiles([typedPost.anonymous_user_id]);
+      const anonymousUser = identities.get(typedPost.anonymous_user_id) ?? this.fallbackAnonymousUser(typedPost.anonymous_user_id);
+
+      return {
+        ...typedPost,
+        anonymous_user: anonymousUser,
+        is_user_post: true,
+        user_vote: null, // A new post has no votes from the user yet
+        replies: [] // A new post has no replies yet
+      };
     } catch (error) {
-      console.error('Error creating post:', error)
-      throw error
+      console.error('Error creating post:', error);
+      throw error;
     }
   }
 
