@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Notification } from '$lib/types'
-	import AnonymousAvatar from './AnonymousAvatar.svelte'
+	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { goto } from '$app/navigation'
 

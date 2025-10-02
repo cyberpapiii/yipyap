@@ -3,7 +3,7 @@
 	import { Loader2, RefreshCw, AlertCircle, ChevronDown } from 'lucide-svelte'
 	import PostCard from './PostCard.svelte'
 	import PostCardSkeleton from './PostCardSkeleton.svelte'
-	import CommunitySelector from './CommunitySelector.svelte'
+	import CommunitySelector from '../community/CommunitySelector.svelte'
 	import type { FeedType, PostWithStats } from '$lib/types'
 	import { feedUtils } from '$lib/stores'
 	import { communityStore } from '$lib/stores/community'

@@ -5,10 +5,10 @@
 	import { supabase } from '$lib/supabase'
 	import { notificationsStore } from '$lib/stores/notifications'
 	import { getDeviceId } from '$lib/auth'
-	import AnonymousAvatar from '$lib/components/AnonymousAvatar.svelte'
-	import SubwayLinePicker from '$lib/components/SubwayLinePicker.svelte'
-	import PushNotificationToggle from '$lib/components/PushNotificationToggle.svelte'
-	import NotificationCard from '$lib/components/NotificationCard.svelte'
+	import AnonymousAvatar from '$lib/components/community/AnonymousAvatar.svelte'
+	import SubwayLinePicker from '$lib/components/community/SubwayLinePicker.svelte'
+	import PushNotificationToggle from '$lib/components/notifications/PushNotificationToggle.svelte'
+	import NotificationCard from '$lib/components/notifications/NotificationCard.svelte'
 	import { RefreshCw, ChevronDown } from 'lucide-svelte'
 
 	let user = $state(get(currentUser))

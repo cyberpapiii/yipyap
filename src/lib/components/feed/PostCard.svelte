@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Clock, MoreHorizontal } from 'lucide-svelte'
 	import VoteButtons from './VoteButtons.svelte'
-	import AnonymousAvatar from './AnonymousAvatar.svelte'
+	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import type { PostCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { goto } from '$app/navigation'

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { composeStore } from '$lib/stores/compose'
   import { unreadCount } from '$lib/stores/notifications'
-  import NotificationBadge from './NotificationBadge.svelte'
+  import NotificationBadge from '../notifications/NotificationBadge.svelte'
 
   export let active: 'home' | 'thread' | 'profile' = 'home'
 

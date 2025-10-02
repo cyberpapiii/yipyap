@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment'
 	import { X, Send, Loader2 } from 'lucide-svelte'
 	import { onMount, tick } from 'svelte'
-	import AnonymousAvatar from './AnonymousAvatar.svelte'
+	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import { Button } from '$lib/components/ui'
 	import { composeStore, showComposeModal, composeState } from '$lib/stores'
 	import type { ComposeState } from '$lib/types'

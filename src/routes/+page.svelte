@@ -3,7 +3,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
-  import Feed from '$lib/components/Feed.svelte'
+  import Feed from '$lib/components/feed/Feed.svelte'
   import { composeStore, feedUtils, activeFeedType, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'

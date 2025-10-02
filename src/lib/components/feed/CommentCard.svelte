@@ -2,7 +2,7 @@
 	import { Clock, MoreHorizontal } from 'lucide-svelte'
 	import { onMount } from 'svelte'
 	import VoteButtons from './VoteButtons.svelte'
-	import AnonymousAvatar from './AnonymousAvatar.svelte'
+	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import type { CommentCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { currentUser } from '$lib/stores/auth'
