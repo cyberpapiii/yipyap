@@ -46,8 +46,5 @@
 		"tailwind-merge": "^3.3.1",
 		"tailwind-variants": "^1.0.0",
 		"tailwindcss": "^4.1.13"
-	},
-	"overrides": {
-		"@rollup/rollup-linux-x64-gnu": "npm:@rollup/rollup-linux-x64-gnu@latest"
 	}
 }
