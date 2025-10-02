@@ -2,6 +2,62 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 📁 Project Structure & Conventions
+
+**IMPORTANT:** This codebase follows strict organizational conventions. Adhering to these conventions is critical for maintainability.
+
+### Component Organization
+
+**All components MUST be organized by feature/purpose.** Components are never placed at the root of `/src/lib/components/`.
+
+```
+src/lib/components/
+├── common/         # Generic, reusable utilities (LoadingSpinner, ErrorBoundary)
+├── feed/           # Post/comment display (PostCard, CommentCard, VoteButtons)
+├── community/      # Identity features (AnonymousAvatar, CommunityPicker)
+├── compose/        # Content creation (ComposeModal, ImageUploader)
+├── layout/         # App navigation (BottomNav, TopHeader)
+├── notifications/  # Notification system (NotificationCard, NotificationBadge)
+└── ui/             # shadcn-svelte library (Button, Card, Input) - DO NOT add custom components
+```
+
+**When creating new components:**
+1. Identify the component's primary purpose
+2. Place it in the appropriate folder (see COMPONENT_GUIDE.md for decision tree)
+3. Use descriptive names: `PostCard` not `Card`, `VoteButtons` not `Buttons`
+4. Import using absolute paths: `import PostCard from '$lib/components/feed/PostCard.svelte'`
+
+**See:** `PROJECT_STRUCTURE.md` and `COMPONENT_GUIDE.md` for complete details.
+
+### Type Safety
+
+**Always use proper TypeScript types. NEVER use `any`.**
+
+```typescript
+// ❌ BAD - Don't do this
+function createPost(supabase: any, data: any) { }
+
+// ✅ GOOD - Always use proper types
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database, PostFormData } from '$lib/types'
+
+function createPost(supabase: SupabaseClient<Database>, data: PostFormData) { }
+```
+
+**Key types:**
+- `SupabaseClient<Database>` for all Supabase clients
+- `AnonymousUser` for user objects (never `any | null`)
+- Import types from `$lib/types` for all database entities
+
+### Code Quality
+
+- **No `console.log` in production code** - Use `console.error` for errors only
+- **Remove unused imports** - Keep imports clean
+- **Use barrel exports** - Import stores from `$lib/stores` not `$lib/stores/auth`
+- **Follow naming conventions** - PascalCase for components, camelCase for stores
+
+---
+
 ## Project Overview
 
 YipYap is a local-first anonymous social playground built with SvelteKit 5 (using runes) and Supabase realtime. Users interact anonymously using device-based identification with NYC subway line branding (e.g., "A Line", "7 Line") instead of traditional accounts.
