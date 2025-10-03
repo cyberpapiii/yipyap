@@ -579,7 +579,7 @@
 							{@const hasError = isSelected && geofenceError}
 							<button
 								type="button"
-								on:click|preventDefault={() => handleCommunityChange(community.id)}
+								onclick={(e) => { e.preventDefault(); handleCommunityChange(community.id); }}
 								disabled={$composeState.isSubmitting || isCheckingGeofence}
 								class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 {isSelected && !hasError ? 'bg-primary text-primary-foreground' : ''} {hasError ? 'bg-destructive/10 text-destructive' : ''} {!isSelected ? 'bg-muted/30 text-foreground hover:bg-muted' : ''}"
 								style={isSelected && !hasError ? 'border: 2px solid rgba(255, 255, 255, 0.2);' : hasError ? 'border: 1px solid rgba(220, 38, 38, 0.2);' : 'border: 1px solid rgba(107, 107, 107, 0.1);'}
