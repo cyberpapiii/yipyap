@@ -166,7 +166,7 @@
 
 				<h2 class="text-3xl font-bold mb-3">
 					{#if user}
-						You're {user.subway_line} Line Anonymous
+						You're {user.subway_line} Line
 					{:else}
 						You're Anonymous
 					{/if}
@@ -208,7 +208,7 @@
 					</p>
 				{:else}
 					<p class="text-muted-foreground mb-8">
-						Post in NYC (20 mi) or location-restricted communities like Dimes Square (0.3 mi).
+						Post in NYC or location-restricted communities like Dimes Square.
 					</p>
 
 					<div class="space-y-3 mb-6">
@@ -218,14 +218,6 @@
 							style="background-color: #00933C; color: white;"
 						>
 							Enable Location
-						</button>
-
-						<button
-							onclick={handleSkipLocation}
-							class="w-full py-3 rounded-xl font-semibold transition-all hover:bg-accent"
-							style="border: 1px solid rgba(107, 107, 107, 0.2);"
-						>
-							Skip for Now
 						</button>
 					</div>
 
