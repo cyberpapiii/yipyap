@@ -92,7 +92,16 @@
 	// Handle community selection change
 	async function handleCommunityChange(community: GeographicCommunity) {
 		selectedCommunity = community
+
+		// Preserve textarea focus during async geofence check
+		const hadFocus = textareaElement === document.activeElement
+
 		await checkGeofence()
+
+		// Restore focus if it was focused before
+		if (hadFocus && textareaElement) {
+			textareaElement.focus({ preventScroll: true })
+		}
 	}
 
 	// Handle form submission
