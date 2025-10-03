@@ -36,7 +36,9 @@
 	let isCheckingGeofence = $state(false)
 	let geofenceError = $state<string | null>(null)
 	const geographicCommunities = getAllGeographicCommunities()
-	const { locationPermission } = communityStore
+
+	// Derive location permission from community store
+	let locationPermission = $derived($communityStore.locationPermission)
 
 
 	// Track pending timeouts for cleanup
@@ -611,7 +613,7 @@
 							<Lock size={14} class="shrink-0 mt-0.5" />
 							<div>
 								<span>{geofenceError}</span>
-								{#if $locationPermission === 'denied'}
+								{#if locationPermission === 'denied'}
 									<button onclick={() => communityStore.retryLocation()} class="mt-2 text-xs font-bold underline">Try Again</button>
 								{/if}
 							</div>

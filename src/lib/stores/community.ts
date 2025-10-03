@@ -12,6 +12,7 @@ import { getGeofence, requiresGeofence } from '$lib/config/communities'
 
 const STORAGE_KEY = 'yipyap_selected_community'
 const POST_COMMUNITY_STORAGE_KEY = 'yipyap_post_community'
+const LOCATION_PERMISSION_STORAGE_KEY = 'yipyap_location_permission'
 const DEFAULT_COMMUNITY: CommunityType = 'nyc'
 const DEFAULT_POST_COMMUNITY: GeographicCommunity = 'nyc'
 
@@ -53,6 +54,37 @@ function getInitialPostCommunity(): GeographicCommunity {
 }
 
 /**
+ * Get initial location permission from localStorage
+ */
+function getInitialLocationPermission(): LocationPermission | null {
+  if (!browser) return null
+
+  try {
+    const stored = localStorage.getItem(LOCATION_PERMISSION_STORAGE_KEY)
+    if (stored && ['granted', 'denied', 'prompt'].includes(stored)) {
+      return stored as LocationPermission
+    }
+  } catch (error) {
+    console.warn('Failed to load location permission from localStorage:', error)
+  }
+
+  return null
+}
+
+/**
+ * Save location permission to localStorage
+ */
+function saveLocationPermission(permission: LocationPermission): void {
+  if (!browser) return
+
+  try {
+    localStorage.setItem(LOCATION_PERMISSION_STORAGE_KEY, permission)
+  } catch (error) {
+    console.warn('Failed to save location permission to localStorage:', error)
+  }
+}
+
+/**
  * Save community filter to localStorage
  */
 function saveCommunity(community: CommunityType): void {
@@ -87,7 +119,7 @@ function createCommunityStore() {
     selectedPostCommunity: getInitialPostCommunity(),
     isPickerOpen: false,
     userLocation: null,
-    locationPermission: null,
+    locationPermission: getInitialLocationPermission(),
     isCheckingLocation: false
   })
 
@@ -158,6 +190,7 @@ function createCommunityStore() {
         const permission = await getLocationPermission()
         const location = await getCurrentLocation()
 
+        saveLocationPermission(permission)
         update(state => ({
           ...state,
           userLocation: location,
@@ -166,11 +199,18 @@ function createCommunityStore() {
         }))
 
         return location
-      } catch (error) {
+      } catch (error: any) {
+        // Distinguish between actual permission denial vs other errors
+        const isDenied = error?.message?.includes('permission denied') ||
+                         error?.message?.includes('Permission denied')
+
+        const permissionState = isDenied ? 'denied' : 'prompt'
+        saveLocationPermission(permissionState)
+
         update(state => ({
           ...state,
           userLocation: null,
-          locationPermission: 'denied',
+          locationPermission: permissionState,
           isCheckingLocation: false
         }))
         return null
@@ -228,8 +268,23 @@ function createCommunityStore() {
 
     /**
      * Retry getting location, e.g. after user changes permissions
+     * Clears cached permission state to force fresh check
      */
     retryLocation: async () => {
+      // Clear cached permission to allow fresh permission prompt
+      if (browser) {
+        try {
+          localStorage.removeItem(LOCATION_PERMISSION_STORAGE_KEY)
+        } catch (error) {
+          console.warn('Failed to clear location permission cache:', error)
+        }
+      }
+
+      update(state => ({
+        ...state,
+        locationPermission: null
+      }))
+
       await communityStore.checkLocation()
     },
 
@@ -237,6 +292,7 @@ function createCommunityStore() {
      * Update location permission state
      */
     setLocationPermission: (permission: LocationPermission) => {
+      saveLocationPermission(permission)
       update(state => ({
         ...state,
         locationPermission: permission
