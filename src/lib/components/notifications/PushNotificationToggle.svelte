@@ -193,7 +193,7 @@
 					{#if !('serviceWorker' in navigator)}
 						Your browser does not support push notifications.
 					{:else if !status.isIOSPWA && /iPad|iPhone|iPod/.test(navigator.userAgent)}
-						On iOS, add YipYap to your Home Screen to enable push notifications.
+						On iOS, add BingBong to your Home Screen to enable push notifications.
 					{:else}
 						Push notifications are not supported on this device.
 					{/if}

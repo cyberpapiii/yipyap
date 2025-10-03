@@ -2,7 +2,7 @@ import { writable } from 'svelte/store'
 import { browser } from '$app/environment'
 import type { OnboardingState, InstallGateType } from '$lib/types'
 
-const STORAGE_KEY = 'yipyap_quick_onboarding_completed'
+const STORAGE_KEY = 'bingbong_quick_onboarding_completed'
 
 /**
  * Check if user has completed quick onboarding

@@ -147,7 +147,7 @@ export async function subscribeToPushNotifications(
     return {
       success: false,
       error: isIOSSafari()
-        ? 'Push notifications require adding YipYap to your Home Screen on iOS'
+        ? 'Push notifications require adding BingBong to your Home Screen on iOS'
         : 'Push notifications are not supported on this device'
     }
   }

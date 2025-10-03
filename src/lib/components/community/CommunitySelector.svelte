@@ -16,9 +16,13 @@
 	} = $props()
 
 	// Check if this is a geographic community or subway line community
-	const isGeographic = $derived(selectedCommunity === 'dimes_square')
+	const isGeographic = $derived(selectedCommunity === 'dimes_square' || selectedCommunity === 'nyc')
 	const community = $derived(isGeographic ? null : getCommunity(selectedCommunity as CommunityType))
-	const geoCommunity = $derived(isGeographic ? getGeographicCommunity('dimes_square') : null)
+	const geoCommunity = $derived(
+		selectedCommunity === 'dimes_square' ? getGeographicCommunity('dimes_square') :
+		selectedCommunity === 'nyc' ? getGeographicCommunity('nyc') :
+		null
+	)
 
 	function handleClick() {
 		// Haptic feedback
@@ -43,25 +47,14 @@
 >
 	<div class="flex items-center gap-3">
 		<div class="flex items-center gap-2">
-			{#if selectedCommunity === 'nyc'}
-				<!-- NYC circles -->
-				<div class="w-9 h-9 rounded-full flex items-center justify-center text-xl font-bold"
-					style="background-color: #F6BC26; color: #000">
-					N
-				</div>
-				<div class="w-9 h-9 rounded-full flex items-center justify-center text-xl font-bold"
-					style="background-color: #0062CF; color: #FFF">
-					Y
-				</div>
-				<div class="w-9 h-9 rounded-full flex items-center justify-center text-xl font-bold"
-					style="background-color: #EB6800; color: #FFF">
-					C
-				</div>
-			{:else if selectedCommunity === 'dimes_square'}
-				<!-- Dimes Square - show emoji and MapPin -->
+			{#if isGeographic && geoCommunity}
+				<!-- Geographic communities - show emoji, name, and location icon -->
 				<div class="flex items-center gap-2">
-					<span class="text-2xl">{geoCommunity?.emoji || '🏙️'}</span>
-					<MapPin size={20} class="text-primary" />
+					<span class="text-2xl">{geoCommunity.emoji}</span>
+					<span class="text-xl font-bold">{geoCommunity.name}</span>
+					{#if geoCommunity.geofence}
+						<MapPin size={18} class="text-primary" />
+					{/if}
 				</div>
 			{:else if community}
 				<!-- Other subway line communities - show subway line badges -->

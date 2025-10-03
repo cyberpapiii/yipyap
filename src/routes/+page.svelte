@@ -67,7 +67,7 @@
   onMount(async () => {
     if (!browser) return
 
-    const saved = (localStorage.getItem('yipyap_feed') as FeedType) || 'hot'
+    const saved = (localStorage.getItem('bingbong_feed') as FeedType) || 'hot'
     feedType = saved
 
     initializing = true
@@ -131,7 +131,7 @@
 
     feedType = type
     if (!options.skipPersist) {
-      localStorage.setItem('yipyap_feed', type)
+      localStorage.setItem('bingbong_feed', type)
     }
 
     // Haptic feedback for feed switch

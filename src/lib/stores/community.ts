@@ -11,10 +11,10 @@ import {
 } from '$lib/services/geolocation'
 import { getGeofence, requiresGeofence } from '$lib/config/communities'
 
-const STORAGE_KEY = 'yipyap_selected_community'
-const POST_COMMUNITY_STORAGE_KEY = 'yipyap_post_community'
-const LOCATION_PERMISSION_STORAGE_KEY = 'yipyap_location_permission'
-const LOCATION_ENABLED_STORAGE_KEY = 'yipyap_location_enabled'
+const STORAGE_KEY = 'bingbong_selected_community'
+const POST_COMMUNITY_STORAGE_KEY = 'bingbong_post_community'
+const LOCATION_PERMISSION_STORAGE_KEY = 'bingbong_location_permission'
+const LOCATION_ENABLED_STORAGE_KEY = 'bingbong_location_enabled'
 const DEFAULT_COMMUNITY: CommunityType = 'nyc'
 const DEFAULT_POST_COMMUNITY: GeographicCommunity = 'nyc'
 

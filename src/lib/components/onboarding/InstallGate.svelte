@@ -66,27 +66,23 @@
 	<div class="w-full max-w-md">
 		<!-- Logo/Branding -->
 		<div class="text-center mb-8">
-			<h1 class="text-5xl font-bold mb-2">YipYap</h1>
+			<h1 class="text-5xl font-bold mb-2">BingBong</h1>
 			<p class="text-xl text-muted-foreground">NYC's Local Playground</p>
 		</div>
 
-		<!-- Animated subway lines -->
+		<!-- Animated subway lines - N Y C -->
 		<div class="flex justify-center gap-3 mb-8 py-2">
 			<div class="subway-circle w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
-				style="background-color: #00933C; color: white; animation-delay: 0s; border: 2px solid rgba(255, 255, 255, 0.2);">
-				4
+				style="background-color: #F6BC26; color: black; animation-delay: 0s; border: 2px solid rgba(255, 255, 255, 0.2);">
+				N
 			</div>
 			<div class="subway-circle w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
 				style="background-color: #0062CF; color: white; animation-delay: 0.2s; border: 2px solid rgba(255, 255, 255, 0.2);">
-				A
+				Y
 			</div>
 			<div class="subway-circle w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
 				style="background-color: #EB6800; color: white; animation-delay: 0.4s; border: 2px solid rgba(255, 255, 255, 0.2);">
-				D
-			</div>
-			<div class="subway-circle w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
-				style="background-color: #F6BC26; color: black; animation-delay: 0.6s; border: 2px solid rgba(255, 255, 255, 0.2);">
-				N
+				C
 			</div>
 		</div>
 
@@ -100,16 +96,16 @@
 				<div class="mb-6">
 					<Smartphone size={48} class="mx-auto mb-4 text-muted-foreground" />
 				</div>
-				<h2 class="text-2xl font-bold mb-4">YipYap is Mobile-Only</h2>
+				<h2 class="text-2xl font-bold mb-4">BingBong is Mobile-Only</h2>
 				<p class="text-muted-foreground mb-6">
-					Please visit <span class="text-primary font-semibold">yipyap.com</span> on your mobile device to install and start yapping.
+					Please visit on your mobile device to install and start posting.
 				</p>
 
 			{:else if gateType === 'ios-manual'}
 				<!-- iOS Manual Install Instructions -->
-				<h2 class="text-2xl font-bold mb-4">📱 Install YipYap</h2>
+				<h2 class="text-2xl font-bold mb-4">📱 Install BingBong</h2>
 				<p class="text-muted-foreground mb-6">
-					Follow these steps to install YipYap on your iPhone:
+					Follow these steps to install BingBong on your iPhone:
 				</p>
 				<div class="text-left space-y-4 mb-8">
 					{#each instructions as instruction, i}
@@ -132,7 +128,7 @@
 				<!-- Android/Chrome Install Prompt -->
 				<h2 class="text-2xl font-bold mb-4">📱 Install to Continue</h2>
 				<p class="text-muted-foreground mb-8">
-					YipYap works best as an installed app. Tap the button below to install and get started.
+					BingBong works best as an installed app. Tap the button below to install and get started.
 				</p>
 
 				<button
@@ -145,7 +141,7 @@
 						<Loader2 size={24} class="animate-spin" />
 						<span>Opening installer...</span>
 					{:else}
-						<span>Install YipYap</span>
+						<span>Install BingBong</span>
 					{/if}
 				</button>
 
