@@ -67,7 +67,7 @@
 		<!-- Logo/Branding -->
 		<div class="text-center mb-8">
 			<h1 class="text-5xl font-bold mb-2">BingBong</h1>
-			<p class="text-xl text-muted-foreground">NYC's Local Playground</p>
+			<p class="text-xl text-muted-foreground">New York City's Message Board</p>
 		</div>
 
 		<!-- Animated subway lines - N Y C -->

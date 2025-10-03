@@ -1,7 +1,7 @@
 {
   "name": "BingBong",
   "short_name": "BingBong",
-  "description": "Anonymous NYC social playground",
+  "description": "New York City's message board",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#101010",
