@@ -13,13 +13,15 @@
 		onVote,
 		onReply,
 		onDelete,
-		onLoadMore
+		onLoadMore,
+		hideHeader = false
 	}: {
 		feedType: FeedType
 		onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
 		onReply?: (post: PostWithStats) => void
 		onDelete?: (postId: string) => Promise<void>
 		onLoadMore?: () => Promise<void>
+		hideHeader?: boolean
 	} = $props()
 
 	// Enhanced state management
@@ -259,31 +261,33 @@
 
 	<div class="max-w-2xl mx-auto px-4 pb-4 space-y-4 relative">
 		<!-- Feed header - Page elements layer: z-1-99 (sticky header at z-10) -->
-		<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
-			<CommunitySelector
-				selectedCommunity={$communityStore.selectedCommunity}
-				postCount={$feedStore.posts.length}
-				onClick={handleOpenPicker}
-			/>
-			<button
-				onclick={refreshFeed}
-				disabled={$feedStore.loading || refreshing}
-				class="
-					p-3 rounded-xl transition-all duration-200 ease-out
-					hover:bg-accent active:scale-95 active:bg-accent/70
-					disabled:opacity-50 disabled:cursor-not-allowed
-					touch-manipulation
-					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-				"
-				aria-label="Refresh feed"
-				type="button"
-			>
-				<RefreshCw
-					size={24}
-					class={$feedStore.loading || refreshing ? 'animate-spin' : 'transition-transform duration-200 hover:rotate-90'}
+		{#if !hideHeader}
+			<div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
+				<CommunitySelector
+					selectedCommunity={$communityStore.selectedCommunity}
+					postCount={$feedStore.posts.length}
+					onClick={handleOpenPicker}
 				/>
-			</button>
-		</div>
+				<button
+					onclick={refreshFeed}
+					disabled={$feedStore.loading || refreshing}
+					class="
+						p-3 rounded-xl transition-all duration-200 ease-out
+						hover:bg-accent active:scale-95 active:bg-accent/70
+						disabled:opacity-50 disabled:cursor-not-allowed
+						touch-manipulation
+						focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+					"
+					aria-label="Refresh feed"
+					type="button"
+				>
+					<RefreshCw
+						size={24}
+						class={$feedStore.loading || refreshing ? 'animate-spin' : 'transition-transform duration-200 hover:rotate-90'}
+					/>
+				</button>
+			</div>
+		{/if}
 
 		<!-- Error state -->
 		{#if $feedStore.error}

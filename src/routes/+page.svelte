@@ -5,6 +5,8 @@
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/feed/Feed.svelte'
   import SwipeableFeeds from '$lib/components/feed/SwipeableFeeds.svelte'
+  import CommunitySelector from '$lib/components/community/CommunitySelector.svelte'
+  import { RefreshCw } from 'lucide-svelte'
   import { composeStore, feedUtils, activeFeedType, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'
@@ -19,6 +21,10 @@
 
   let feedType = $state<FeedType>('hot')
   let initializing = $state(false)
+  let refreshing = $state(false)
+
+  // Derived feed store for header
+  const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
 
   // Watch for community changes and reload feed
   $effect(() => {
@@ -32,6 +38,30 @@
   // Handle feed change from swipe
   function handleFeedChange(newFeed: FeedType) {
     switchFeed(newFeed)
+  }
+
+  // Handle community picker open
+  function handleOpenPicker() {
+    communityStore.openPicker()
+  }
+
+  // Handle refresh from header button
+  async function handleRefresh() {
+    if (refreshing) return
+
+    refreshing = true
+    if ('vibrate' in navigator) {
+      navigator.vibrate(15)
+    }
+
+    try {
+      await loadFeed(feedType)
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10)
+      }
+    } finally {
+      refreshing = false
+    }
   }
 
   onMount(async () => {
@@ -189,7 +219,36 @@
 
 <div class="min-h-screen bg-background font-sans">
   <div class="max-w-md mx-auto animate-fade-in">
-    <!-- Swipeable Feeds Container -->
+    <!-- Fixed Feed Header - stays in place while feeds swipe -->
+    <div class="max-w-2xl mx-auto px-4">
+      <div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
+        <CommunitySelector
+          selectedCommunity={$communityStore.selectedCommunity}
+          postCount={$currentFeedStore.posts.length}
+          onClick={handleOpenPicker}
+        />
+        <button
+          onclick={handleRefresh}
+          disabled={$currentFeedStore.loading || refreshing}
+          class="
+            p-3 rounded-xl transition-all duration-200 ease-out
+            hover:bg-accent active:scale-95 active:bg-accent/70
+            disabled:opacity-50 disabled:cursor-not-allowed
+            touch-manipulation
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+          "
+          aria-label="Refresh feed"
+          type="button"
+        >
+          <RefreshCw
+            size={24}
+            class={$currentFeedStore.loading || refreshing ? 'animate-spin' : 'transition-transform duration-200 hover:rotate-90'}
+          />
+        </button>
+      </div>
+    </div>
+
+    <!-- Swipeable Feeds Container (only posts slide) -->
     <SwipeableFeeds activeFeed={feedType} onFeedChange={handleFeedChange}>
       {#snippet children({ feedType: currentFeed })}
         <Feed
@@ -198,6 +257,7 @@
           onReply={onReply}
           onDelete={onDelete}
           onLoadMore={loadMore}
+          hideHeader={true}
         />
       {/snippet}
     </SwipeableFeeds>
