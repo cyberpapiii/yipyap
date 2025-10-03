@@ -16,6 +16,10 @@
   import { createRealtimeAPI } from '$lib/api/realtime'
   import { notificationsStore } from '$lib/stores/notifications'
   import { communityStore } from '$lib/stores/community'
+  import { onboardingStore } from '$lib/stores/onboarding'
+  import { isPWA, isDesktop, isIOSSafari, canInstallPWA, initPWAInstallListener } from '$lib/utils/pwa'
+  import InstallGate from '$lib/components/onboarding/InstallGate.svelte'
+  import QuickOnboarding from '$lib/components/onboarding/QuickOnboarding.svelte'
 
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
@@ -81,6 +85,38 @@
 
   onMount(async () => {
     try {
+      // Initialize PWA install prompt listener
+      initPWAInstallListener()
+
+      // FIRST CHECK: Are we in PWA mode?
+      const inPWA = isPWA()
+
+      if (!inPWA) {
+        // NOT IN PWA - Show install gate and block app
+        console.log('[Onboarding] Not in PWA, showing install gate')
+
+        if (isDesktop()) {
+          onboardingStore.showGate('desktop-block')
+          return // Don't initialize app
+        }
+
+        if (isIOSSafari()) {
+          onboardingStore.showGate('ios-manual')
+          return // Don't initialize app
+        }
+
+        // Mobile browser with install capability
+        if (canInstallPWA()) {
+          onboardingStore.showGate('prompt')
+        } else {
+          // Can't install for some reason, show iOS instructions as fallback
+          onboardingStore.showGate('ios-manual')
+        }
+        return // Don't initialize app until installed
+      }
+
+      // IN PWA - Initialize app normally
+      console.log('[Onboarding] In PWA mode, initializing app')
 
       // Initialize anonymous user via helper RPC
       const deviceId = getDeviceId()
@@ -117,6 +153,12 @@
       communityStore.checkLocation().catch((err) => {
         console.warn('Failed to check location on app startup:', err)
       })
+
+      // Show quick onboarding if not completed
+      if (!onboardingStore.hasCompleted()) {
+        console.log('[Onboarding] Starting quick onboarding')
+        onboardingStore.startQuickOnboarding()
+      }
     } catch (e) {
       console.error('App init failed:', e)
     }
@@ -172,3 +214,13 @@
   onSelect={handleSelectCommunity}
   onClose={handleClosePicker}
 />
+
+<!-- Install Gate - highest z-index, blocks app if not in PWA -->
+{#if $onboardingStore.showInstallGate && $onboardingStore.installGateType}
+  <InstallGate gateType={$onboardingStore.installGateType} />
+{/if}
+
+<!-- Quick Onboarding - shows after PWA install -->
+{#if $onboardingStore.showQuickOnboarding}
+  <QuickOnboarding />
+{/if}

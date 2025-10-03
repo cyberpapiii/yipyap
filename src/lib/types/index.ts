@@ -269,6 +269,17 @@ export interface CommunityState {
   locationEnabled: boolean // App-level toggle: false = user disabled location in app
 }
 
+// Onboarding Types
+export type InstallGateType = 'prompt' | 'ios-manual' | 'desktop-block'
+
+export interface OnboardingState {
+  showInstallGate: boolean
+  installGateType: InstallGateType | null
+  isInstalling: boolean
+  showQuickOnboarding: boolean
+  currentOnboardingStep: number
+}
+
 // Navigation Types
 export interface NavItem {
   name: string
