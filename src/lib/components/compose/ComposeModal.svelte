@@ -36,6 +36,8 @@
 	let isCheckingGeofence = $state(false)
 	let geofenceError = $state<string | null>(null)
 	const geographicCommunities = getAllGeographicCommunities()
+	const { locationPermission } = communityStore
+
 
 	// Track pending timeouts for cleanup
 	let pendingSuccessTimeout: ReturnType<typeof setTimeout> | null = null
@@ -607,7 +609,12 @@
 					{#if geofenceError}
 						<div class="mt-2 p-2 bg-destructive/10 rounded-lg text-xs text-destructive flex items-start gap-2" style="border: 1px solid hsl(var(--destructive));">
 							<Lock size={14} class="shrink-0 mt-0.5" />
-							<span>{geofenceError}</span>
+							<div>
+								<span>{geofenceError}</span>
+								{#if $locationPermission === 'denied'}
+									<button onclick={() => communityStore.retryLocation()} class="mt-2 text-xs font-bold underline">Try Again</button>
+								{/if}
+							</div>
 						</div>
 					{/if}
 

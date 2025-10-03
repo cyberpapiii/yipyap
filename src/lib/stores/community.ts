@@ -197,49 +197,40 @@ function createCommunityStore() {
       }
 
       // Try to get current location from state first
-      update(state => ({ ...state, isCheckingLocation: true }))
+      await communityStore.checkLocation()
+      const state = get({ subscribe })
 
-      try {
-        const permission = await getLocationPermission()
-        const location = await getCurrentLocation()
-
-        update(state => ({
-          ...state,
-          userLocation: location,
-          locationPermission: permission,
-          isCheckingLocation: false
-        }))
-
-        if (!location) {
+      if (!state.userLocation) {
+        if (state.locationPermission === 'denied') {
           return {
             canPost: false,
-            reason: 'Could not get your location. Please enable location services.'
+            reason: 'Location permission denied. Please enable it in your browser settings and try again.'
           }
         }
-
-        // Check geofence
-        const isInside = isWithinGeofence(location.lat, location.lon, geofence)
-
-        if (!isInside) {
-          return {
-            canPost: false,
-            reason: 'You must be in Dimes Square to post here.'
-          }
-        }
-
-        return { canPost: true }
-      } catch (error) {
-        update(state => ({
-          ...state,
-          userLocation: null,
-          locationPermission: 'denied',
-          isCheckingLocation: false
-        }))
         return {
           canPost: false,
           reason: 'Could not get your location. Please enable location services.'
         }
       }
+
+      // Check geofence
+      const isInside = isWithinGeofence(state.userLocation.lat, state.userLocation.lon, geofence)
+
+      if (!isInside) {
+        return {
+          canPost: false,
+          reason: 'You must be in Dimes Square to post here.'
+        }
+      }
+
+      return { canPost: true }
+    },
+
+    /**
+     * Retry getting location, e.g. after user changes permissions
+     */
+    retryLocation: async () => {
+      await communityStore.checkLocation()
     },
 
     /**
