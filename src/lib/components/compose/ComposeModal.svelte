@@ -611,15 +611,7 @@
 						</div>
 					{/if}
 
-					<!-- Community description -->
-					{#if selectedCommunity}
-						{@const community = geographicCommunities.find(c => c.id === selectedCommunity)}
-						{#if community}
-							<p class="mt-2 text-xs text-muted-foreground">
-								{community.description}
-							</p>
-						{/if}
-					{/if}
+
 				</div>
 			{/if}
 
