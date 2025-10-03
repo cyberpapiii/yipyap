@@ -16,8 +16,8 @@
 		onClose: () => void
 	} = $props()
 
-	const communities = getAllCommunities()
-	const geographicCommunities = getAllGeographicCommunities().filter(c => c.id === 'dimes_square')
+	const communities = getAllCommunities().filter(c => c.id !== 'nyc') // Exclude NYC from subway filters
+	const geographicCommunities = getAllGeographicCommunities() // Include both NYC and Dimes Square
 	let isClosing = $state(false)
 
 	function handleSelect(communityId: CommunityType | 'dimes_square') {
@@ -56,8 +56,12 @@
 			// Store original overflow
 			const originalBodyOverflow = document.body.style.overflow
 			const originalDocumentOverflow = document.documentElement.style.overflow
+			const scrollY = window.scrollY
 
-			// Lock scroll
+			// Lock scroll with position fixed to prevent iOS scroll issues
+			document.body.style.position = 'fixed'
+			document.body.style.top = `-${scrollY}px`
+			document.body.style.width = '100%'
 			document.body.style.overflow = 'hidden'
 			document.documentElement.style.overflow = 'hidden'
 
@@ -66,8 +70,14 @@
 
 			return () => {
 				// Restore scroll
+				document.body.style.position = ''
+				document.body.style.top = ''
+				document.body.style.width = ''
 				document.body.style.overflow = originalBodyOverflow
 				document.documentElement.style.overflow = originalDocumentOverflow
+
+				// Restore scroll position
+				window.scrollTo(0, scrollY)
 
 				// Remove listener
 				document.removeEventListener('keydown', handleKeydown)
@@ -159,9 +169,70 @@
 			<!-- Communities list -->
 			<div
 				class="p-4 overflow-y-auto custom-scrollbar flex-1 min-h-0"
-				style="overscroll-behavior: contain; -webkit-overflow-scrolling: touch;"
+				style="overscroll-behavior: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch;"
+				onclick={(e) => e.stopPropagation()}
+				ontouchstart={(e) => e.stopPropagation()}
+				ontouchmove={(e) => e.stopPropagation()}
 			>
 				<div class="space-y-2">
+					<!-- Locations (Geographic Communities) -->
+					{#each geographicCommunities as geoCommunity}
+						{@const isSelected = geoCommunity.id === selectedCommunity}
+						<button
+							onclick={() => handleSelect(geoCommunity.id)}
+							class="
+								w-full flex items-center gap-4 p-4 rounded-xl
+								transition-all duration-200 ease-out
+								hover:bg-accent/50 active:scale-[0.98]
+								touch-manipulation
+								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+							"
+							style={isSelected ? 'background-color: rgba(1, 115, 92, 0.15); border: 1px solid rgba(1, 115, 92, 0.3);' : 'border: 1px solid rgba(107, 107, 107, 0.15);'}
+							aria-label="Select {geoCommunity.name} location"
+							type="button"
+						>
+							<!-- Community Info -->
+							<div class="flex-1 flex flex-col items-start gap-1 min-w-0">
+								<div class="flex items-center gap-2">
+									<span class="text-lg font-bold text-foreground">
+										{geoCommunity.emoji} {geoCommunity.name}
+									</span>
+									{#if geoCommunity.geofence}
+										<div class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
+											style="background-color: rgba(1, 115, 92, 0.15); color: rgb(1, 115, 92);">
+											<MapPin size={12} />
+											<span>{geoCommunity.geofence.radiusMiles < 1 ? `${geoCommunity.geofence.radiusMiles} mi` : `${geoCommunity.geofence.radiusMiles} mi`}</span>
+										</div>
+									{/if}
+								</div>
+								<div class="text-sm text-muted-foreground">
+									{geoCommunity.description}
+								</div>
+							</div>
+
+							<!-- Checkmark for selected -->
+							{#if isSelected}
+								<div class="flex-shrink-0">
+									<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+										<Check size={16} class="text-primary-foreground" />
+									</div>
+								</div>
+							{/if}
+						</button>
+					{/each}
+
+					<!-- Separator -->
+					<div class="py-3">
+						<div class="flex items-center gap-3">
+							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
+							<div class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+								Filter by Line
+							</div>
+							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
+						</div>
+					</div>
+
+					<!-- Subway Line Communities -->
 					{#each communities as community}
 						{@const isSelected = community.id === selectedCommunity}
 						<button
@@ -174,7 +245,7 @@
 								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
 							"
 							style={isSelected ? 'background-color: rgba(1, 115, 92, 0.15);' : ''}
-							aria-label="Select {community.name} community"
+							aria-label="Filter by {community.name} line"
 							type="button"
 						>
 							<!-- Community Info -->
@@ -203,63 +274,6 @@
 											C
 										</div>
 									{/if}
-								</div>
-							</div>
-
-							<!-- Checkmark for selected -->
-							{#if isSelected}
-								<div class="flex-shrink-0">
-									<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-										<Check size={16} class="text-primary-foreground" />
-									</div>
-								</div>
-							{/if}
-						</button>
-					{/each}
-
-					<!-- Separator -->
-					<div class="py-3">
-						<div class="flex items-center gap-3">
-							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
-							<div class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-								Geographic Communities
-							</div>
-							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
-						</div>
-					</div>
-
-					<!-- Geographic Communities -->
-					{#each geographicCommunities as geoCommunity}
-						{@const isSelected = geoCommunity.id === selectedCommunity}
-						<button
-							onclick={() => handleSelect(geoCommunity.id)}
-							class="
-								w-full flex items-center gap-4 p-4 rounded-xl
-								transition-all duration-200 ease-out
-								hover:bg-accent/50 active:scale-[0.98]
-								touch-manipulation
-								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-							"
-							style={isSelected ? 'background-color: rgba(1, 115, 92, 0.15); border: 1px solid rgba(1, 115, 92, 0.3);' : 'border: 1px solid rgba(107, 107, 107, 0.15);'}
-							aria-label="Select {geoCommunity.name} community"
-							type="button"
-						>
-							<!-- Community Info -->
-							<div class="flex-1 flex flex-col items-start gap-1 min-w-0">
-								<div class="flex items-center gap-2">
-									<span class="text-lg font-bold text-foreground">
-										{geoCommunity.emoji} {geoCommunity.name}
-									</span>
-									{#if geoCommunity.geofence}
-										<div class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
-											style="background-color: rgba(1, 115, 92, 0.15); color: rgb(1, 115, 92);">
-											<MapPin size={12} />
-											<span>Geofenced</span>
-										</div>
-									{/if}
-								</div>
-								<div class="text-sm text-muted-foreground">
-									{geoCommunity.description}
 								</div>
 							</div>
 
