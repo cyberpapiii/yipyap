@@ -4,6 +4,7 @@
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/feed/Feed.svelte'
+  import SwipeableFeeds from '$lib/components/feed/SwipeableFeeds.svelte'
   import { composeStore, feedUtils, activeFeedType, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'
@@ -18,10 +19,6 @@
 
   let feedType = $state<FeedType>('hot')
   let initializing = $state(false)
-  let feedContainer: HTMLElement
-  let touchStartX = 0
-  let touchEndX = 0
-  let isSwiping = $state(false)
 
   // Watch for community changes and reload feed
   $effect(() => {
@@ -32,39 +29,9 @@
     }
   })
 
-  // Swipe handling
-  function handleTouchStart(e: TouchEvent) {
-    touchStartX = e.touches[0].clientX
-    touchEndX = e.touches[0].clientX // Initialize to start position
-    isSwiping = true
-  }
-
-  function handleTouchMove(e: TouchEvent) {
-    if (!isSwiping) return
-    touchEndX = e.touches[0].clientX
-  }
-
-  function handleTouchEnd() {
-    if (!isSwiping) return
-    isSwiping = false
-
-    const swipeDistance = touchEndX - touchStartX
-    const minSwipeDistance = 80 // Increased threshold to prevent accidental swipes
-
-    // Only trigger if there was actual movement
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      // Swiped right - go to previous feed (new)
-      if (swipeDistance > 0 && feedType === 'hot') {
-        switchFeed('new')
-      }
-      // Swiped left - go to next feed (hot)
-      else if (swipeDistance < 0 && feedType === 'new') {
-        switchFeed('hot')
-      }
-    }
-
-    touchStartX = 0
-    touchEndX = 0
+  // Handle feed change from swipe
+  function handleFeedChange(newFeed: FeedType) {
+    switchFeed(newFeed)
   }
 
   onMount(async () => {
@@ -220,23 +187,20 @@
 
 </script>
 
-<div
-  class="min-h-screen bg-background font-sans"
-  bind:this={feedContainer}
-  ontouchstart={handleTouchStart}
-  ontouchmove={handleTouchMove}
-  ontouchend={handleTouchEnd}
->
+<div class="min-h-screen bg-background font-sans">
   <div class="max-w-md mx-auto animate-fade-in">
-
-    <!-- Feed component uses feed stores internally -->
-    <Feed
-      {feedType}
-      onVote={onVote}
-      onReply={onReply}
-      onDelete={onDelete}
-      onLoadMore={loadMore}
-    />
+    <!-- Swipeable Feeds Container -->
+    <SwipeableFeeds activeFeed={feedType} onFeedChange={handleFeedChange}>
+      {#snippet children({ feedType: currentFeed })}
+        <Feed
+          feedType={currentFeed}
+          onVote={onVote}
+          onReply={onReply}
+          onDelete={onDelete}
+          onLoadMore={loadMore}
+        />
+      {/snippet}
+    </SwipeableFeeds>
   </div>
 
   <!-- Floating Feed Toggle - Page elements layer: z-1-99 -->
