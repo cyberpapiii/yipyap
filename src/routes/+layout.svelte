@@ -7,7 +7,7 @@
   import { realtime } from '$lib/stores/realtime'
   import { authStore } from '$lib/stores/auth'
   import { cacheAnonymousUser, getDeviceId, ensureAnonymousUser } from '$lib/auth'
-  import type { AnonymousUser } from '$lib/types'
+  import type { AnonymousUser, GeographicCommunity } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/layout/BottomNav.svelte'
   import ComposeModal from '$lib/components/compose/ComposeModal.svelte'
@@ -33,7 +33,7 @@
     communityStore.closePicker()
   }
 
-  async function onSubmit(content: string, replyTo?: any) {
+  async function onSubmit(content: string, replyTo?: any, community?: GeographicCommunity) {
     let user = get(cu)
     if (!user) {
       try {
@@ -67,7 +67,7 @@
           }, user)
         }
       } else {
-        await api.createPostOptimistic({ content }, user)
+        await api.createPostOptimistic({ content, community }, user)
       }
     } catch (error: any) {
       // Check for foreign key violation (post was deleted)

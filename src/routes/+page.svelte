@@ -158,10 +158,15 @@
 
     try {
       const currentUser = get(cu) || undefined
-      const community = get(communityStore).selectedCommunity
+      const selectedCommunity = get(communityStore).selectedCommunity
+
+      // Determine if viewing a geographic community or subway line filter
+      const geographicCommunity = selectedCommunity === 'dimes_square' ? 'dimes_square' : undefined
+      const subwayLineCommunity = selectedCommunity === 'dimes_square' ? 'nyc' : selectedCommunity
+
       const response = cursor
-        ? await api.getFeedPosts(type, cursor, 20, currentUser, community)
-        : await api.loadFeedWithRealtime(type, undefined, 20, currentUser, community)
+        ? await api.getFeedPosts(type, cursor, 20, currentUser, subwayLineCommunity, geographicCommunity)
+        : await api.loadFeedWithRealtime(type, undefined, 20, currentUser, subwayLineCommunity, geographicCommunity)
 
       if (cursor) {
         feedStore.addPosts(response.data, response.hasMore, response.nextCursor)

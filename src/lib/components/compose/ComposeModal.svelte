@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
-	import { X, Send, Loader2 } from 'lucide-svelte'
+	import { X, Send, Loader2, MapPin, Lock, Check } from 'lucide-svelte'
 	import { onMount, tick } from 'svelte'
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import { Button } from '$lib/components/ui'
 	import { composeStore, showComposeModal, composeState } from '$lib/stores'
-	import type { ComposeState } from '$lib/types'
+	import type { ComposeState, GeographicCommunity } from '$lib/types'
+	import { getAllGeographicCommunities, requiresGeofence } from '$lib/config/communities'
+	import { communityStore } from '$lib/stores/community'
 
 	let {
 		onSubmit
 	}: {
-		onSubmit: (content: string, replyTo?: ComposeState['replyTo']) => Promise<void>
+		onSubmit: (content: string, replyTo?: ComposeState['replyTo'], community?: GeographicCommunity) => Promise<void>
 	} = $props()
 
 	// Animation timing constants
@@ -28,6 +30,12 @@
 	let keyboardOffset = $state(0)
 	let baselineInnerHeight = 0
 	const KEYBOARD_THRESHOLD = 120
+
+	// Community selector state
+	let selectedCommunity = $state<GeographicCommunity>('nyc')
+	let isCheckingGeofence = $state(false)
+	let geofenceError = $state<string | null>(null)
+	const geographicCommunities = getAllGeographicCommunities()
 
 	// Track pending timeouts for cleanup
 	let pendingSuccessTimeout: ReturnType<typeof setTimeout> | null = null
@@ -60,16 +68,47 @@
 		textareaElement.style.height = textareaElement.scrollHeight + 'px'
 	}
 
+	// Check geofence for selected community
+	async function checkGeofence(): Promise<boolean> {
+		if (!requiresGeofence(selectedCommunity)) {
+			geofenceError = null
+			return true
+		}
+
+		isCheckingGeofence = true
+		geofenceError = null
+
+		const result = await communityStore.canPostInCommunity(selectedCommunity)
+		isCheckingGeofence = false
+
+		if (!result.canPost) {
+			geofenceError = result.reason || 'You must be in this location to post'
+			return false
+		}
+
+		return true
+	}
+
+	// Handle community selection change
+	async function handleCommunityChange(community: GeographicCommunity) {
+		selectedCommunity = community
+		await checkGeofence()
+	}
+
 	// Handle form submission
 	async function handleSubmit(e: Event) {
 		e.preventDefault()
 		if (!content.trim() || $composeState.isSubmitting) return
 
+		// Check geofence before submitting
+		const canPost = await checkGeofence()
+		if (!canPost) return
+
 		composeStore.setSubmitting(true)
 		composeStore.setError(null)
 
 		try {
-			await onSubmit(content.trim(), $composeState.replyTo)
+			await onSubmit(content.trim(), $composeState.replyTo, selectedCommunity)
 
 			// Success haptic feedback
 			if ('vibrate' in navigator) {
@@ -190,7 +229,7 @@
 		return null
 	})
 	const canSubmit = $derived.by(() => {
-		return trimmedLength >= 1 && trimmedLength <= maxLength && !$composeState.isSubmitting
+		return trimmedLength >= 1 && trimmedLength <= maxLength && !$composeState.isSubmitting && !geofenceError
 	})
 	const submitLabel = $derived.by(() => ($composeState.replyTo ? 'Reply' : 'Post'))
 	const submittingLabel = $derived.by(() => ($composeState.replyTo ? 'Replying...' : 'Posting...'))
@@ -513,6 +552,63 @@
 							</p>
 						</div>
 					</div>
+				</div>
+			{/if}
+
+			<!-- Community Selector (only show for new posts, not replies) -->
+			{#if !$composeState.replyTo}
+				<div class="px-4 pt-2 pb-3 border-b" style="border-color: rgba(107, 107, 107, 0.1);">
+					<div class="block text-sm font-medium text-muted-foreground mb-2">
+						Post to:
+					</div>
+					<div class="flex gap-2">
+						{#each geographicCommunities as community}
+							{@const isSelected = selectedCommunity === community.id}
+							{@const needsGeofence = requiresGeofence(community.id)}
+							{@const hasError = isSelected && geofenceError}
+							<button
+								type="button"
+								onclick={() => handleCommunityChange(community.id)}
+								disabled={$composeState.isSubmitting || isCheckingGeofence}
+								class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 {isSelected && !hasError ? 'bg-primary text-primary-foreground' : ''} {hasError ? 'bg-destructive/10 text-destructive' : ''} {!isSelected ? 'bg-muted/30 text-foreground hover:bg-muted' : ''}"
+								style={isSelected && !hasError ? 'border: 2px solid rgba(255, 255, 255, 0.2);' : hasError ? 'border: 1px solid rgba(220, 38, 38, 0.2);' : 'border: 1px solid rgba(107, 107, 107, 0.1);'}
+								aria-pressed={isSelected}
+								aria-label="Post to {community.name}"
+							>
+								<span class="text-lg">{community.emoji}</span>
+								<span class="font-medium text-sm">{community.name}</span>
+								{#if needsGeofence}
+									{#if isCheckingGeofence && isSelected}
+										<Loader2 size={14} class="animate-spin" />
+									{:else if hasError}
+										<Lock size={14} />
+									{:else if isSelected}
+										<Check size={14} />
+									{:else}
+										<MapPin size={14} />
+									{/if}
+								{/if}
+							</button>
+						{/each}
+					</div>
+
+					<!-- Geofence error message -->
+					{#if geofenceError}
+						<div class="mt-2 p-2 bg-destructive/10 rounded-lg text-xs text-destructive flex items-start gap-2" style="border: 1px solid rgba(220, 38, 38, 0.2);">
+							<Lock size={14} class="shrink-0 mt-0.5" />
+							<span>{geofenceError}</span>
+						</div>
+					{/if}
+
+					<!-- Community description -->
+					{#if selectedCommunity}
+						{@const community = geographicCommunities.find(c => c.id === selectedCommunity)}
+						{#if community}
+							<p class="mt-2 text-xs text-muted-foreground">
+								{community.description}
+							</p>
+						{/if}
+					{/if}
 				</div>
 			{/if}
 

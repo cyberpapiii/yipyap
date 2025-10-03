@@ -1,19 +1,30 @@
 import { writable, get } from 'svelte/store'
 import { browser } from '$app/environment'
-import type { CommunityType, CommunityState } from '$lib/types'
+import type { CommunityType, GeographicCommunity, CommunityState } from '$lib/types'
+import {
+  getCurrentLocation,
+  getLocationPermission,
+  isWithinGeofence,
+  type Coordinates,
+  type LocationPermission
+} from '$lib/services/geolocation'
+import { getGeofence, requiresGeofence } from '$lib/config/communities'
 
 const STORAGE_KEY = 'yipyap_selected_community'
+const POST_COMMUNITY_STORAGE_KEY = 'yipyap_post_community'
 const DEFAULT_COMMUNITY: CommunityType = 'nyc'
+const DEFAULT_POST_COMMUNITY: GeographicCommunity = 'nyc'
 
 /**
- * Get initial community from localStorage or default
+ * Get initial community filter from localStorage or default
  */
 function getInitialCommunity(): CommunityType {
   if (!browser) return DEFAULT_COMMUNITY
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
+    const validTypes: CommunityType[] = ['nyc', 'blue', 'orange', 'yellow', 'red', 'green', 'purple', 'turquoise', 'lime', 'gray', 'brown']
+    if (stored && validTypes.includes(stored as CommunityType)) {
       return stored as CommunityType
     }
   } catch (error) {
@@ -24,7 +35,25 @@ function getInitialCommunity(): CommunityType {
 }
 
 /**
- * Save community to localStorage
+ * Get initial post community from localStorage or default
+ */
+function getInitialPostCommunity(): GeographicCommunity {
+  if (!browser) return DEFAULT_POST_COMMUNITY
+
+  try {
+    const stored = localStorage.getItem(POST_COMMUNITY_STORAGE_KEY)
+    if (stored && (stored === 'nyc' || stored === 'dimes_square')) {
+      return stored as GeographicCommunity
+    }
+  } catch (error) {
+    console.warn('Failed to load post community from localStorage:', error)
+  }
+
+  return DEFAULT_POST_COMMUNITY
+}
+
+/**
+ * Save community filter to localStorage
  */
 function saveCommunity(community: CommunityType): void {
   if (!browser) return
@@ -37,19 +66,36 @@ function saveCommunity(community: CommunityType): void {
 }
 
 /**
- * Create community store
+ * Save post community to localStorage
+ */
+function savePostCommunity(community: GeographicCommunity): void {
+  if (!browser) return
+
+  try {
+    localStorage.setItem(POST_COMMUNITY_STORAGE_KEY, community)
+  } catch (error) {
+    console.warn('Failed to save post community to localStorage:', error)
+  }
+}
+
+/**
+ * Create community store with location tracking
  */
 function createCommunityStore() {
   const { subscribe, set, update } = writable<CommunityState>({
     selectedCommunity: getInitialCommunity(),
-    isPickerOpen: false
+    selectedPostCommunity: getInitialPostCommunity(),
+    isPickerOpen: false,
+    userLocation: null,
+    locationPermission: null,
+    isCheckingLocation: false
   })
 
   return {
     subscribe,
 
     /**
-     * Select a community and persist to localStorage
+     * Select a community filter (for viewing feed)
      */
     selectCommunity: (community: CommunityType) => {
       update(state => {
@@ -58,6 +104,19 @@ function createCommunityStore() {
           ...state,
           selectedCommunity: community,
           isPickerOpen: false
+        }
+      })
+    },
+
+    /**
+     * Select a post community (for posting destination)
+     */
+    setPostCommunity: (community: GeographicCommunity) => {
+      update(state => {
+        savePostCommunity(community)
+        return {
+          ...state,
+          selectedPostCommunity: community
         }
       })
     },
@@ -90,14 +149,123 @@ function createCommunityStore() {
     },
 
     /**
-     * Reset to default community
+     * Check and update current location
+     */
+    checkLocation: async (): Promise<Coordinates | null> => {
+      update(state => ({ ...state, isCheckingLocation: true }))
+
+      try {
+        const permission = await getLocationPermission()
+        const location = await getCurrentLocation()
+
+        update(state => ({
+          ...state,
+          userLocation: location,
+          locationPermission: permission,
+          isCheckingLocation: false
+        }))
+
+        return location
+      } catch (error) {
+        update(state => ({
+          ...state,
+          userLocation: null,
+          locationPermission: 'denied',
+          isCheckingLocation: false
+        }))
+        return null
+      }
+    },
+
+    /**
+     * Check if user can post in a specific geographic community
+     * Returns true if no geofence required or user is within geofence
+     */
+    canPostInCommunity: async (communityId: GeographicCommunity): Promise<{
+      canPost: boolean
+      reason?: string
+      distance?: number
+    }> => {
+      // No geofence required
+      if (!requiresGeofence(communityId)) {
+        return { canPost: true }
+      }
+
+      const geofence = getGeofence(communityId)
+      if (!geofence) {
+        return { canPost: true }
+      }
+
+      // Try to get current location from state first
+      update(state => ({ ...state, isCheckingLocation: true }))
+
+      try {
+        const permission = await getLocationPermission()
+        const location = await getCurrentLocation()
+
+        update(state => ({
+          ...state,
+          userLocation: location,
+          locationPermission: permission,
+          isCheckingLocation: false
+        }))
+
+        if (!location) {
+          return {
+            canPost: false,
+            reason: 'Could not get your location. Please enable location services.'
+          }
+        }
+
+        // Check geofence
+        const isInside = isWithinGeofence(location.lat, location.lon, geofence)
+
+        if (!isInside) {
+          return {
+            canPost: false,
+            reason: 'You must be in Dimes Square to post here.'
+          }
+        }
+
+        return { canPost: true }
+      } catch (error) {
+        update(state => ({
+          ...state,
+          userLocation: null,
+          locationPermission: 'denied',
+          isCheckingLocation: false
+        }))
+        return {
+          canPost: false,
+          reason: 'Could not get your location. Please enable location services.'
+        }
+      }
+    },
+
+    /**
+     * Update location permission state
+     */
+    setLocationPermission: (permission: LocationPermission) => {
+      update(state => ({
+        ...state,
+        locationPermission: permission
+      }))
+    },
+
+    /**
+     * Reset to default communities
      */
     reset: () => {
       set({
         selectedCommunity: DEFAULT_COMMUNITY,
-        isPickerOpen: false
+        selectedPostCommunity: DEFAULT_POST_COMMUNITY,
+        isPickerOpen: false,
+        userLocation: null,
+        locationPermission: null,
+        isCheckingLocation: false
       })
       saveCommunity(DEFAULT_COMMUNITY)
+      savePostCommunity(DEFAULT_POST_COMMUNITY)
     }
   }
 }

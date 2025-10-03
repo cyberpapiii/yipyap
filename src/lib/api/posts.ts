@@ -9,6 +9,7 @@ import type {
   FeedType,
   AnonymousUser,
   CommunityType,
+  GeographicCommunity,
 } from '$lib/types'
 import { getSubwayLinesForCommunity } from '$lib/config/communities'
 
@@ -86,33 +87,54 @@ export class PostsAPI {
 		cursor?: string,
 		limit = 20,
 		currentUser?: AnonymousUser | null,
-		community: CommunityType = 'nyc'
+		community: CommunityType = 'nyc',
+		geographicCommunity?: GeographicCommunity
 	): Promise<PaginatedResponse<PostWithStats>> {
 		try {
-			// Build query with community filtering
-			const subwayLines = getSubwayLinesForCommunity(community)
+			// Determine which geographic community to query
+			// If geographicCommunity is explicitly provided, use it
+			// Otherwise, default to 'nyc'
+			const targetGeoCommunity = geographicCommunity || 'nyc'
 
-			// If filtering by community, we need to JOIN with anonymous_users table
+			// Build query with dual filtering:
+			// 1. Geographic community filter (nyc vs dimes_square)
+			// 2. Subway line filter (only applied for NYC)
 			let query: any
 
-			if (community === 'nyc' || subwayLines.length === 0) {
-				// No filtering - use simple query
+			if (targetGeoCommunity === 'dimes_square') {
+				// Viewing Dimes Square: filter by geographic community only
+				// NO subway line filtering
 				query = this.supabase
 				  .from('post_with_stats')
 				  .select('*')
+				  .eq('community', 'dimes_square')
 				  .is('parent_post_id', null)
 				  .eq('is_deleted', false)
 				  .limit(limit)
 			} else {
-				// Filter by community - use denormalized user_subway_line field
-				// This avoids JOIN and relationship ambiguity with PGRST201 error
-				query = this.supabase
-				  .from('post_with_stats')
-				  .select('*')
-				  .is('parent_post_id', null)
-				  .eq('is_deleted', false)
-				  .in('user_subway_line', subwayLines)
-				  .limit(limit)
+				// Viewing NYC: apply both geographic filter and subway line filter
+				const subwayLines = getSubwayLinesForCommunity(community)
+
+				if (community === 'nyc' || subwayLines.length === 0) {
+					// No subway line filtering - show all NYC posts
+					query = this.supabase
+					  .from('post_with_stats')
+					  .select('*')
+					  .eq('community', 'nyc')
+					  .is('parent_post_id', null)
+					  .eq('is_deleted', false)
+					  .limit(limit)
+				} else {
+					// Filter by both NYC community and specific subway lines
+					query = this.supabase
+					  .from('post_with_stats')
+					  .select('*')
+					  .eq('community', 'nyc')
+					  .is('parent_post_id', null)
+					  .eq('is_deleted', false)
+					  .in('user_subway_line', subwayLines)
+					  .limit(limit)
+				}
 			}
 
 			// Apply ordering
@@ -464,10 +486,12 @@ export class PostsAPI {
   ): Promise<PostWithStats> {
     try {
       // 1. Use RPC to respect RLS and server-side validations
+      // @ts-expect-error - Supabase type definitions don't include rpc_create_post with p_community parameter
       const { data: created, error } = await this.supabase
         .rpc('rpc_create_post', {
           p_user: currentUser.id,
-          p_content: data.content
+          p_content: data.content,
+          p_community: data.community || 'nyc'
         });
       if (error) throw error;
 

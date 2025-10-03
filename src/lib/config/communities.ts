@@ -1,4 +1,11 @@
 import type { SubwayLine } from '$lib/types'
+import type { Geofence } from '$lib/services/geolocation'
+
+// ============================================================================
+// SUBWAY LINE COMMUNITIES (For Feed Filtering)
+// ============================================================================
+// These are used to filter the NYC community feed by subway line color groups
+// User's subway line identity persists across all posts
 
 /**
  * Community Types
@@ -150,4 +157,78 @@ export function getCommunityForSubwayLine(line: SubwayLine): Community | null {
 export function isLineInCommunity(line: SubwayLine, communityId: CommunityType): boolean {
   if (communityId === 'nyc') return true
   return COMMUNITIES[communityId].subwayLines.includes(line)
+}
+
+// ============================================================================
+// GEOGRAPHIC COMMUNITIES (For Post Tagging)
+// ============================================================================
+// These determine WHERE posts are stored and which require geofencing
+// Separate from subway line identity system
+
+/**
+ * Geographic Community Types
+ */
+export type GeographicCommunity = 'nyc' | 'dimes_square'
+
+/**
+ * Geographic Community Interface
+ */
+export interface GeographicCommunityConfig {
+  id: GeographicCommunity
+  name: string
+  emoji: string
+  description: string
+  geofence?: Geofence // Optional geofence requirement for posting
+}
+
+/**
+ * All geographic communities with optional geofencing
+ */
+export const GEOGRAPHIC_COMMUNITIES: Record<GeographicCommunity, GeographicCommunityConfig> = {
+  nyc: {
+    id: 'nyc',
+    name: 'NYC',
+    emoji: '🗽',
+    description: 'All of New York City'
+    // No geofence - accessible from anywhere
+  },
+  dimes_square: {
+    id: 'dimes_square',
+    name: 'Dimes Square',
+    emoji: '🏙️',
+    description: 'Lower East Side',
+    geofence: {
+      lat: 40.7145, // Canal/Division St area
+      lon: -73.9936,
+      radiusMiles: 0.3
+    }
+  }
+}
+
+/**
+ * Get all geographic communities as an array
+ */
+export function getAllGeographicCommunities(): GeographicCommunityConfig[] {
+  return Object.values(GEOGRAPHIC_COMMUNITIES)
+}
+
+/**
+ * Get a specific geographic community by ID
+ */
+export function getGeographicCommunity(id: GeographicCommunity): GeographicCommunityConfig {
+  return GEOGRAPHIC_COMMUNITIES[id]
+}
+
+/**
+ * Check if a geographic community requires geofencing
+ */
+export function requiresGeofence(communityId: GeographicCommunity): boolean {
+  return !!GEOGRAPHIC_COMMUNITIES[communityId].geofence
+}
+
+/**
+ * Get geofence for a geographic community
+ */
+export function getGeofence(communityId: GeographicCommunity): Geofence | null {
+  return GEOGRAPHIC_COMMUNITIES[communityId].geofence || null
 }

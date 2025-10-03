@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Check, X } from 'lucide-svelte'
+	import { Check, X, MapPin } from 'lucide-svelte'
 	import type { CommunityType } from '$lib/types'
-	import { getAllCommunities, getCommunity } from '$lib/config/communities'
+	import { getAllCommunities, getCommunity, getAllGeographicCommunities } from '$lib/config/communities'
 	import CommunityBadge from './CommunityBadge.svelte'
 
 	let {
@@ -11,15 +11,16 @@
 		onClose
 	}: {
 		isOpen: boolean
-		selectedCommunity: CommunityType
-		onSelect: (community: CommunityType) => void
+		selectedCommunity: CommunityType | 'dimes_square'
+		onSelect: (community: CommunityType | 'dimes_square') => void
 		onClose: () => void
 	} = $props()
 
 	const communities = getAllCommunities()
+	const geographicCommunities = getAllGeographicCommunities().filter(c => c.id === 'dimes_square')
 	let isClosing = $state(false)
 
-	function handleSelect(communityId: CommunityType) {
+	function handleSelect(communityId: CommunityType | 'dimes_square') {
 		// Haptic feedback
 		if ('vibrate' in navigator) {
 			navigator.vibrate(20)
@@ -202,6 +203,63 @@
 											C
 										</div>
 									{/if}
+								</div>
+							</div>
+
+							<!-- Checkmark for selected -->
+							{#if isSelected}
+								<div class="flex-shrink-0">
+									<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+										<Check size={16} class="text-primary-foreground" />
+									</div>
+								</div>
+							{/if}
+						</button>
+					{/each}
+
+					<!-- Separator -->
+					<div class="py-3">
+						<div class="flex items-center gap-3">
+							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
+							<div class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+								Geographic Communities
+							</div>
+							<div class="flex-1 h-px" style="background-color: rgba(107, 107, 107, 0.2);"></div>
+						</div>
+					</div>
+
+					<!-- Geographic Communities -->
+					{#each geographicCommunities as geoCommunity}
+						{@const isSelected = geoCommunity.id === selectedCommunity}
+						<button
+							onclick={() => handleSelect(geoCommunity.id)}
+							class="
+								w-full flex items-center gap-4 p-4 rounded-xl
+								transition-all duration-200 ease-out
+								hover:bg-accent/50 active:scale-[0.98]
+								touch-manipulation
+								focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
+							"
+							style={isSelected ? 'background-color: rgba(1, 115, 92, 0.15); border: 1px solid rgba(1, 115, 92, 0.3);' : 'border: 1px solid rgba(107, 107, 107, 0.15);'}
+							aria-label="Select {geoCommunity.name} community"
+							type="button"
+						>
+							<!-- Community Info -->
+							<div class="flex-1 flex flex-col items-start gap-1 min-w-0">
+								<div class="flex items-center gap-2">
+									<span class="text-lg font-bold text-foreground">
+										{geoCommunity.emoji} {geoCommunity.name}
+									</span>
+									{#if geoCommunity.geofence}
+										<div class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
+											style="background-color: rgba(1, 115, 92, 0.15); color: rgb(1, 115, 92);">
+											<MapPin size={12} />
+											<span>Geofenced</span>
+										</div>
+									{/if}
+								</div>
+								<div class="text-sm text-muted-foreground">
+									{geoCommunity.description}
 								</div>
 							</div>
 

@@ -32,6 +32,14 @@ export interface Database {
       }
     }
     Functions: {
+      rpc_create_post: {
+        Args: {
+          p_user: string
+          p_content: string
+          p_community?: 'nyc' | 'dimes_square'
+        }
+        Returns: Post
+      }
       rpc_get_notifications: {
         Args: {
           p_user: string
@@ -249,9 +257,15 @@ export type CommunityType =
   | 'gray'
   | 'brown'
 
+export type GeographicCommunity = 'nyc' | 'dimes_square'
+
 export interface CommunityState {
-  selectedCommunity: CommunityType
+  selectedCommunity: CommunityType // For feed filtering (subway line groups)
+  selectedPostCommunity: GeographicCommunity // For posting destination
   isPickerOpen: boolean
+  userLocation: { lat: number; lon: number } | null
+  locationPermission: 'granted' | 'denied' | 'prompt' | 'unsupported' | null
+  isCheckingLocation: boolean
 }
 
 // Navigation Types
@@ -313,6 +327,7 @@ export interface PaginatedResponse<T> {
 // Form Types
 export interface PostFormData {
   content: string
+  community?: GeographicCommunity
   parentPostId?: string
   threadId?: string
 }

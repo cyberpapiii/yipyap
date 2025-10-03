@@ -7,7 +7,8 @@ import type {
   CommentFormData,
   AnonymousUser,
   FeedType,
-  CommunityType
+  CommunityType,
+  GeographicCommunity
 } from '$lib/types'
 
 import { PostsAPI } from './posts'
@@ -124,10 +125,11 @@ export class RealtimePostsAPI extends PostsAPI {
     cursor?: string,
     limit = 20,
     currentUser?: AnonymousUser | null,
-    community: CommunityType = 'nyc'
+    community: CommunityType = 'nyc',
+    geographicCommunity?: GeographicCommunity
   ) {
     // First load the initial data
-    const result = await super.getFeedPosts(feedType, cursor, limit, currentUser, community)
+    const result = await super.getFeedPosts(feedType, cursor, limit, currentUser, community, geographicCommunity)
 
     // Subscribe to real-time updates for this feed
     await realtime.subscribeToFeed(feedType)
