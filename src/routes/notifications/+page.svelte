@@ -8,6 +8,7 @@
 	import AnonymousAvatar from '$lib/components/community/AnonymousAvatar.svelte'
 	import SubwayLinePicker from '$lib/components/community/SubwayLinePicker.svelte'
 	import PushNotificationToggle from '$lib/components/notifications/PushNotificationToggle.svelte'
+	import LocationPermissionToggle from '$lib/components/notifications/LocationPermissionToggle.svelte'
 	import NotificationCard from '$lib/components/notifications/NotificationCard.svelte'
 	import { RefreshCw, ChevronDown } from 'lucide-svelte'
 
@@ -265,6 +266,11 @@
 					userId={user.id}
 					{deviceId}
 				/>
+
+				<!-- Location Permission Toggle -->
+				<div class="mt-3">
+					<LocationPermissionToggle />
+				</div>
 			</div>
 		{/if}
 
