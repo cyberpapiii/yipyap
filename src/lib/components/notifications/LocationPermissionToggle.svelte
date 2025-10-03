@@ -10,14 +10,26 @@
 
 	onMount(async () => {
 		// Subscribe to community store for permission status
-		communityStore.subscribe(state => {
+		const unsubscribe = communityStore.subscribe(state => {
 			locationPermission = state.locationPermission
 			isCheckingLocation = state.isCheckingLocation
 		})
 
-		// Check current status on mount if not already known
-		if (!locationPermission) {
-			await communityStore.checkLocation()
+		// Always check current status on mount to verify permission is still valid
+		// and location can actually be fetched (not just that permission was granted)
+		try {
+			const location = await communityStore.checkLocation()
+			if (!location && locationPermission === 'prompt') {
+				// Permission API says 'granted' but location fetch failed
+				// This can happen when permission is stale or location services are off
+				error = 'Could not get location. Ensure location services are enabled.'
+			}
+		} catch (err) {
+			console.error('[LocationPermissionToggle] Failed to check location:', err)
+		}
+
+		return () => {
+			unsubscribe()
 		}
 	})
 

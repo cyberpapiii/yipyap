@@ -5,6 +5,7 @@ import {
   getCurrentLocation,
   getLocationPermission,
   isWithinGeofence,
+  calculateDistance,
   type Coordinates,
   type LocationPermission
 } from '$lib/services/geolocation'
@@ -253,13 +254,19 @@ function createCommunityStore() {
         }
       }
 
-      // Check geofence
-      const isInside = isWithinGeofence(state.userLocation.lat, state.userLocation.lon, geofence)
+      // Check geofence with distance calculation
+      const distance = calculateDistance(state.userLocation.lat, state.userLocation.lon, geofence.lat, geofence.lon)
+      const isInside = distance <= geofence.radiusMiles
 
       if (!isInside) {
+        const distanceStr = distance < 1
+          ? `${(distance * 5280).toFixed(0)} feet`
+          : `${distance.toFixed(1)} miles`
+
         return {
           canPost: false,
-          reason: 'You must be in Dimes Square to post here.'
+          reason: `You're ${distanceStr} from Dimes Square. You must be within ${geofence.radiusMiles} miles to post here.`,
+          distance
         }
       }
 
