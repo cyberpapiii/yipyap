@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
+	import { onMount } from 'svelte'
 	import type { FeedType } from '$lib/types'
 
 	let {
@@ -14,10 +15,12 @@
 
 	// Touch state
 	let touchStartX = $state(0)
+	let touchStartY = $state(0)
 	let touchCurrentX = $state(0)
 	let isDragging = $state(false)
 	let containerTranslateX = $state(0)
 	let isAnimating = $state(false)
+	let containerElement: HTMLDivElement
 
 	// Swipe configuration
 	const SWIPE_THRESHOLD = 80 // Minimum distance to trigger feed change
@@ -28,24 +31,34 @@
 
 	// Handle touch start
 	function handleTouchStart(e: TouchEvent) {
-		// Don't intercept if touching inside a post card or scrollable element
-		const target = e.target as HTMLElement
-		if (target.closest('[role="article"]') || target.closest('[data-no-swipe]')) {
-			return
-		}
-
 		touchStartX = e.touches[0].clientX
+		touchStartY = e.touches[0].clientY
 		touchCurrentX = e.touches[0].clientX
-		isDragging = true
+		isDragging = false // Will be set to true in touchmove if horizontal swipe detected
 		isAnimating = false
 	}
 
 	// Handle touch move - follow finger with resistance
 	function handleTouchMove(e: TouchEvent) {
-		if (!isDragging) return
-
 		touchCurrentX = e.touches[0].clientX
 		const deltaX = touchCurrentX - touchStartX
+		const deltaY = Math.abs(e.touches[0].clientY - touchStartY)
+
+		// Start dragging only if horizontal movement is detected
+		if (!isDragging) {
+			// If moved more than 10px horizontally and horizontal > vertical, start horizontal drag
+			if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > deltaY) {
+				isDragging = true
+			} else {
+				// Not enough movement yet or vertical scroll, wait
+				return
+			}
+		}
+
+		// Prevent vertical scroll while swiping horizontally
+		if (isDragging) {
+			e.preventDefault()
+		}
 
 		// Apply resistance
 		const resistedDelta = deltaX * RESISTANCE_FACTOR
@@ -113,6 +126,22 @@
 			containerTranslateX = targetIndex * -100
 		}
 	})
+
+	// Add touch listeners with passive: false for preventDefault to work
+	onMount(() => {
+		if (!containerElement) return
+
+		// These need passive: false to allow preventDefault
+		containerElement.addEventListener('touchstart', handleTouchStart as any, { passive: true })
+		containerElement.addEventListener('touchmove', handleTouchMove as any, { passive: false })
+		containerElement.addEventListener('touchend', handleTouchEnd as any, { passive: true })
+
+		return () => {
+			containerElement?.removeEventListener('touchstart', handleTouchStart as any)
+			containerElement?.removeEventListener('touchmove', handleTouchMove as any)
+			containerElement?.removeEventListener('touchend', handleTouchEnd as any)
+		}
+	})
 </script>
 
 <style>
@@ -124,11 +153,8 @@
 </style>
 
 <div
-	class="relative w-full overflow-hidden"
-	ontouchstart={handleTouchStart}
-	ontouchmove={handleTouchMove}
-	ontouchend={handleTouchEnd}
-	data-no-swipe
+	bind:this={containerElement}
+	class="relative w-full overflow-hidden touch-pan-y"
 >
 	<div
 		class="feed-container flex w-full"
