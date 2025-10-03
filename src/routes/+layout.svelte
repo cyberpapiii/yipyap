@@ -111,6 +111,12 @@
 
       // Subscribe to realtime notification updates
       notificationsStore.subscribeToRealtime()
+
+      // Check location permission on app startup (don't await - runs in background)
+      // This ensures the location toggle shows correct state when user navigates to profile
+      communityStore.checkLocation().catch((err) => {
+        console.warn('Failed to check location on app startup:', err)
+      })
     } catch (e) {
       console.error('App init failed:', e)
     }
