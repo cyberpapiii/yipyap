@@ -605,7 +605,7 @@
 
 					<!-- Geofence error message -->
 					{#if geofenceError}
-						<div class="mt-2 p-2 bg-destructive/10 rounded-lg text-xs text-destructive flex items-start gap-2" style="border: 1px solid rgba(220, 38, 38, 0.2);">
+						<div class="mt-2 p-2 bg-destructive/10 rounded-lg text-xs text-destructive flex items-start gap-2" style="border: 1px solid hsl(var(--destructive));">
 							<Lock size={14} class="shrink-0 mt-0.5" />
 							<span>{geofenceError}</span>
 						</div>
