@@ -535,7 +535,7 @@
 			tabindex="-1"
 		>
 			<!-- Header -->
-			<div class="flex items-center justify-between p-4">
+			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
 					{$composeState.replyTo ? 'Reply' : 'New Post'}
 				</h2>
@@ -568,7 +568,7 @@
 
 			<!-- Community Selector (only show for new posts, not replies) -->
 			{#if !$composeState.replyTo}
-				<div class="px-4 pt-2 pb-3 border-b" style="border-color: rgba(107, 107, 107, 0.1);">
+				<div class="px-4 pt-1 pb-3 border-b" style="border-color: rgba(107, 107, 107, 0.1);">
 					<div class="block text-sm font-medium text-muted-foreground mb-2">
 						Post to:
 					</div>
@@ -581,13 +581,13 @@
 								type="button"
 								onclick={(e) => { e.preventDefault(); handleCommunityChange(community.id); }}
 								disabled={$composeState.isSubmitting || isCheckingGeofence}
-								class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 {isSelected && !hasError ? 'bg-primary text-primary-foreground' : ''} {hasError ? 'bg-destructive/10 text-destructive' : ''} {!isSelected ? 'bg-muted/30 text-foreground hover:bg-muted' : ''}"
+								class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 {isSelected && !hasError ? 'bg-primary text-primary-foreground' : ''} {hasError ? 'bg-destructive/10 text-destructive' : ''} {!isSelected ? 'bg-muted/30 text-foreground hover:bg-muted' : ''}"
 								style={isSelected && !hasError ? 'border: 2px solid rgba(255, 255, 255, 0.2);' : hasError ? 'border: 1px solid rgba(220, 38, 38, 0.2);' : 'border: 1px solid rgba(107, 107, 107, 0.1);'}
 								aria-pressed={isSelected}
 								aria-label="Post to {community.name}"
 							>
-								<span class="text-lg">{community.emoji}</span>
-								<span class="font-medium text-sm">{community.name}</span>
+								<span class="text-base">{community.emoji}</span>
+								<span class="font-medium text-xs">{community.name}</span>
 								{#if needsGeofence}
 									{#if isCheckingGeofence && isSelected}
 										<Loader2 size={14} class="animate-spin" />
@@ -632,7 +632,7 @@
 						bind:value={content}
 						oninput={autoResize}
 						placeholder={$composeState.replyTo ? "Write your reply..." : "What's on your mind?"}
-						class="w-full bg-transparent border-0 outline-none resize-none placeholder:text-muted-foreground text-foreground min-h-24 max-h-48"
+						class="w-full bg-transparent border-0 outline-none resize-none placeholder:text-muted-foreground text-foreground min-h-20 max-h-48"
 						disabled={$composeState.isSubmitting}
 						maxlength={maxLength}
 					></textarea>
