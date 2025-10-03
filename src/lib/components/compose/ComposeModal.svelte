@@ -582,7 +582,7 @@
 								onclick={(e) => { e.preventDefault(); handleCommunityChange(community.id); }}
 								disabled={$composeState.isSubmitting || isCheckingGeofence}
 								class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 {isSelected && !hasError ? 'bg-primary text-primary-foreground' : ''} {hasError ? 'bg-destructive/10 text-destructive' : ''} {!isSelected ? 'bg-muted/30 text-foreground hover:bg-muted' : ''}"
-								style={isSelected && !hasError ? 'border: 2px solid rgba(255, 255, 255, 0.2);' : hasError ? 'border: 2px solid rgba(220, 38, 38, 0.2);' : 'border: 1px solid rgba(107, 107, 107, 0.1);'}
+								style={isSelected && !hasError ? 'border: 2px solid rgba(255, 255, 255, 0.2);' : hasError ? 'border: 2px solid hsl(var(--destructive));' : 'border: 1px solid rgba(107, 107, 107, 0.1);'}
 								aria-pressed={isSelected}
 								aria-label="Post to {community.name}"
 							>
