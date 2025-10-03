@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { ChevronDown } from 'lucide-svelte'
+	import { ChevronDown, MapPin } from 'lucide-svelte'
 	import type { CommunityType } from '$lib/types'
 	import { getCommunity } from '$lib/config/communities'
+	import { getGeographicCommunity } from '$lib/config/communities'
 	import CommunityBadge from './CommunityBadge.svelte'
 
 	let {
@@ -9,12 +10,15 @@
 		postCount,
 		onClick
 	}: {
-		selectedCommunity: CommunityType
+		selectedCommunity: CommunityType | 'dimes_square'
 		postCount: number
 		onClick: () => void
 	} = $props()
 
-	const community = $derived(getCommunity(selectedCommunity))
+	// Check if this is a geographic community or subway line community
+	const isGeographic = $derived(selectedCommunity === 'dimes_square')
+	const community = $derived(isGeographic ? null : getCommunity(selectedCommunity as CommunityType))
+	const geoCommunity = $derived(isGeographic ? getGeographicCommunity('dimes_square') : null)
 
 	function handleClick() {
 		// Haptic feedback
@@ -53,8 +57,14 @@
 					style="background-color: #EB6800; color: #FFF">
 					C
 				</div>
-			{:else}
-				<!-- Other communities - show subway line badges -->
+			{:else if selectedCommunity === 'dimes_square'}
+				<!-- Dimes Square - show emoji and MapPin -->
+				<div class="flex items-center gap-2">
+					<span class="text-2xl">{geoCommunity?.emoji || '🏙️'}</span>
+					<MapPin size={20} class="text-primary" />
+				</div>
+			{:else if community}
+				<!-- Other subway line communities - show subway line badges -->
 				{#each community.subwayLines as line}
 					<div class="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold"
 						style="background-color: {line === 'A' || line === 'C' || line === 'E' ? '#0062CF' : line === 'B' || line === 'D' || line === 'F' || line === 'M' ? '#EB6800' : line === 'N' || line === 'Q' || line === 'R' || line === 'W' ? '#F6BC26' : line === '1' || line === '2' || line === '3' ? '#D82233' : line === '4' || line === '5' || line === '6' ? '#009952' : line === '7' ? '#9A38A1' : line === 'T' ? '#008EB7' : line === 'G' ? '#799534' : line === 'L' ? '#7C858C' : '#8E5C33'}; color: {line === 'N' || line === 'Q' || line === 'R' || line === 'W' ? '#000' : '#FFF'}">
