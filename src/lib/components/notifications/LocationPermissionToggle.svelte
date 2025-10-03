@@ -2,19 +2,15 @@
 	import { onMount } from 'svelte'
 	import { MapPin } from 'lucide-svelte'
 	import { communityStore } from '$lib/stores/community'
-	import type { LocationPermission } from '$lib/services/geolocation'
 
-	let locationPermission = $state<LocationPermission | null>(null)
-	let isCheckingLocation = $state(false)
 	let error = $state<string | null>(null)
 
-	onMount(async () => {
-		// Subscribe to community store for permission status
-		const unsubscribe = communityStore.subscribe(state => {
-			locationPermission = state.locationPermission
-			isCheckingLocation = state.isCheckingLocation
-		})
+	// Derive values directly from store to avoid sync issues
+	let locationPermission = $derived($communityStore.locationPermission)
+	let isCheckingLocation = $derived($communityStore.isCheckingLocation)
+	let locationEnabled = $derived($communityStore.locationEnabled)
 
+	onMount(async () => {
 		// Always check current status on mount to verify permission is still valid
 		// and location can actually be fetched (not just that permission was granted)
 		try {
@@ -27,10 +23,6 @@
 		} catch (err) {
 			console.error('[LocationPermissionToggle] Failed to check location:', err)
 		}
-
-		return () => {
-			unsubscribe()
-		}
 	})
 
 	async function handleToggle() {
@@ -41,11 +33,33 @@
 		error = null
 
 		try {
-			if (locationPermission === 'granted') {
-				// Show info about how to disable in browser settings
-				error = 'To disable location access, change your browser settings.'
+			if (locationEnabled && locationPermission === 'granted') {
+				// User wants to disable - toggle app-level preference
+				communityStore.setLocationEnabled(false)
+				// Success haptic
+				if ('vibrate' in navigator) {
+					navigator.vibrate([10, 50, 10])
+				}
+			} else if (!locationEnabled) {
+				// User wants to enable - toggle app-level preference and check location
+				communityStore.setLocationEnabled(true)
+				await communityStore.checkLocation()
+				const state = $communityStore
+
+				if (state.locationPermission === 'granted') {
+					// Success haptic
+					if ('vibrate' in navigator) {
+						navigator.vibrate([10, 50, 10])
+					}
+				} else if (state.locationPermission === 'denied') {
+					error = 'Location permission denied. Please enable it in your browser settings.'
+					// Error haptic
+					if ('vibrate' in navigator) {
+						navigator.vibrate([10, 30, 10, 30, 10])
+					}
+				}
 			} else {
-				// Try to request location permission
+				// Location disabled or not yet granted - request permission
 				await communityStore.retryLocation()
 				const state = $communityStore
 
@@ -73,6 +87,11 @@
 	}
 
 	function getStatusText(): string {
+		// If user disabled in app, show that regardless of browser permission
+		if (!locationEnabled) {
+			return 'Disabled'
+		}
+
 		if (!locationPermission) {
 			return 'Checking...'
 		}
@@ -91,6 +110,11 @@
 	}
 
 	function getStatusColor(): string {
+		// If disabled in app, show gray
+		if (!locationEnabled) {
+			return '#6B6B6B'
+		}
+
 		if (!locationPermission || locationPermission === 'prompt' || locationPermission === 'denied' || locationPermission === 'unsupported') {
 			return '#6B6B6B' // Muted gray
 		}
@@ -105,7 +129,7 @@
 	}
 
 	function isEnabled(): boolean {
-		return locationPermission === 'granted'
+		return locationEnabled && locationPermission === 'granted'
 	}
 </script>
 
@@ -175,7 +199,13 @@
 	{/if}
 
 	<!-- Help text -->
-	{#if locationPermission === 'unsupported'}
+	{#if !locationEnabled}
+		<div class="mt-3 pt-3" style="border-top: 1px solid rgba(107, 107, 107, 0.1);">
+			<p class="text-xs" style="color: #6B6B6B;">
+				Location is disabled. You won't be able to post in NYC or location-restricted communities.
+			</p>
+		</div>
+	{:else if locationPermission === 'unsupported'}
 		<div class="mt-3 pt-3" style="border-top: 1px solid rgba(107, 107, 107, 0.1);">
 			<p class="text-xs" style="color: #6B6B6B;">
 				Your browser does not support location services.
@@ -190,7 +220,7 @@
 	{:else if locationPermission === 'prompt' || !locationPermission}
 		<div class="mt-3 pt-3" style="border-top: 1px solid rgba(107, 107, 107, 0.1);">
 			<p class="text-xs" style="color: #6B6B6B;">
-				Required to post in location-restricted communities like Dimes Square.
+				Required to post in NYC and other location-restricted communities.
 			</p>
 		</div>
 	{/if}

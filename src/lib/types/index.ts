@@ -266,6 +266,7 @@ export interface CommunityState {
   userLocation: { lat: number; lon: number } | null
   locationPermission: 'granted' | 'denied' | 'prompt' | 'unsupported' | null
   isCheckingLocation: boolean
+  locationEnabled: boolean // App-level toggle: false = user disabled location in app
 }
 
 // Navigation Types

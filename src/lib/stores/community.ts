@@ -14,6 +14,7 @@ import { getGeofence, requiresGeofence } from '$lib/config/communities'
 const STORAGE_KEY = 'yipyap_selected_community'
 const POST_COMMUNITY_STORAGE_KEY = 'yipyap_post_community'
 const LOCATION_PERMISSION_STORAGE_KEY = 'yipyap_location_permission'
+const LOCATION_ENABLED_STORAGE_KEY = 'yipyap_location_enabled'
 const DEFAULT_COMMUNITY: CommunityType = 'nyc'
 const DEFAULT_POST_COMMUNITY: GeographicCommunity = 'nyc'
 
@@ -86,6 +87,36 @@ function saveLocationPermission(permission: LocationPermission): void {
 }
 
 /**
+ * Get initial location enabled preference from localStorage
+ * Default to true (enabled)
+ */
+function getInitialLocationEnabled(): boolean {
+  if (!browser) return true
+
+  try {
+    const stored = localStorage.getItem(LOCATION_ENABLED_STORAGE_KEY)
+    if (stored === 'false') return false
+    return true // Default to enabled
+  } catch (error) {
+    console.warn('Failed to load location enabled preference from localStorage:', error)
+    return true
+  }
+}
+
+/**
+ * Save location enabled preference to localStorage
+ */
+function saveLocationEnabled(enabled: boolean): void {
+  if (!browser) return
+
+  try {
+    localStorage.setItem(LOCATION_ENABLED_STORAGE_KEY, enabled ? 'true' : 'false')
+  } catch (error) {
+    console.warn('Failed to save location enabled preference to localStorage:', error)
+  }
+}
+
+/**
  * Save community filter to localStorage
  */
 function saveCommunity(community: CommunityType): void {
@@ -121,7 +152,8 @@ function createCommunityStore() {
     isPickerOpen: false,
     userLocation: null,
     locationPermission: getInitialLocationPermission(),
-    isCheckingLocation: false
+    isCheckingLocation: false,
+    locationEnabled: getInitialLocationEnabled()
   })
 
   return {
@@ -183,8 +215,21 @@ function createCommunityStore() {
 
     /**
      * Check and update current location
+     * Respects app-level locationEnabled preference
      */
     checkLocation: async (): Promise<Coordinates | null> => {
+      const state = get({ subscribe })
+
+      // If user has disabled location in app, don't check
+      if (!state.locationEnabled) {
+        update(s => ({
+          ...s,
+          userLocation: null,
+          isCheckingLocation: false
+        }))
+        return null
+      }
+
       update(state => ({ ...state, isCheckingLocation: true }))
 
       try {
@@ -237,12 +282,21 @@ function createCommunityStore() {
         return { canPost: true }
       }
 
-      // Try to get current location from state first
-      await communityStore.checkLocation()
+      // Check if user has disabled location in app
       const state = get({ subscribe })
+      if (!state.locationEnabled) {
+        return {
+          canPost: false,
+          reason: 'Location is disabled. Enable it in your profile settings to post here.'
+        }
+      }
 
-      if (!state.userLocation) {
-        if (state.locationPermission === 'denied') {
+      // Try to get current location
+      await communityStore.checkLocation()
+      const updatedState = get({ subscribe })
+
+      if (!updatedState.userLocation) {
+        if (updatedState.locationPermission === 'denied') {
           return {
             canPost: false,
             reason: 'Location permission denied. Please enable it in your browser settings and try again.'
@@ -255,7 +309,7 @@ function createCommunityStore() {
       }
 
       // Check geofence with distance calculation
-      const distance = calculateDistance(state.userLocation.lat, state.userLocation.lon, geofence.lat, geofence.lon)
+      const distance = calculateDistance(updatedState.userLocation.lat, updatedState.userLocation.lon, geofence.lat, geofence.lon)
       const isInside = distance <= geofence.radiusMiles
 
       if (!isInside) {
@@ -307,6 +361,19 @@ function createCommunityStore() {
     },
 
     /**
+     * Enable/disable location in app (app-level preference)
+     */
+    setLocationEnabled: (enabled: boolean) => {
+      saveLocationEnabled(enabled)
+      update(state => ({
+        ...state,
+        locationEnabled: enabled,
+        // Clear location data when disabling
+        userLocation: enabled ? state.userLocation : null
+      }))
+    },
+
+    /**
      * Reset to default communities
      */
     reset: () => {
@@ -316,10 +383,12 @@ function createCommunityStore() {
         isPickerOpen: false,
         userLocation: null,
         locationPermission: null,
-        isCheckingLocation: false
+        isCheckingLocation: false,
+        locationEnabled: true
       })
       saveCommunity(DEFAULT_COMMUNITY)
       savePostCommunity(DEFAULT_POST_COMMUNITY)
+      saveLocationEnabled(true)
     }
   }
 }

@@ -189,8 +189,12 @@ export const GEOGRAPHIC_COMMUNITIES: Record<GeographicCommunity, GeographicCommu
     id: 'nyc',
     name: 'NYC',
     emoji: '🗽',
-    description: 'All of New York City'
-    // No geofence - accessible from anywhere
+    description: 'All of New York City',
+    geofence: {
+      lat: 40.7484, // Empire State Building (central Manhattan)
+      lon: -73.9857,
+      radiusMiles: 20 // Covers all 5 boroughs
+    }
   },
   dimes_square: {
     id: 'dimes_square',
