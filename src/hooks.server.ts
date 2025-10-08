@@ -3,10 +3,12 @@ import { dev } from '$app/environment'
 
 /**
  * SvelteKit server hooks
- * Adds security headers to all responses
+ * Adds security headers and performance optimizations to all responses
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	const response = await resolve(event)
+	const response = await resolve(event, {
+		preload: ({ type }) => type === 'font' || type === 'js' || type === 'css'
+	})
 
 	// Content Security Policy (CSP)
 	// Prevents XSS attacks by controlling what resources can be loaded

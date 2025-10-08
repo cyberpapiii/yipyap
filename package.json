@@ -20,6 +20,7 @@
 	"devDependencies": {
 		"@playwright/test": "^1.55.1",
 		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/enhanced-img": "^0.8.4",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@tailwindcss/postcss": "^4.1.13",
@@ -28,6 +29,7 @@
 		"happy-dom": "^19.0.2",
 		"mode-watcher": "^1.0.8",
 		"pg": "^8.16.3",
+		"rollup-plugin-visualizer": "^6.0.4",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"svelte-sonner": "^1.0.5",

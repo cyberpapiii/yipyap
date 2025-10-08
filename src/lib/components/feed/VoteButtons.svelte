@@ -163,40 +163,27 @@
 	type ScoreColor = 'positive' | 'negative' | 'neutral'
 	type VoteVariant = 'neutral' | 'upvoted' | 'downvoted' | 'animating' | 'error' | 'success'
 
-	let scoreColor = $state<ScoreColor>('neutral')
-	let formattedScore = $state(voteScore.toString())
-	let upvoteVariant = $state<VoteVariant>('neutral')
-	let downvoteVariant = $state<VoteVariant>('neutral')
+	const scoreColor = $derived<ScoreColor>(voteScore > 0 ? 'positive' : voteScore < 0 ? 'negative' : 'neutral')
+	const formattedScore = $derived(Math.abs(voteScore) >= 1000 ? `${(voteScore / 1000).toFixed(1)}k` : voteScore.toString())
 
+	const upvoteVariant = $derived.by((): VoteVariant => {
+		if (errorState) return 'error'
+		if (isAnimating && userVote === 'up') return 'animating'
+		if (successPulse && userVote === 'up') return 'success'
+		return userVote === 'up' ? 'upvoted' : 'neutral'
+	})
+
+	const downvoteVariant = $derived.by((): VoteVariant => {
+		if (errorState) return 'error'
+		if (isAnimating && userVote === 'down') return 'animating'
+		if (successPulse && userVote === 'down') return 'success'
+		return userVote === 'down' ? 'downvoted' : 'neutral'
+	})
+
+	// Track vote changes with $effect for side effects only
 	$effect(() => {
-		scoreColor = voteScore > 0 ? 'positive' : voteScore < 0 ? 'negative' : 'neutral'
-		formattedScore = Math.abs(voteScore) >= 1000 ? `${(voteScore / 1000).toFixed(1)}k` : voteScore.toString()
-
 		if (lastVote !== userVote) {
 			lastVote = userVote
-		}
-
-		if (errorState) {
-			upvoteVariant = 'error'
-			downvoteVariant = 'error'
-			return
-		}
-
-		upvoteVariant = userVote === 'up' ? 'upvoted' : 'neutral'
-		downvoteVariant = userVote === 'down' ? 'downvoted' : 'neutral'
-
-		if (successPulse && userVote === 'up') {
-			upvoteVariant = 'success'
-		}
-		if (successPulse && userVote === 'down') {
-			downvoteVariant = 'success'
-		}
-
-		if (isAnimating && userVote === 'up') {
-			upvoteVariant = 'animating'
-		}
-		if (isAnimating && userVote === 'down') {
-			downvoteVariant = 'animating'
 		}
 	})
 </script>

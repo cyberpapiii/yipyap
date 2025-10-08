@@ -91,9 +91,18 @@
 	}
 
 	// Removed formattedContent - using plain text with CSS whitespace handling
-	let timeAgo = $state('')
-	let indentClass = $state('')
-	let depthStyles = $state({ opacity: 1, borderColor: '' })
+	const timeAgo = $derived(formatDistanceToNow(new Date(comment.created_at)))
+	const indentClass = $derived.by(() => {
+		const indentLevels = ['', 'ml-2', 'ml-4', 'ml-6']
+		return indentLevels[Math.min(depth, 3)] || 'ml-6'
+	})
+	const depthStyles = $derived.by(() => {
+		const opacity = Math.max(0.7, 1 - depth * 0.1)
+		return {
+			opacity,
+			borderColor: depth > 0 ? `hsl(0 0% 20% / ${opacity})` : ''
+		}
+	})
 	// Collapse nested replies by default, show on tap
 	let showNestedReplies = $state(false)
 
@@ -111,18 +120,6 @@
 		return () => {
 			document.removeEventListener('click', handleClickOutside)
 		}
-	})
-
-	$effect(() => {
-		timeAgo = formatDistanceToNow(new Date(comment.created_at))
-		const indentLevels = ['', 'ml-2', 'ml-4', 'ml-6']
-		indentClass = indentLevels[Math.min(depth, 3)] || 'ml-6'
-		const opacity = Math.max(0.7, 1 - depth * 0.1)
-		depthStyles = {
-			opacity,
-			borderColor: depth > 0 ? `hsl(0 0% 20% / ${opacity})` : ''
-		}
-		// Removed auto-expansion: replies now stay collapsed by default
 	})
 </script>
 

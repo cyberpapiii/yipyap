@@ -10,9 +10,8 @@
   import type { AnonymousUser, GeographicCommunity } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/layout/BottomNav.svelte'
-  import ComposeModal from '$lib/components/compose/ComposeModal.svelte'
   import CommunityPicker from '$lib/components/community/CommunityPicker.svelte'
-  import { composeStore, anonymousUser as currentUserStore } from '$lib/stores'
+  import { composeStore, anonymousUser as currentUserStore, showComposeModal } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import { notificationsStore } from '$lib/stores/notifications'
   import { communityStore } from '$lib/stores/community'
@@ -24,10 +23,24 @@
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
 
+  // Lazy load ComposeModal component
+  let ComposeModal = $state<any>(null)
+
+  // Load ComposeModal when needed
+  $effect(() => {
+    if ($showComposeModal && !ComposeModal) {
+      import('$lib/components/compose/ComposeModal.svelte').then(module => {
+        ComposeModal = module.default
+      })
+    }
+  })
+
   // Determine active nav based on current route
-  $: activePage = $page.url.pathname === '/notifications' ? 'profile' :
-                  $page.url.pathname.startsWith('/thread') ? 'thread' :
-                  'home'
+  const activePage = $derived(
+    $page.url.pathname === '/notifications' ? 'profile' :
+    $page.url.pathname.startsWith('/thread') ? 'thread' :
+    'home'
+  )
 
   function handleSelectCommunity(community: any) {
     communityStore.selectCommunity(community)
@@ -205,7 +218,9 @@
 
 <BottomNav active={activePage} />
 
-<ComposeModal onSubmit={onSubmit} />
+{#if ComposeModal}
+  <svelte:component this={ComposeModal} {onSubmit} />
+{/if}
 
 <!-- Community Picker Modal - rendered at root level -->
 <CommunityPicker
