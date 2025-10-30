@@ -24,8 +24,9 @@
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
 
-  // iOS haptic workaround element reference
+  // iOS haptic workaround element references
   let hapticLabel: HTMLLabelElement | null = null
+  let hapticInput: HTMLInputElement | null = null
 
   // Lazy load ComposeModal component
   let ComposeModal = $state<any>(null)
@@ -154,7 +155,7 @@
       }
 
       // Initialize haptic feedback system (iOS workaround)
-      hapticsStore.initialize(hapticLabel)
+      hapticsStore.initialize(hapticLabel, hapticInput)
 
       // Initialize realtime system
       await realtime.initialize(supabase as any)
@@ -187,6 +188,7 @@
 
 <!-- Hidden iOS haptic workaround elements (iOS 18+ WebKit switch haptic) -->
 <input
+  bind:this={hapticInput}
   id="haptic-switch"
   type="checkbox"
   switch

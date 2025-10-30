@@ -4,7 +4,7 @@
  */
 
 import { writable } from 'svelte/store'
-import { setIOSHapticRef, triggerHaptic as triggerHapticUtil, type HapticAction } from '$lib/utils/haptics'
+import { setIOSHapticRefs, triggerHaptic as triggerHapticUtil, type HapticAction } from '$lib/utils/haptics'
 
 // Store state
 export const hapticSupported = writable<boolean>(false)
@@ -14,9 +14,9 @@ export const hapticInitialized = writable<boolean>(false)
  * Initialize haptic system
  * Must be called from +layout.svelte after iOS elements are mounted
  */
-export function initializeHaptics(labelElement: HTMLLabelElement | null): void {
-	// Set iOS workaround reference
-	setIOSHapticRef(labelElement)
+export function initializeHaptics(labelElement: HTMLLabelElement | null, inputElement: HTMLInputElement | null = null): void {
+	// Set iOS workaround references
+	setIOSHapticRefs(labelElement, inputElement)
 
 	// Mark as initialized
 	hapticInitialized.set(true)

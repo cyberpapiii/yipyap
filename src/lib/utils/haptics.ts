@@ -52,9 +52,11 @@ export function supportsVibration(): boolean {
 
 // iOS workaround refs (set by store initialization)
 let iosHapticLabel: HTMLLabelElement | null = null
+let iosHapticInput: HTMLInputElement | null = null
 
-export function setIOSHapticRef(labelElement: HTMLLabelElement | null): void {
+export function setIOSHapticRefs(labelElement: HTMLLabelElement | null, inputElement: HTMLInputElement | null = null): void {
 	iosHapticLabel = labelElement
+	iosHapticInput = inputElement
 }
 
 // Debouncing to prevent haptic fatigue
@@ -99,28 +101,15 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 	const pattern = HAPTIC_PATTERNS[action]
 
 	// iOS 18+ WebKit workaround
-	if (isIOS() && iosHapticLabel) {
-		// iOS doesn't support custom patterns well, so just trigger the label click
-		// This gives a consistent "selection" haptic feel
+	if (isIOS() && iosHapticLabel && iosHapticInput) {
+		// iOS haptic only fires when checkbox STATE CHANGES
+		// So we toggle it explicitly to guarantee a state change
 		if (import.meta.env.DEV) {
-			console.log('[Haptics] iOS: Clicking label for haptic')
+			console.log('[Haptics] iOS: Toggling checkbox state for haptic')
 		}
 
-		// Try direct click first
-		iosHapticLabel.click()
-
-		// Fallback: Dispatch a synthetic click event with trusted flag
-		// This may help with touch event contexts where direct click() is blocked
-		try {
-			const clickEvent = new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			})
-			iosHapticLabel.dispatchEvent(clickEvent)
-		} catch (e) {
-			// Fallback failed, silently continue
-		}
+		// Toggle the checkbox state to trigger haptic
+		iosHapticInput.checked = !iosHapticInput.checked
 
 		return
 	}
