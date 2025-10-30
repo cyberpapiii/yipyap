@@ -29,9 +29,11 @@ export function initializeHaptics(labelElement: HTMLLabelElement | null): void {
 /**
  * Trigger haptic feedback for a specific action
  * This is the main API that components should use
+ * @param action - The haptic action to trigger
+ * @param bypassDebounce - Set to true for gesture-based haptics (swipes) to bypass debounce timer
  */
-export function triggerHaptic(action: HapticAction): void {
-	triggerHapticUtil(action)
+export function triggerHaptic(action: HapticAction, bypassDebounce = false): void {
+	triggerHapticUtil(action, bypassDebounce)
 }
 
 // Export the store API
