@@ -44,3 +44,4 @@ The app includes a comprehensive test suite covering:
 - End-to-end user flows
 
 See [`tests/README.md`](tests/README.md) for detailed testing documentation.
+
