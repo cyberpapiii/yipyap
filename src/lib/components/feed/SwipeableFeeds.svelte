@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment'
 	import { onMount } from 'svelte'
 	import type { FeedType } from '$lib/types'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		activeFeed,
@@ -110,6 +111,8 @@
 
 		// Trigger feed change if different
 		if (feed !== activeFeed) {
+			// Haptic feedback for successful feed switch
+			hapticsStore.trigger('selection')
 			onFeedChange(feed)
 		}
 
