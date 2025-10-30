@@ -23,9 +23,6 @@
 	let isAnimating = $state(false)
 	let containerElement: HTMLDivElement
 
-	// Hidden button for iOS haptic click event context
-	let hapticTriggerButton: HTMLButtonElement
-
 	// Swipe configuration
 	const SWIPE_THRESHOLD = 80 // Minimum distance to trigger feed change
 	const RESISTANCE_FACTOR = 0.5 // Drag resistance (0.5 = 50% of finger movement)
@@ -88,14 +85,14 @@
 		if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
 			// Swipe right (show new feed)
 			if (deltaX > 0 && activeFeed === 'hot') {
-				// Trigger haptic via hidden button click (creates trusted iOS event context)
-				hapticTriggerButton?.click()
+				// Haptic feedback for successful swipe (bypass debounce)
+				hapticsStore.trigger('selection', true)
 				snapToFeed('new')
 			}
 			// Swipe left (show hot feed)
 			else if (deltaX < 0 && activeFeed === 'new') {
-				// Trigger haptic via hidden button click (creates trusted iOS event context)
-				hapticTriggerButton?.click()
+				// Haptic feedback for successful swipe (bypass debounce)
+				hapticsStore.trigger('selection', true)
 				snapToFeed('hot')
 			} else {
 				// Swipe in wrong direction, snap back
@@ -159,16 +156,6 @@
 		will-change: transform;
 	}
 </style>
-
-<!-- Hidden button to create click event context for iOS haptics -->
-<button
-	bind:this={hapticTriggerButton}
-	onclick={() => hapticsStore.trigger('selection', true)}
-	class="sr-only"
-	aria-hidden="true"
-	tabindex="-1"
-	type="button"
-></button>
 
 <div
 	bind:this={containerElement}
