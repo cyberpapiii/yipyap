@@ -382,6 +382,25 @@ export interface NotificationState {
   cursor: string | null
 }
 
+// Haptic Types
+export type HapticAction =
+	| 'vote-up'
+	| 'vote-down'
+	| 'vote-remove'
+	| 'post-success'
+	| 'comment-success'
+	| 'delete'
+	| 'error'
+	| 'navigation'
+	| 'selection'
+	| 'menu-open'
+	| 'menu-close'
+
+export interface HapticState {
+	supported: boolean
+	initialized: boolean
+}
+
 // Utility Types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 export type RequireAtLeastOne<T> = {

@@ -7,6 +7,7 @@
 	import type { FeedType, PostWithStats } from '$lib/types'
 	import { feedUtils } from '$lib/stores'
 	import { communityStore } from '$lib/stores/community'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		feedType,
@@ -124,9 +125,7 @@
 
 		refreshing = true
 		// Haptic feedback for refresh
-		if ('vibrate' in navigator) {
-			navigator.vibrate(20)
-		}
+		hapticsStore.trigger('selection')
 
 		try {
 			await transitionFeed(async () => {

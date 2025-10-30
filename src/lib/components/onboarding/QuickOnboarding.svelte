@@ -5,6 +5,7 @@
 	import { communityStore } from '$lib/stores/community'
 	import { currentUser } from '$lib/stores/auth'
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let currentStep = $derived($onboardingStore.currentOnboardingStep)
 	let user = $derived($currentUser)
@@ -54,17 +55,13 @@
 	}
 
 	async function handleEnableLocation() {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 
 		try {
 			await communityStore.checkLocation()
 
 			// Success haptic
-			if ('vibrate' in navigator) {
-				navigator.vibrate([10, 50, 10])
-			}
+			hapticsStore.trigger('post-success')
 
 			// Complete onboarding
 			onboardingStore.completeOnboarding()
@@ -74,16 +71,12 @@
 	}
 
 	function handleSkipLocation() {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('navigation')
 		onboardingStore.completeOnboarding()
 	}
 
 	function handleSkipAll() {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('navigation')
 		onboardingStore.skipOnboarding()
 	}
 

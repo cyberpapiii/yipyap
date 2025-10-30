@@ -6,6 +6,7 @@
 	import type { CommentCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { currentUser } from '$lib/stores/auth'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	// Admin user ID
 	const ADMIN_USER_ID = '784e1453-e77f-491c-ad61-d76c3f1d0f2d'
@@ -40,24 +41,18 @@
 	function handleReply(e: Event) {
 		e.stopPropagation()
 		// Haptic feedback for reply
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('selection')
 		onReply?.(comment)
 	}
 
 	// Handle delete
 	async function handleDelete() {
 		// Warning haptic before confirm
-		if ('vibrate' in navigator) {
-			navigator.vibrate(30)
-		}
+		hapticsStore.trigger('selection')
 
 		if (confirm('Are you sure you want to delete this comment?')) {
 			// Delete action haptic
-			if ('vibrate' in navigator) {
-				navigator.vibrate([10, 50, 10])
-			}
+			hapticsStore.trigger('delete')
 			await onDelete?.(comment.id)
 		}
 		showOptionsMenu = false
@@ -67,9 +62,7 @@
 	function toggleOptionsMenu(e: Event) {
 		e.stopPropagation()
 		showOptionsMenu = !showOptionsMenu
-		if ('vibrate' in navigator) {
-			navigator.vibrate(5)
-		}
+		hapticsStore.trigger(showOptionsMenu ? 'menu-open' : 'menu-close')
 	}
 
 	// Touch interaction handlers

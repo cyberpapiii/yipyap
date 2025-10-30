@@ -8,6 +8,7 @@
 	import type { ComposeState, GeographicCommunity } from '$lib/types'
 	import { getAllGeographicCommunities, requiresGeofence } from '$lib/config/communities'
 	import { communityStore } from '$lib/stores/community'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		onSubmit
@@ -126,9 +127,7 @@
 			await onSubmit(content.trim(), $composeState.replyTo, selectedCommunity)
 
 			// Success haptic feedback
-			if ('vibrate' in navigator) {
-				navigator.vibrate([10, 50, 10])
-			}
+			hapticsStore.trigger($composeState.replyTo ? 'comment-success' : 'post-success')
 
 			// Capture modal position using Svelte binding before closing
 			if (modalContainerElement) {
@@ -172,9 +171,7 @@
 			showSuccess = false
 
 			// Error haptic feedback
-			if ('vibrate' in navigator) {
-				navigator.vibrate([50, 100, 50])
-			}
+			hapticsStore.trigger('error')
 
 			const errorMessage = error instanceof Error ? error.message : 'Failed to post'
 			composeStore.setError(errorMessage)

@@ -3,6 +3,7 @@
 	import { onboardingStore } from '$lib/stores/onboarding'
 	import { promptInstall, getInstallInstructions } from '$lib/utils/pwa'
 	import type { InstallGateType } from '$lib/types'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		gateType
@@ -21,15 +22,11 @@
 
 			if (result === 'installed') {
 				// Success! Gate will auto-hide when app reopens in PWA mode
-				if ('vibrate' in navigator) {
-					navigator.vibrate([10, 50, 10])
-				}
+				hapticsStore.trigger('post-success')
 			} else if (result === 'dismissed') {
 				// User dismissed the prompt
 				onboardingStore.setInstalling(false)
-				if ('vibrate' in navigator) {
-					navigator.vibrate([10, 30, 10])
-				}
+				hapticsStore.trigger('selection')
 			} else {
 				// Unavailable - shouldn't happen but handle gracefully
 				onboardingStore.setInstalling(false)

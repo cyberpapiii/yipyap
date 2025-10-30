@@ -4,6 +4,7 @@
 	import { tv } from 'tailwind-variants'
 	import { onMount } from 'svelte'
 	import { voteNotifications } from '$lib/services/toastNotifications'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		voteScore,
@@ -20,22 +21,6 @@
 	let scoreAnimating = $state(false)
 	let errorState = $state(false)
 	let successPulse = $state(false)
-
-	// Haptic feedback function
-	function triggerHapticFeedback(type: 'light' | 'medium' | 'heavy' = 'light') {
-		if ('vibrate' in navigator) {
-			const patterns = {
-				light: 10,
-				medium: 20,
-				heavy: 50
-			}
-			try {
-				navigator.vibrate(patterns[type])
-			} catch (e) {
-				// Ignore vibration errors
-			}
-		}
-	}
 
 	const buttonVariants = tv({
 		base: 'relative flex items-center justify-center rounded-full border-2 border-border touch-manipulation select-none transition-all duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 focus-vote',
@@ -93,7 +78,7 @@
 		errorState = false
 
 		// Trigger haptic feedback
-		triggerHapticFeedback(newVote === 'up' ? 'medium' : 'light')
+		hapticsStore.trigger(newVote === 'up' ? 'vote-up' : 'vote-remove')
 
 		// Start animation
 		isAnimating = true
@@ -111,7 +96,7 @@
 			voteNotifications.voteFailed(error instanceof Error ? error.message : 'Vote failed')
 
 			// Trigger error haptic feedback
-			triggerHapticFeedback('heavy')
+			hapticsStore.trigger('error')
 		})
 
 		// End animation quickly
@@ -131,7 +116,7 @@
 		errorState = false
 
 		// Trigger haptic feedback
-		triggerHapticFeedback(newVote === 'down' ? 'medium' : 'light')
+		hapticsStore.trigger(newVote === 'down' ? 'vote-down' : 'vote-remove')
 
 		// Start animation
 		isAnimating = true
@@ -149,7 +134,7 @@
 			voteNotifications.voteFailed(error instanceof Error ? error.message : 'Vote failed')
 
 			// Trigger error haptic feedback
-			triggerHapticFeedback('heavy')
+			hapticsStore.trigger('error')
 		})
 
 		// End animation quickly

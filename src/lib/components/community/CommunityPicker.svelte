@@ -3,6 +3,7 @@
 	import type { CommunityType } from '$lib/types'
 	import { getAllCommunities, getCommunity, getAllGeographicCommunities } from '$lib/config/communities'
 	import CommunityBadge from './CommunityBadge.svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		isOpen,
@@ -22,9 +23,7 @@
 
 	function handleSelect(communityId: CommunityType | 'dimes_square') {
 		// Haptic feedback
-		if ('vibrate' in navigator) {
-			navigator.vibrate(20)
-		}
+		hapticsStore.trigger('selection')
 		isClosing = true
 		setTimeout(() => {
 			onSelect(communityId)
@@ -34,9 +33,7 @@
 
 	function handleClose() {
 		// Haptic feedback
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('menu-close')
 		isClosing = true
 		setTimeout(() => {
 			onClose()

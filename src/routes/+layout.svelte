@@ -19,9 +19,13 @@
   import { isPWA, isDesktop, isIOSSafari, canInstallPWA, initPWAInstallListener } from '$lib/utils/pwa'
   import InstallGate from '$lib/components/onboarding/InstallGate.svelte'
   import QuickOnboarding from '$lib/components/onboarding/QuickOnboarding.svelte'
+  import { hapticsStore } from '$lib/stores/haptics'
 
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
+
+  // iOS haptic workaround element reference
+  let hapticLabel: HTMLLabelElement | null = null
 
   // Lazy load ComposeModal component
   let ComposeModal = $state<any>(null)
@@ -149,6 +153,9 @@
         }
       }
 
+      // Initialize haptic feedback system (iOS workaround)
+      hapticsStore.initialize(hapticLabel)
+
       // Initialize realtime system
       await realtime.initialize(supabase as any)
 
@@ -177,6 +184,21 @@
     }
   })
 </script>
+
+<!-- Hidden iOS haptic workaround elements (iOS 18+ WebKit switch haptic) -->
+<input
+  id="haptic-switch"
+  type="checkbox"
+  switch
+  class="sr-only"
+  aria-hidden="true"
+/>
+<label
+  bind:this={hapticLabel}
+  for="haptic-switch"
+  class="sr-only"
+  aria-hidden="true"
+></label>
 
 <header class="sticky top-0 z-90 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1);">
   <!-- Navigation layer: z-100-199 (header at z-90) -->

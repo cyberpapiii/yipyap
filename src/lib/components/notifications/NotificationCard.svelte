@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Notification } from '$lib/types'
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 	import { formatDistanceToNow } from '$lib/utils/date'
 	import { goto } from '$app/navigation'
 
@@ -65,9 +66,7 @@
 
 	function handleClick(e: MouseEvent) {
 		// Haptic feedback
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('navigation')
 
 		// Call provided onclick handler
 		onclick?.()

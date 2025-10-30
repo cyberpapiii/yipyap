@@ -4,6 +4,7 @@
 	import { getCommunity } from '$lib/config/communities'
 	import { getGeographicCommunity } from '$lib/config/communities'
 	import CommunityBadge from './CommunityBadge.svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		selectedCommunity,
@@ -26,9 +27,7 @@
 
 	function handleClick() {
 		// Haptic feedback
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 		onClick()
 	}
 </script>

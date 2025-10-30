@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 	import type { SupabaseClient } from '@supabase/supabase-js'
 	import {
 		subscribeToPushNotifications,
@@ -45,9 +46,7 @@
 			return
 		}
 
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 
 		loading = true
 		error = null
@@ -67,15 +66,11 @@
 				if (result.success) {
 					await checkStatus()
 					// Success haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 50, 10])
-					}
+					hapticsStore.trigger('post-success')
 				} else {
 					error = result.error || 'Failed to subscribe'
 					// Error haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 30, 10, 30, 10])
-					}
+					hapticsStore.trigger('error')
 				}
 			}
 		} catch (err) {

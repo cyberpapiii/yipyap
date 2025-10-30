@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	let {
 		currentLine,
@@ -44,16 +45,12 @@
 	})
 
 	function handleSelect(line: string) {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 		onSelect(line)
 	}
 
 	function handleClose() {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(10)
-		}
+		hapticsStore.trigger('menu-close')
 		onClose()
 	}
 

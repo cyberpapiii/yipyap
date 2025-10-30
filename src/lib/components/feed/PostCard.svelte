@@ -7,6 +7,7 @@
 	import { goto } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { currentUser } from '$lib/stores/auth'
+	import { hapticsStore } from '$lib/stores/haptics'
 
 	// Admin user ID
 	const ADMIN_USER_ID = '784e1453-e77f-491c-ad61-d76c3f1d0f2d'
@@ -38,9 +39,7 @@
 	function openThread() {
 		if (!isInThread) {
 			// Haptic feedback for navigation
-			if ('vibrate' in navigator) {
-				navigator.vibrate(10)
-			}
+			hapticsStore.trigger('navigation')
 			goto(`/thread/${post.id}`)
 		}
 	}
@@ -49,9 +48,7 @@
 	function handleReply(e: Event) {
 		e.stopPropagation()
 		// Haptic feedback for reply
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 		onReply?.(post)
 	}
 
@@ -66,9 +63,7 @@
 		e.preventDefault()
 
 		// Delete action haptic
-		if ('vibrate' in navigator) {
-			navigator.vibrate([10, 50, 10])
-		}
+		hapticsStore.trigger('delete')
 
 		try {
 			await onDelete?.(post.id)
@@ -83,9 +78,7 @@
 	function toggleOptionsMenu(e: Event) {
 		e.stopPropagation()
 		showOptionsMenu = !showOptionsMenu
-		if ('vibrate' in navigator) {
-			navigator.vibrate(5)
-		}
+		hapticsStore.trigger(showOptionsMenu ? 'menu-open' : 'menu-close')
 	}
 
 	// Ripple effect for touch feedback

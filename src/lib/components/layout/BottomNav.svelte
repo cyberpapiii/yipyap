@@ -2,22 +2,19 @@
   import { composeStore } from '$lib/stores/compose'
   import { unreadCount } from '$lib/stores/notifications'
   import NotificationBadge from '../notifications/NotificationBadge.svelte'
+  import { hapticsStore } from '$lib/stores/haptics'
 
   export let active: 'home' | 'thread' | 'profile' = 'home'
 
   function openComposer() {
     // Haptic feedback for compose button
-    if ('vibrate' in navigator) {
-      navigator.vibrate(15)
-    }
+    hapticsStore.trigger('selection')
     composeStore.openModal()
   }
 
   function handleNavClick() {
     // Haptic feedback for navigation
-    if ('vibrate' in navigator) {
-      navigator.vibrate(10)
-    }
+    hapticsStore.trigger('navigation')
   }
 </script>
 

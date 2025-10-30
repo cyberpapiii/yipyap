@@ -169,6 +169,19 @@
     background-color: #008EB7; /* T (SIR) - alias */
   }
 
+  /* Accessibility utility - screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* Vote button border colors */
   .border-vote-up {
     border-color: hsl(var(--vote-up));

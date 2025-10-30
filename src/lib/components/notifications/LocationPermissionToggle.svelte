@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 	import { MapPin } from 'lucide-svelte'
+	import { hapticsStore } from '$lib/stores/haptics'
 	import { communityStore } from '$lib/stores/community'
 
 	let error = $state<string | null>(null)
@@ -26,9 +28,7 @@
 	})
 
 	async function handleToggle() {
-		if ('vibrate' in navigator) {
-			navigator.vibrate(15)
-		}
+		hapticsStore.trigger('selection')
 
 		error = null
 
@@ -37,9 +37,7 @@
 				// User wants to disable - toggle app-level preference
 				communityStore.setLocationEnabled(false)
 				// Success haptic
-				if ('vibrate' in navigator) {
-					navigator.vibrate([10, 50, 10])
-				}
+				hapticsStore.trigger('post-success')
 			} else if (!locationEnabled) {
 				// User wants to enable - toggle app-level preference and check location
 				communityStore.setLocationEnabled(true)
@@ -48,15 +46,11 @@
 
 				if (state.locationPermission === 'granted') {
 					// Success haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 50, 10])
-					}
+					hapticsStore.trigger('post-success')
 				} else if (state.locationPermission === 'denied') {
 					error = 'Location permission denied. Please enable it in your browser settings.'
 					// Error haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 30, 10, 30, 10])
-					}
+					hapticsStore.trigger('error')
 				}
 			} else {
 				// Location disabled or not yet granted - request permission
@@ -65,24 +59,18 @@
 
 				if (state.locationPermission === 'granted') {
 					// Success haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 50, 10])
-					}
+					hapticsStore.trigger('post-success')
 				} else if (state.locationPermission === 'denied') {
 					error = 'Location permission denied. Please enable it in your browser settings.'
 					// Error haptic
-					if ('vibrate' in navigator) {
-						navigator.vibrate([10, 30, 10, 30, 10])
-					}
+					hapticsStore.trigger('error')
 				}
 			}
 		} catch (err) {
 			console.error('[LocationPermissionToggle] Error:', err)
 			error = err instanceof Error ? err.message : 'Failed to check location'
 			// Error haptic
-			if ('vibrate' in navigator) {
-				navigator.vibrate([10, 30, 10, 30, 10])
-			}
+			hapticsStore.trigger('error')
 		}
 	}
 
