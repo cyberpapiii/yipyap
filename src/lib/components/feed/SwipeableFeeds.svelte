@@ -85,10 +85,14 @@
 		if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
 			// Swipe right (show new feed)
 			if (deltaX > 0 && activeFeed === 'hot') {
+				// Haptic feedback for successful swipe
+				hapticsStore.trigger('selection')
 				snapToFeed('new')
 			}
 			// Swipe left (show hot feed)
 			else if (deltaX < 0 && activeFeed === 'new') {
+				// Haptic feedback for successful swipe
+				hapticsStore.trigger('selection')
 				snapToFeed('hot')
 			} else {
 				// Swipe in wrong direction, snap back
@@ -111,8 +115,6 @@
 
 		// Trigger feed change if different
 		if (feed !== activeFeed) {
-			// Haptic feedback for successful feed switch
-			hapticsStore.trigger('selection')
 			onFeedChange(feed)
 		}
 
