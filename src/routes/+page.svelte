@@ -131,7 +131,9 @@
       localStorage.setItem('bingbong_feed', type)
     }
 
-    // Haptic feedback for feed switch (bypass debounce for gestures)
+    // Haptic feedback for button-based feed switch only
+    // Swipe haptics handled in SwipeableFeeds touchend (must be immediate)
+    // Note: This only works for button clicks, not swipes (iOS gesture context issue)
     hapticsStore.trigger('navigation', true)
 
     feedUtils.switchFeed(type)

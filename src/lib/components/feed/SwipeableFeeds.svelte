@@ -78,20 +78,29 @@
 	function handleTouchEnd() {
 		if (!isDragging) return
 
-		isDragging = false
 		const deltaX = touchCurrentX - touchStartX
+
+		// CRITICAL: Trigger haptic IMMEDIATELY before any logic
+		// Must happen before gesture context expires (Grok's insight: touchmove poisons tap context)
+		// Try to catch the gesture window before iOS finalizes it as "drag"
+		const willSwitch = Math.abs(deltaX) > SWIPE_THRESHOLD &&
+			((deltaX > 0 && activeFeed === 'hot') || (deltaX < 0 && activeFeed === 'new'))
+
+		if (willSwitch) {
+			hapticsStore.trigger('navigation', true)
+		}
+
+		isDragging = false
 
 		// Determine if swipe threshold was met
 		if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
 			// Swipe right (show new feed)
 			if (deltaX > 0 && activeFeed === 'hot') {
 				snapToFeed('new')
-				// Haptic handled by parent switchFeed()
 			}
 			// Swipe left (show hot feed)
 			else if (deltaX < 0 && activeFeed === 'new') {
 				snapToFeed('hot')
-				// Haptic handled by parent switchFeed()
 			} else {
 				// Swipe in wrong direction, snap back
 				snapToFeed(activeFeed)
@@ -134,10 +143,12 @@
 	onMount(() => {
 		if (!containerElement) return
 
-		// These need passive: false to allow preventDefault
+		// touchstart: passive for performance
+		// touchmove: passive: false to allow preventDefault
+		// touchend: passive: false to preserve gesture context for haptics (Grok's recommendation)
 		containerElement.addEventListener('touchstart', handleTouchStart as any, { passive: true })
 		containerElement.addEventListener('touchmove', handleTouchMove as any, { passive: false })
-		containerElement.addEventListener('touchend', handleTouchEnd as any, { passive: true })
+		containerElement.addEventListener('touchend', handleTouchEnd as any, { passive: false })
 
 		return () => {
 			containerElement?.removeEventListener('touchstart', handleTouchStart as any)
