@@ -14,6 +14,7 @@
   import type { FeedType } from '$lib/types'
   import { ensureAnonymousUser } from '$lib/auth'
   import { PostsAPI } from '$lib/api/posts'
+  import { hapticsStore } from '$lib/stores/haptics'
 
   const api = createRealtimeAPI(supabase as any)
   const postsApi = new PostsAPI(supabase as any)
@@ -50,15 +51,11 @@
     if (refreshing) return
 
     refreshing = true
-    if ('vibrate' in navigator) {
-      navigator.vibrate(15)
-    }
+    hapticsStore.trigger('selection')
 
     try {
       await loadFeed(feedType)
-      if ('vibrate' in navigator) {
-        navigator.vibrate(10)
-      }
+      hapticsStore.trigger('navigation')
     } finally {
       refreshing = false
     }
@@ -134,10 +131,8 @@
       localStorage.setItem('bingbong_feed', type)
     }
 
-    // Haptic feedback for feed switch
-    if ('vibrate' in navigator) {
-      navigator.vibrate(10)
-    }
+    // Haptic feedback for feed switch (bypass debounce for gestures)
+    hapticsStore.trigger('navigation', true)
 
     feedUtils.switchFeed(type)
 

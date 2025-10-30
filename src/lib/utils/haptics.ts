@@ -101,15 +101,15 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 	const pattern = HAPTIC_PATTERNS[action]
 
 	// iOS 18+ WebKit workaround
-	if (isIOS() && iosHapticLabel && iosHapticInput) {
-		// iOS haptic only fires when checkbox STATE CHANGES
-		// So we toggle it explicitly to guarantee a state change
+	if (isIOS() && iosHapticLabel) {
+		// iOS haptic only fires from label.click(), NOT from checkbox.checked changes
+		// Must be called synchronously within user gesture context (touchend, click, etc.)
 		if (import.meta.env.DEV) {
-			console.log('[Haptics] iOS: Toggling checkbox state for haptic')
+			console.log('[Haptics] iOS: Clicking label for haptic (synchronous)')
 		}
 
-		// Toggle the checkbox state to trigger haptic
-		iosHapticInput.checked = !iosHapticInput.checked
+		// Click the label synchronously - this triggers the checkbox toggle and haptic
+		iosHapticLabel.click()
 
 		return
 	}
