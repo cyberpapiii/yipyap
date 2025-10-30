@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte'
 	import { hapticsStore } from '$lib/stores/haptics'
 	import { MapPin } from 'lucide-svelte'
-	import { hapticsStore } from '$lib/stores/haptics'
 	import { communityStore } from '$lib/stores/community'
 
 	let error = $state<string | null>(null)
