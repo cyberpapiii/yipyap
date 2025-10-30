@@ -105,7 +105,23 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 		if (import.meta.env.DEV) {
 			console.log('[Haptics] iOS: Clicking label for haptic')
 		}
+
+		// Try direct click first
 		iosHapticLabel.click()
+
+		// Fallback: Dispatch a synthetic click event with trusted flag
+		// This may help with touch event contexts where direct click() is blocked
+		try {
+			const clickEvent = new MouseEvent('click', {
+				bubbles: true,
+				cancelable: true,
+				view: window
+			})
+			iosHapticLabel.dispatchEvent(clickEvent)
+		} catch (e) {
+			// Fallback failed, silently continue
+		}
+
 		return
 	}
 
