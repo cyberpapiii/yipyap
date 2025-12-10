@@ -6,7 +6,7 @@
   import { RefreshCw, ChevronDown } from 'lucide-svelte'
   import PostCard from '$lib/components/feed/PostCard.svelte'
   import CommentCard from '$lib/components/feed/CommentCard.svelte'
-  import { composeStore, showComposeModal, threadStore, realtime, anonymousUser as currentUserStore } from '$lib/stores'
+  import { composeStore, showComposeModal, threadStore, realtime, anonymousUser as currentUserStore, feedUtils, activeFeedType } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { CommentWithStats, ComposeState, PostWithStats } from '$lib/types'
   import { supabase } from '$lib/supabase'
@@ -84,6 +84,22 @@
     try {
       const user = get(currentUser) || undefined
 
+      // First, check if we have this post in the feed store with optimistic updates
+      // This ensures vote counts are consistent between feed and thread
+      const activeType = get(activeFeedType)
+      const feedStore = feedUtils.getFeedStore(activeType)
+      const feedState = get(feedStore)
+      const cachedPost = feedState.posts.find(p => p.id === id)
+
+      // If we have a cached post, use it immediately for consistent UX
+      // This shows the optimistic vote count while we load fresh data
+      if (cachedPost) {
+        thread.setPost({
+          ...cachedPost,
+          replies: [] // Replies will be loaded from API
+        })
+      }
+
       // Fetch post and comments in parallel
       const [fetchedPost, replies] = await Promise.all([
         api.getPost(id, user),
@@ -96,7 +112,21 @@
         return
       }
 
-      thread.setPost(fetchedPost)
+      // Merge fetched data with any optimistic updates
+      // If cached post has more recent vote data (optimistic), preserve it
+      if (cachedPost) {
+        // Use the higher vote score to handle race condition where
+        // optimistic update shows correct score but DB hasn't updated yet
+        const mergedPost = {
+          ...fetchedPost,
+          vote_score: cachedPost.vote_score,
+          user_vote: cachedPost.user_vote
+        }
+        thread.setPost(mergedPost)
+      } else {
+        thread.setPost(fetchedPost)
+      }
+
       thread.setComments(replies.data)
       loadError = null
     } catch (error: any) {

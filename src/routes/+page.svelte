@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
+  import { afterNavigate } from '$app/navigation'
   import { onMount, onDestroy } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
@@ -61,6 +62,33 @@
     }
   }
 
+  // Refresh feed when navigating back from thread (SvelteKit SPA navigation)
+  // visibilitychange doesn't fire for SPA navigation, so we use afterNavigate
+  afterNavigate(async ({ from }) => {
+    if (!browser || initializing) return
+
+    // Only refresh if navigating back from a thread page
+    if (from?.route.id?.startsWith('/thread/')) {
+      const currentFeed = feedUtils.getFeedStore(feedType)
+      const posts = get(currentFeed).posts
+
+      // Only refresh if we have posts and aren't already loading
+      if (posts.length > 0 && !get(currentFeed).loading) {
+        try {
+          // Fetch fresh data to sync vote counts with database
+          const user = get(cu)
+          const community = get(communityStore).selectedCommunity
+          const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
+
+          // Update the feed store with fresh data
+          currentFeed.setPosts(freshData.data)
+        } catch (error) {
+          console.error('Error refreshing feed after navigation:', error)
+        }
+      }
+    }
+  })
+
   onMount(async () => {
     if (!browser) return
 
@@ -91,8 +119,8 @@
       initializing = false
     }
 
-    // Refresh feed when page becomes visible (e.g., returning from thread page)
-    // This ensures comment counts and other updates are reflected
+    // Refresh feed when page becomes visible (e.g., returning from another app/tab)
+    // This handles cases outside SPA navigation (tab switching, app switching on mobile)
     const handleVisibilityChange = async () => {
       if (!document.hidden && browser) {
         const currentFeed = feedUtils.getFeedStore(feedType)
