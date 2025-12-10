@@ -208,6 +208,7 @@ export class PostsAPI {
 		const postsWithVotes = currentUser && posts?.length
 		  ? await this.addUserVotesToPosts(posts, currentUser.id)
 		  : posts || []
+
 		const withAnon = await this.attachAnonymousIdentities(postsWithVotes)
 
 		// Batch fetch all replies for all posts in one query (fixes N+1)

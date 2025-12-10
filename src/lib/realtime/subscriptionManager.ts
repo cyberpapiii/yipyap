@@ -227,8 +227,6 @@ export class FeedSubscriptionManager {
     payload: VoteRealtimePayload,
     onPostUpdate: (postId: string, updates: Partial<PostWithStats>) => void
   ): void {
-    console.log('Vote event:', payload.eventType, payload)
-
     const vote = payload.new || payload.old
     if (!vote?.post_id) return
 
@@ -242,7 +240,6 @@ export class FeedSubscriptionManager {
 
       // Skip score update if optimistic update already applied (prevent double-count)
       if (this.isVotePending(vote.post_id)) {
-        console.log(`Skipping score delta for pending vote on post ${vote.post_id}`)
         // Only update user_vote (score already handled by optimistic update)
         onPostUpdate(vote.post_id, { user_vote: userVote })
         this.clearPendingVote(vote.post_id)

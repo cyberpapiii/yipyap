@@ -408,8 +408,6 @@ function createRealtimeStore() {
 
         // Confirm the operation succeeded
         optimisticUpdateManager.confirmOperation(operationId)
-
-        console.log(`Vote confirmed: ${operationId}`)
       } catch (error) {
         console.error('Vote failed, rolling back:', error)
 

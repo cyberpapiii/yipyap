@@ -17,6 +17,58 @@
   const api = createRealtimeAPI(supabase as any)
   const pageStore = page
 
+  // Helper to flatten nested comments into a single array for lookup
+  function flattenComments(comments: CommentWithStats[]): CommentWithStats[] {
+    const result: CommentWithStats[] = []
+    for (const comment of comments) {
+      result.push(comment)
+      if (comment.replies?.length) {
+        result.push(...flattenComments(comment.replies))
+      }
+    }
+    return result
+  }
+
+  // Helper to merge comments recursively, preserving optimistic vote updates
+  function mergeCommentsRecursively(
+    freshComments: CommentWithStats[],
+    currentMap: Map<string, CommentWithStats>
+  ): CommentWithStats[] {
+    return freshComments.map(fresh => {
+      const current = currentMap.get(fresh.id)
+
+      // Merge vote state if user has an optimistic vote
+      let mergedComment = fresh
+      if (current?.user_vote) {
+        if (!fresh.user_vote) {
+          // API hasn't caught up - preserve optimistic state
+          mergedComment = {
+            ...fresh,
+            vote_score: current.vote_score,
+            user_vote: current.user_vote
+          }
+        } else if (fresh.user_vote === current.user_vote && fresh.vote_score !== current.vote_score) {
+          // Both agree on vote direction but differ in score - use higher
+          mergedComment = {
+            ...fresh,
+            vote_score: Math.max(fresh.vote_score, current.vote_score),
+            user_vote: fresh.user_vote
+          }
+        }
+      }
+
+      // Recursively merge nested replies
+      if (fresh.replies?.length) {
+        mergedComment = {
+          ...mergedComment,
+          replies: mergeCommentsRecursively(fresh.replies, currentMap)
+        }
+      }
+
+      return mergedComment
+    })
+  }
+
   let postId = $state('')
   let initializing = $state(false)
   let loadError: string | null = $state(null)
@@ -112,22 +164,47 @@
         return
       }
 
-      // Merge fetched data with any optimistic updates
-      // If cached post has more recent vote data (optimistic), preserve it
-      if (cachedPost) {
-        // Use the higher vote score to handle race condition where
-        // optimistic update shows correct score but DB hasn't updated yet
-        const mergedPost = {
-          ...fetchedPost,
-          vote_score: cachedPost.vote_score,
-          user_vote: cachedPost.user_vote
+      // Smart merge: preserve optimistic updates while using fresh data
+      // This handles the race condition where user votes, navigates to thread
+      // before the API call completes, and the DB hasn't updated yet
+      if (cachedPost?.user_vote) {
+        // User has an optimistic vote in the feed store
+        if (!fetchedPost.user_vote) {
+          // API hasn't caught up yet - preserve optimistic state entirely
+          const mergedPost = {
+            ...fetchedPost,
+            vote_score: cachedPost.vote_score,
+            user_vote: cachedPost.user_vote
+          }
+          thread.setPost(mergedPost)
+        } else if (fetchedPost.user_vote === cachedPost.user_vote) {
+          // API has the vote, but scores might differ due to race condition
+          // Use the higher score (optimistic includes our vote, API might not yet)
+          const mergedPost = {
+            ...fetchedPost,
+            vote_score: Math.max(fetchedPost.vote_score, cachedPost.vote_score),
+            user_vote: fetchedPost.user_vote
+          }
+          thread.setPost(mergedPost)
+        } else {
+          // Vote directions differ - API is authoritative (user may have changed vote)
+          thread.setPost(fetchedPost)
         }
-        thread.setPost(mergedPost)
       } else {
+        // No optimistic vote in cache - use API data
         thread.setPost(fetchedPost)
       }
 
-      thread.setComments(replies.data)
+      // Smart merge for comments: preserve optimistic vote updates
+      // This handles the race condition where user votes on a comment,
+      // then pull-to-refresh happens before the API call completes
+      const currentComments = get(thread).comments
+      const currentCommentMap = new Map(
+        flattenComments(currentComments).map(c => [c.id, c])
+      )
+
+      const mergedComments = mergeCommentsRecursively(replies.data, currentCommentMap)
+      thread.setComments(mergedComments)
       loadError = null
     } catch (error: any) {
       loadError = error?.message || 'Failed to load thread'

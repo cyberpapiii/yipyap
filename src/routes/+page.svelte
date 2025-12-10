@@ -70,18 +70,56 @@
     // Only refresh if navigating back from a thread page
     if (from?.route.id?.startsWith('/thread/')) {
       const currentFeed = feedUtils.getFeedStore(feedType)
-      const posts = get(currentFeed).posts
+      const currentState = get(currentFeed)
 
       // Only refresh if we have posts and aren't already loading
-      if (posts.length > 0 && !get(currentFeed).loading) {
+      if (currentState.posts.length > 0 && !currentState.loading) {
         try {
           // Fetch fresh data to sync vote counts with database
           const user = get(cu)
           const community = get(communityStore).selectedCommunity
           const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
 
-          // Update the feed store with fresh data
-          currentFeed.setPosts(freshData.data)
+          // Smart merge: preserve optimistic vote updates that may not be in DB yet
+          // This handles the race condition where user votes, navigates away before
+          // the API call completes, and navigates back before DB has updated
+          const currentPostMap = new Map(currentState.posts.map(p => [p.id, p]))
+
+          const mergedPosts = freshData.data.map(freshPost => {
+            const currentPost = currentPostMap.get(freshPost.id)
+
+            // If user has voted on this post in current state but API shows different,
+            // preserve the optimistic update (user_vote and its score delta)
+            if (currentPost?.user_vote && !freshPost.user_vote) {
+              // API hasn't caught up - preserve optimistic state
+              return {
+                ...freshPost,
+                vote_score: currentPost.vote_score,
+                user_vote: currentPost.user_vote
+              }
+            }
+
+            // If both have user_vote but scores differ, trust current optimistic state
+            // as it includes the user's pending vote
+            if (currentPost?.user_vote && freshPost.user_vote &&
+                currentPost.user_vote === freshPost.user_vote &&
+                currentPost.vote_score !== freshPost.vote_score) {
+              // Both agree on vote direction but differ in score - use higher
+              // (optimistic adds vote immediately, DB might lag)
+              const useScore = Math.max(currentPost.vote_score, freshPost.vote_score)
+              return {
+                ...freshPost,
+                vote_score: useScore,
+                user_vote: currentPost.user_vote
+              }
+            }
+
+            // Normal case: use fresh data from API
+            return freshPost
+          })
+
+          // Update the feed store with merged data
+          currentFeed.setPosts(mergedPosts)
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
         }
@@ -134,8 +172,27 @@
             const community = get(communityStore).selectedCommunity
             const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
 
-            // Update the feed store with fresh data
-            currentFeed.setPosts(freshData.data)
+            // Smart merge: preserve optimistic vote updates
+            const currentState = get(currentFeed)
+            const currentPostMap = new Map(currentState.posts.map(p => [p.id, p]))
+
+            const mergedPosts = freshData.data.map(freshPost => {
+              const currentPost = currentPostMap.get(freshPost.id)
+
+              if (currentPost?.user_vote && !freshPost.user_vote) {
+                return { ...freshPost, vote_score: currentPost.vote_score, user_vote: currentPost.user_vote }
+              }
+
+              if (currentPost?.user_vote && freshPost.user_vote &&
+                  currentPost.user_vote === freshPost.user_vote &&
+                  currentPost.vote_score !== freshPost.vote_score) {
+                return { ...freshPost, vote_score: Math.max(currentPost.vote_score, freshPost.vote_score), user_vote: currentPost.user_vote }
+              }
+
+              return freshPost
+            })
+
+            currentFeed.setPosts(mergedPosts)
           } catch (error) {
             console.error('Error refreshing feed on visibility change:', error)
           }
