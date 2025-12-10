@@ -45,13 +45,26 @@ function createFeedStore() {
 			posts: [post, ...state.posts]
 		})),
 
-		// Update a specific post
-		updatePost: (postId: string, updates: Partial<PostWithStats>) =>
+		// Update a specific post (supports _scoreDelta for incremental score updates)
+		updatePost: (postId: string, updates: Partial<PostWithStats> & { _scoreDelta?: number }) =>
 			update(state => ({
 				...state,
-				posts: state.posts.map(post =>
-					post.id === postId ? { ...post, ...updates } : post
-				)
+				posts: state.posts.map(post => {
+					if (post.id !== postId) return post
+
+					// Handle incremental score delta from realtime vote events
+					if (updates._scoreDelta !== undefined) {
+						const { _scoreDelta, ...restUpdates } = updates
+						return {
+							...post,
+							...restUpdates,
+							vote_score: post.vote_score + _scoreDelta
+						}
+					}
+
+					// Standard update (absolute values)
+					return { ...post, ...updates }
+				})
 			})),
 
 		// Remove a post

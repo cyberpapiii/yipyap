@@ -45,6 +45,8 @@ export class FeedSubscriptionManager {
   private connectionManager: RealtimeConnectionManager
   private activeSubscriptions = new Map<string, () => void>()
   private currentUser: AnonymousUser | null = null
+  // Track pending votes to prevent double-counting (optimistic + realtime)
+  private pendingVotes = new Set<string>()
 
   constructor(connectionManager: RealtimeConnectionManager) {
     this.connectionManager = connectionManager
@@ -55,6 +57,30 @@ export class FeedSubscriptionManager {
    */
   setCurrentUser(user: AnonymousUser | null): void {
     this.currentUser = user
+  }
+
+  /**
+   * Register a pending vote (called before optimistic update)
+   * Prevents realtime event from double-counting the score
+   */
+  registerPendingVote(targetId: string): void {
+    this.pendingVotes.add(targetId)
+    // Auto-clear after 5 seconds (fallback in case confirmation never comes)
+    setTimeout(() => this.pendingVotes.delete(targetId), 5000)
+  }
+
+  /**
+   * Clear a pending vote (called after API success/failure)
+   */
+  clearPendingVote(targetId: string): void {
+    this.pendingVotes.delete(targetId)
+  }
+
+  /**
+   * Check if a vote is pending (optimistic update already applied)
+   */
+  isVotePending(targetId: string): boolean {
+    return this.pendingVotes.has(targetId)
   }
 
   /**
@@ -206,15 +232,41 @@ export class FeedSubscriptionManager {
     const vote = payload.new || payload.old
     if (!vote?.post_id) return
 
-    // If it's the current user, update their vote state
+    // If it's the current user, update their vote state AND score
     if (this.currentUser && vote.user_id === this.currentUser.id) {
       let userVote: 'up' | 'down' | null = null
-      
+
       if (payload.eventType !== 'DELETE') {
         userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
       }
-      
-      onPostUpdate(vote.post_id, { user_vote: userVote })
+
+      // Skip score update if optimistic update already applied (prevent double-count)
+      if (this.isVotePending(vote.post_id)) {
+        console.log(`Skipping score delta for pending vote on post ${vote.post_id}`)
+        // Only update user_vote (score already handled by optimistic update)
+        onPostUpdate(vote.post_id, { user_vote: userVote })
+        this.clearPendingVote(vote.post_id)
+        return
+      }
+
+      // Calculate score delta based on event type
+      let scoreDelta = 0
+      switch (payload.eventType) {
+        case 'INSERT':
+          scoreDelta = payload.new.vote_type
+          break
+        case 'DELETE':
+          scoreDelta = -payload.old.vote_type
+          break
+        case 'UPDATE':
+          scoreDelta = payload.new.vote_type - payload.old.vote_type
+          break
+      }
+
+      onPostUpdate(vote.post_id, {
+        user_vote: userVote,
+        _scoreDelta: scoreDelta
+      } as Partial<PostWithStats> & { _scoreDelta?: number })
     }
   }
 
@@ -277,6 +329,8 @@ export class ThreadSubscriptionManager {
   private activeSubscriptions = new Map<string, () => void>()
   private currentUser: AnonymousUser | null = null
   private currentThreadId: string | null = null
+  // Track pending votes to prevent double-counting (optimistic + realtime)
+  private pendingVotes = new Set<string>()
 
   constructor(connectionManager: RealtimeConnectionManager) {
     this.connectionManager = connectionManager
@@ -287,6 +341,28 @@ export class ThreadSubscriptionManager {
    */
   setCurrentUser(user: AnonymousUser | null): void {
     this.currentUser = user
+  }
+
+  /**
+   * Register a pending vote (called before optimistic update)
+   */
+  registerPendingVote(targetId: string): void {
+    this.pendingVotes.add(targetId)
+    setTimeout(() => this.pendingVotes.delete(targetId), 5000)
+  }
+
+  /**
+   * Clear a pending vote (called after API success/failure)
+   */
+  clearPendingVote(targetId: string): void {
+    this.pendingVotes.delete(targetId)
+  }
+
+  /**
+   * Check if a vote is pending
+   */
+  isVotePending(targetId: string): boolean {
+    return this.pendingVotes.has(targetId)
   }
 
   /**
@@ -458,15 +534,40 @@ export class ThreadSubscriptionManager {
     const vote = payload.new || payload.old
     if (!vote?.comment_id) return
 
-    // If it's the current user, update their vote state
+    // If it's the current user, update their vote state AND score
     if (this.currentUser && vote.user_id === this.currentUser.id) {
       let userVote: 'up' | 'down' | null = null
-      
+
       if (payload.eventType !== 'DELETE') {
         userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
       }
-      
-      onCommentUpdate(vote.comment_id, { user_vote: userVote })
+
+      // Skip score update if optimistic update already applied (prevent double-count)
+      if (this.isVotePending(vote.comment_id)) {
+        console.log(`Skipping score delta for pending vote on comment ${vote.comment_id}`)
+        onCommentUpdate(vote.comment_id, { user_vote: userVote })
+        this.clearPendingVote(vote.comment_id)
+        return
+      }
+
+      // Calculate score delta based on event type
+      let scoreDelta = 0
+      switch (payload.eventType) {
+        case 'INSERT':
+          scoreDelta = payload.new.vote_type
+          break
+        case 'DELETE':
+          scoreDelta = -payload.old.vote_type
+          break
+        case 'UPDATE':
+          scoreDelta = payload.new.vote_type - payload.old.vote_type
+          break
+      }
+
+      onCommentUpdate(vote.comment_id, {
+        user_vote: userVote,
+        _scoreDelta: scoreDelta
+      } as Partial<CommentWithStats> & { _scoreDelta?: number })
     }
   }
 
@@ -485,15 +586,40 @@ export class ThreadSubscriptionManager {
     // Only handle if it matches current thread post
     if (vote.post_id !== this.currentThreadId) return
 
-    // If it's the current user, update their vote state
+    // If it's the current user, update their vote state AND score
     if (this.currentUser && vote.user_id === this.currentUser.id) {
       let userVote: 'up' | 'down' | null = null
-      
+
       if (payload.eventType !== 'DELETE') {
         userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
       }
-      
-      onPostUpdate(vote.post_id, { user_vote: userVote })
+
+      // Skip score update if optimistic update already applied (prevent double-count)
+      if (this.isVotePending(vote.post_id)) {
+        console.log(`Skipping score delta for pending vote on post ${vote.post_id}`)
+        onPostUpdate(vote.post_id, { user_vote: userVote })
+        this.clearPendingVote(vote.post_id)
+        return
+      }
+
+      // Calculate score delta based on event type
+      let scoreDelta = 0
+      switch (payload.eventType) {
+        case 'INSERT':
+          scoreDelta = payload.new.vote_type
+          break
+        case 'DELETE':
+          scoreDelta = -payload.old.vote_type
+          break
+        case 'UPDATE':
+          scoreDelta = payload.new.vote_type - payload.old.vote_type
+          break
+      }
+
+      onPostUpdate(vote.post_id, {
+        user_vote: userVote,
+        _scoreDelta: scoreDelta
+      } as Partial<PostWithStats> & { _scoreDelta?: number })
     }
   }
 

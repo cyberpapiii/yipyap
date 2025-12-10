@@ -70,8 +70,8 @@ export const threadStore = {
 			}
 		}),
 
-	// Update a specific comment
-	updateComment: (commentId: string, updates: Partial<CommentWithStats>) =>
+	// Update a specific comment (supports _scoreDelta for incremental score updates)
+	updateComment: (commentId: string, updates: Partial<CommentWithStats> & { _scoreDelta?: number }) =>
 		threadState.update(state => ({
 			...state,
 			comments: updateCommentsRecursively(state.comments, commentId, updates)
@@ -84,12 +84,30 @@ export const threadStore = {
 			comments: removeCommentRecursively(state.comments, commentId)
 		})),
 
-	// Update thread post
-	updatePost: (updates: Partial<PostWithStats>) =>
-		threadState.update(state => ({
-			...state,
-			post: state.post ? { ...state.post, ...updates } : null
-		})),
+	// Update thread post (supports _scoreDelta for incremental score updates)
+	updatePost: (updates: Partial<PostWithStats> & { _scoreDelta?: number }) =>
+		threadState.update(state => {
+			if (!state.post) return state
+
+			// Handle incremental score delta from realtime vote events
+			if (updates._scoreDelta !== undefined) {
+				const { _scoreDelta, ...restUpdates } = updates
+				return {
+					...state,
+					post: {
+						...state.post,
+						...restUpdates,
+						vote_score: state.post.vote_score + _scoreDelta
+					}
+				}
+			}
+
+			// Standard update (absolute values)
+			return {
+				...state,
+				post: { ...state.post, ...updates }
+			}
+		}),
 
 	// Clear thread state
 	clear: () => threadState.set({
@@ -112,13 +130,23 @@ export const threadStore = {
 }
 
 // Helper function to update comments recursively (for nested replies)
+// Supports _scoreDelta for incremental score updates from realtime vote events
 function updateCommentsRecursively(
 	comments: CommentWithStats[],
 	commentId: string,
-	updates: Partial<CommentWithStats>
+	updates: Partial<CommentWithStats> & { _scoreDelta?: number }
 ): CommentWithStats[] {
 	return comments.map(comment => {
 		if (comment.id === commentId) {
+			// Handle incremental score delta
+			if (updates._scoreDelta !== undefined) {
+				const { _scoreDelta, ...restUpdates } = updates
+				return {
+					...comment,
+					...restUpdates,
+					vote_score: comment.vote_score + _scoreDelta
+				}
+			}
 			return { ...comment, ...updates }
 		}
 		if (comment.replies && comment.replies.length > 0) {

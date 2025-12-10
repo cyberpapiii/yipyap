@@ -368,6 +368,15 @@ function createRealtimeStore() {
         }
       }
 
+      // Register pending vote to prevent double-counting when realtime event arrives
+      // The realtime handlers will clear this and skip score delta if pending
+      if (targetType === 'post' && feedSubscriptionManager) {
+        feedSubscriptionManager.registerPendingVote(targetId)
+      }
+      if (threadSubscriptionManager) {
+        threadSubscriptionManager.registerPendingVote(targetId)
+      }
+
       // Apply optimistic update
       const operationId = optimisticUpdateManager.applyOptimisticVote(
         targetId,
@@ -403,6 +412,14 @@ function createRealtimeStore() {
         console.log(`Vote confirmed: ${operationId}`)
       } catch (error) {
         console.error('Vote failed, rolling back:', error)
+
+        // Clear pending vote on failure (no realtime event will arrive)
+        if (targetType === 'post' && feedSubscriptionManager) {
+          feedSubscriptionManager.clearPendingVote(targetId)
+        }
+        if (threadSubscriptionManager) {
+          threadSubscriptionManager.clearPendingVote(targetId)
+        }
 
         // Rollback the optimistic update
         optimisticUpdateManager.rollbackOperation(operationId, (operation) => {
