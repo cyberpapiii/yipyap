@@ -158,8 +158,13 @@ export class FeedSubscriptionManager {
           const updates: Partial<PostWithStats> = {}
 
           // Compare old and new to determine what changed
-          if (payload.new.vote_score !== payload.old.vote_score) {
-            updates.vote_score = payload.new.vote_score
+          // Compare old and new to determine what changed
+          // Map DB 'score' column to 'vote_score' property
+          const newScore = (payload.new as any).score ?? payload.new.vote_score
+          const oldScore = (payload.old as any).score ?? payload.old.vote_score
+          
+          if (newScore !== oldScore) {
+            updates.vote_score = newScore
           }
           if (payload.new.comment_count !== payload.old.comment_count) {
             updates.comment_count = payload.new.comment_count
@@ -198,11 +203,18 @@ export class FeedSubscriptionManager {
   ): void {
     console.log('Vote event:', payload.eventType, payload)
 
-    if (payload.new?.post_id) {
-      // We need to calculate the new vote score
-      // For now, we'll trigger a refresh of the specific post
-      // In a production app, you might want to maintain vote counts in memory
-      this.triggerPostRefresh(payload.new.post_id, onPostUpdate)
+    const vote = payload.new || payload.old
+    if (!vote?.post_id) return
+
+    // If it's the current user, update their vote state
+    if (this.currentUser && vote.user_id === this.currentUser.id) {
+      let userVote: 'up' | 'down' | null = null
+      
+      if (payload.eventType !== 'DELETE') {
+        userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
+      }
+      
+      onPostUpdate(vote.post_id, { user_vote: userVote })
     }
   }
 
@@ -243,22 +255,7 @@ export class FeedSubscriptionManager {
     }
   }
 
-  /**
-   * Trigger post refresh for vote score updates
-   */
-  private async triggerPostRefresh(
-    postId: string,
-    onPostUpdate: (postId: string, updates: Partial<PostWithStats>) => void
-  ): Promise<void> {
-    // In a real implementation, you'd fetch the updated vote score
-    // For now, we'll emit a generic update event
-    console.log(`Triggering refresh for post ${postId} due to vote change`)
 
-    // This is a placeholder - you'd implement actual vote score fetching
-    onPostUpdate(postId, {
-      // Will be updated by the actual API call in the component
-    })
-  }
 
   /**
    * Cleanup all subscriptions
@@ -416,8 +413,13 @@ export class ThreadSubscriptionManager {
         if (payload.new && payload.old) {
           const updates: Partial<CommentWithStats> = {}
 
-          if (payload.new.vote_score !== payload.old.vote_score) {
-            updates.vote_score = payload.new.vote_score
+          // Compare old and new to determine what changed
+          // Map DB 'score' column to 'vote_score' property
+          const newScore = (payload.new as any).score ?? payload.new.vote_score
+          const oldScore = (payload.old as any).score ?? payload.old.vote_score
+          
+          if (newScore !== oldScore) {
+            updates.vote_score = newScore
           }
           if (payload.new.reply_count !== payload.old.reply_count) {
             updates.reply_count = payload.new.reply_count
@@ -453,8 +455,18 @@ export class ThreadSubscriptionManager {
   ): void {
     console.log('Comment vote event:', payload.eventType, payload)
 
-    if (payload.new?.comment_id) {
-      this.triggerCommentRefresh(payload.new.comment_id, onCommentUpdate)
+    const vote = payload.new || payload.old
+    if (!vote?.comment_id) return
+
+    // If it's the current user, update their vote state
+    if (this.currentUser && vote.user_id === this.currentUser.id) {
+      let userVote: 'up' | 'down' | null = null
+      
+      if (payload.eventType !== 'DELETE') {
+        userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
+      }
+      
+      onCommentUpdate(vote.comment_id, { user_vote: userVote })
     }
   }
 
@@ -467,8 +479,21 @@ export class ThreadSubscriptionManager {
   ): void {
     console.log('Post vote event:', payload.eventType, payload)
 
-    if (payload.new?.post_id && payload.new.post_id === this.currentThreadId) {
-      this.triggerPostRefresh(payload.new.post_id, onPostUpdate)
+    const vote = payload.new || payload.old
+    if (!vote?.post_id) return
+
+    // Only handle if it matches current thread post
+    if (vote.post_id !== this.currentThreadId) return
+
+    // If it's the current user, update their vote state
+    if (this.currentUser && vote.user_id === this.currentUser.id) {
+      let userVote: 'up' | 'down' | null = null
+      
+      if (payload.eventType !== 'DELETE') {
+        userVote = vote.vote_type === 1 ? 'up' : vote.vote_type === -1 ? 'down' : null
+      }
+      
+      onPostUpdate(vote.post_id, { user_vote: userVote })
     }
   }
 
@@ -510,27 +535,9 @@ export class ThreadSubscriptionManager {
     }
   }
 
-  /**
-   * Trigger comment refresh for vote score updates
-   */
-  private async triggerCommentRefresh(
-    commentId: string,
-    onCommentUpdate: (commentId: string, updates: Partial<CommentWithStats>) => void
-  ): Promise<void> {
-    console.log(`Triggering refresh for comment ${commentId} due to vote change`)
-    onCommentUpdate(commentId, {})
-  }
 
-  /**
-   * Trigger post refresh for vote score updates
-   */
-  private async triggerPostRefresh(
-    postId: string,
-    onPostUpdate: (postId: string, updates: Partial<PostWithStats>) => void
-  ): Promise<void> {
-    console.log(`Triggering refresh for post ${postId} due to vote change`)
-    onPostUpdate(postId, {})
-  }
+
+
 
   /**
    * Cleanup all subscriptions
