@@ -183,15 +183,14 @@ export class FeedSubscriptionManager {
         if (payload.new && payload.old) {
           const updates: Partial<PostWithStats> = {}
 
-          // Compare old and new to determine what changed
-          // Compare old and new to determine what changed
-          // Map DB 'score' column to 'vote_score' property
-          const newScore = (payload.new as any).score ?? payload.new.vote_score
-          const oldScore = (payload.old as any).score ?? payload.old.vote_score
-          
-          if (newScore !== oldScore) {
-            updates.vote_score = newScore
-          }
+          // IMPORTANT: Do NOT send vote_score updates from POST events!
+          // Vote scores are already handled by VOTE events with proper pending vote tracking.
+          // Sending vote_score here can cause race conditions where a delayed POST UPDATE
+          // overwrites optimistic vote state after the user has already voted.
+          // The trigger fires synchronously with the vote, but the realtime event
+          // delivery can be delayed, causing stale data to overwrite newer state.
+
+          // Only update non-vote-related fields from POST events
           if (payload.new.comment_count !== payload.old.comment_count) {
             updates.comment_count = payload.new.comment_count
           }
@@ -486,14 +485,12 @@ export class ThreadSubscriptionManager {
         if (payload.new && payload.old) {
           const updates: Partial<CommentWithStats> = {}
 
-          // Compare old and new to determine what changed
-          // Map DB 'score' column to 'vote_score' property
-          const newScore = (payload.new as any).score ?? payload.new.vote_score
-          const oldScore = (payload.old as any).score ?? payload.old.vote_score
-          
-          if (newScore !== oldScore) {
-            updates.vote_score = newScore
-          }
+          // IMPORTANT: Do NOT send vote_score updates from COMMENT events!
+          // Vote scores are already handled by VOTE events with proper pending vote tracking.
+          // Same issue as with POST events - delayed realtime delivery can overwrite
+          // optimistic state with stale data.
+
+          // Only update non-vote-related fields from COMMENT events
           if (payload.new.reply_count !== payload.old.reply_count) {
             updates.reply_count = payload.new.reply_count
           }

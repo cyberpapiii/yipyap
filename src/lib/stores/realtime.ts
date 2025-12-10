@@ -184,8 +184,14 @@ function createRealtimeStore() {
         },
         // Handle post updates
         (postId: string, updates: Partial<PostWithStats>) => {
-          console.log(`Post update received:`, postId, updates)
+          console.log(`[REALTIME] Post UPDATE for ${postId.slice(0,8)}:`, updates)
+          const beforeState = get(feedStore)
+          const beforePost = beforeState.posts.find(p => p.id === postId)
+          console.log(`[REALTIME] BEFORE update: score=${beforePost?.vote_score}, user_vote=${beforePost?.user_vote}`)
           feedStore.updatePost(postId, updates)
+          const afterState = get(feedStore)
+          const afterPost = afterState.posts.find(p => p.id === postId)
+          console.log(`[REALTIME] AFTER update: score=${afterPost?.vote_score}, user_vote=${afterPost?.user_vote}`)
         },
         // Handle post deletions
         (postId: string) => {
