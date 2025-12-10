@@ -202,7 +202,7 @@
   aria-hidden="true"
 ></label>
 
-<header class="sticky top-0 z-90 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1);">
+<header class="sticky top-0 z-90 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1); padding-top: env(safe-area-inset-top)">
   <!-- Navigation layer: z-100-199 (header at z-90) -->
   <div class="mx-auto max-w-md px-4 h-12 flex items-center justify-center">
     <a href="/" class="flex items-center" aria-label="BingBong home">
