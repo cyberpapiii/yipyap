@@ -182,12 +182,12 @@
   })
 </script>
 
-{#if supabaseOrigin}
-  <svelte:head>
+<svelte:head>
+  {#if supabaseOrigin}
     <link rel="preconnect" href={supabaseOrigin} />
     <link rel="dns-prefetch" href={supabaseOrigin} />
-  </svelte:head>
-{/if}
+  {/if}
+</svelte:head>
 
 <!-- Hidden iOS haptic workaround elements (iOS 18+ WebKit switch haptic) -->
 <input
