@@ -12,7 +12,7 @@
   import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'
   import { createRealtimeAPI } from '$lib/api/realtime'
-  import type { FeedType } from '$lib/types'
+  import type { FeedType, CommunityType, PostWithStats } from '$lib/types'
   import { ensureAnonymousUser } from '$lib/auth'
   import { PostsAPI } from '$lib/api/posts'
   import { hapticsStore } from '$lib/stores/haptics'
@@ -21,14 +21,60 @@
   const postsApi = new PostsAPI(supabase as any)
   const cu = currentUserStore
 
+  export let data: {
+    initialFeed?: {
+      feedType: FeedType
+      community: CommunityType
+      posts: PostWithStats[]
+      hasMore: boolean
+      cursor: string | null
+      timestamp: number
+    } | null
+  }
+
   let feedType = $state<FeedType>('hot')
   let initializing = $state(false)
   let refreshing = $state(false)
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
+  const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
 
   // Derived feed store for header
   const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
+
+  const getCacheKey = (type: FeedType, community: CommunityType) =>
+    `${FEED_CACHE_PREFIX}:${type}:${community}`
+
+  const loadCachedFeed = (type: FeedType, community: CommunityType) => {
+    if (!browser) return null
+    try {
+      const raw = sessionStorage.getItem(getCacheKey(type, community))
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as {
+        posts: PostWithStats[]
+        hasMore: boolean
+        cursor: string | null
+        timestamp: number
+      }
+      return parsed
+    } catch {
+      return null
+    }
+  }
+
+  const saveCachedFeed = (type: FeedType, community: CommunityType, payload: {
+    posts: PostWithStats[]
+    hasMore: boolean
+    cursor: string | null
+    timestamp: number
+  }) => {
+    if (!browser) return
+    try {
+      sessionStorage.setItem(getCacheKey(type, community), JSON.stringify(payload))
+    } catch {
+      // Ignore quota/cache errors
+    }
+  }
 
   // Watch for community changes and reload feed
   $effect(() => {
@@ -166,6 +212,29 @@
         })
       }
 
+      const selectedCommunity = $communityStore.selectedCommunity
+
+      // If SSR provided an initial feed and it matches current filter, hydrate immediately
+      if (data.initialFeed && data.initialFeed.feedType === feedType && data.initialFeed.community === selectedCommunity) {
+        const feedStore = feedUtils.getFeedStore(feedType)
+        feedStore.setPosts(data.initialFeed.posts)
+        lastFeedSync = data.initialFeed.timestamp
+        saveCachedFeed(feedType, selectedCommunity, {
+          posts: data.initialFeed.posts,
+          hasMore: data.initialFeed.hasMore,
+          cursor: data.initialFeed.cursor,
+          timestamp: data.initialFeed.timestamp
+        })
+      } else {
+        // Fall back to cached feed snapshot for instant render
+        const cached = loadCachedFeed(feedType, selectedCommunity)
+        if (cached) {
+          const feedStore = feedUtils.getFeedStore(feedType)
+          feedStore.setPosts(cached.posts)
+          lastFeedSync = cached.timestamp
+        }
+      }
+
       await switchFeed(saved, { skipPersist: true })
     } finally {
       initializing = false
@@ -272,6 +341,13 @@
 
       // Track last sync time for cooldown gating
       lastFeedSync = Date.now()
+      const communityKey = get(communityStore).selectedCommunity
+      saveCachedFeed(type, communityKey, {
+        posts: get(feedStore).posts,
+        hasMore: response.hasMore,
+        cursor: response.nextCursor ?? null,
+        timestamp: lastFeedSync
+      })
     } catch (error: any) {
       const message = error?.message || 'Failed to load feed'
       feedStore.setError(message)

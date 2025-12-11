@@ -20,6 +20,7 @@
   import InstallGate from '$lib/components/onboarding/InstallGate.svelte'
   import QuickOnboarding from '$lib/components/onboarding/QuickOnboarding.svelte'
   import { hapticsStore } from '$lib/stores/haptics'
+  import { config } from '$lib/config'
 
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
@@ -27,6 +28,8 @@
   // iOS haptic workaround element references
   let hapticLabel: HTMLLabelElement | null = null
   let hapticInput: HTMLInputElement | null = null
+
+  const supabaseOrigin = config.supabase.url ? new URL(config.supabase.url).origin : null
 
   // Lazy load ComposeModal component
   let ComposeModal = $state<any>(null)
@@ -177,6 +180,13 @@
     }
   })
 </script>
+
+<svelte:head>
+  {#if supabaseOrigin}
+    <link rel="preconnect" href={supabaseOrigin} />
+    <link rel="dns-prefetch" href={supabaseOrigin} />
+  {/if}
+</svelte:head>
 
 <!-- Hidden iOS haptic workaround elements (iOS 18+ WebKit switch haptic) -->
 <input
