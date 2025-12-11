@@ -123,7 +123,7 @@ export class RealtimePostsAPI extends PostsAPI {
   async loadFeedWithRealtime(
     feedType: FeedType,
     cursor?: string,
-    limit = 20,
+    limit = 15,
     currentUser?: AnonymousUser | null,
     community: CommunityType = 'nyc',
     geographicCommunity?: GeographicCommunity

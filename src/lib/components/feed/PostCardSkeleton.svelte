@@ -14,6 +14,7 @@
 <div
 	class="bg-card border border-line rounded-2xl p-4 animate-fade-in relative overflow-hidden"
 	style:animation-delay={animationDelay}
+	style:min-height="200px"
 	aria-label="Loading post..."
 	role="status"
 >

@@ -4,7 +4,7 @@
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import type { PostCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
-	import { goto } from '$app/navigation'
+import { goto } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { currentUser } from '$lib/stores/auth'
 	import { hapticsStore } from '$lib/stores/haptics'
@@ -20,6 +20,7 @@
 	let rippleElements: HTMLElement[] = []
 	let showOptionsMenu = $state(false)
 	let isExpanded = $state(false)
+	let hasPrefetchedThread = $state(false)
 
 	let {
 		post,
@@ -41,6 +42,17 @@
 			// Haptic feedback for navigation
 			hapticsStore.trigger('navigation')
 			goto(`/thread/${post.id}`)
+		}
+	}
+
+	async function prefetchThread() {
+		if (hasPrefetchedThread) return
+		hasPrefetchedThread = true
+		try {
+			const navigation = await import('$app/navigation') as { prefetch?: (url: string) => Promise<void> }
+			await navigation.prefetch?.(`/thread/${post.id}`)
+		} catch {
+			hasPrefetchedThread = false
 		}
 	}
 
@@ -119,6 +131,7 @@
 	// Touch and mouse event handlers
 	function handleTouchStart(e: TouchEvent) {
 		isPressed = true
+		void prefetchThread()
 		createRipple(e)
 	}
 
@@ -137,6 +150,7 @@
 
 	function handleMouseEnter() {
 		isHovered = true
+		void prefetchThread()
 	}
 
 	function handleMouseLeave() {
@@ -198,6 +212,7 @@
 		{isHovered && !isInThread ? 'transform-gpu' : ''}
 		animate-fade-in
 	"
+	style="content-visibility: auto; contain-intrinsic-size: 320px;"
 	onclick={openThread}
 	onmousedown={handleMouseDown}
 	onmouseup={handleMouseUp}
@@ -209,7 +224,7 @@
 	onkeyup={handleKeyUp}
 	role={!isInThread ? 'button' : 'article'}
 	tabindex={!isInThread ? 0 : undefined}
-	aria-label={`Post by ${post.anonymous_user.emoji} anonymous user. ${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}. Posted ${timeAgo()}. ${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'}.`}
+	aria-label={`Post by ${post.anonymous_user.subway_line} line anonymous user. ${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}. Posted ${timeAgo()}. ${post.comment_count} ${post.comment_count === 1 ? 'reply' : 'replies'}.`}
 	aria-pressed={!isInThread ? isPressed : undefined}
 >
 	<div class="flex gap-3 items-start">

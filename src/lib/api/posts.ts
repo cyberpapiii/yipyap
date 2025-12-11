@@ -85,12 +85,15 @@ export class PostsAPI {
 	async getFeedPosts(
 		feedType: FeedType,
 		cursor?: string,
-		limit = 20,
+		limit = 15,
 		currentUser?: AnonymousUser | null,
 		community: CommunityType = 'nyc',
 		geographicCommunity?: GeographicCommunity
 	): Promise<PaginatedResponse<PostWithStats>> {
 		try {
+			const feedColumns =
+				'id, content, anonymous_user_id, thread_id, parent_post_id, created_at, updated_at, is_deleted, vote_score, comment_count, community'
+
 			// Determine which geographic community to query
 			// If geographicCommunity is explicitly provided, use it
 			// Otherwise, default to 'nyc'
@@ -106,7 +109,7 @@ export class PostsAPI {
 				// NO subway line filtering
 				query = this.supabase
 				  .from('post_with_stats')
-				  .select('*')
+				  .select(feedColumns)
 				  .eq('community', 'dimes_square')
 				  .is('parent_post_id', null)
 				  .eq('is_deleted', false)
@@ -119,7 +122,7 @@ export class PostsAPI {
 					// No subway line filtering - show all NYC posts
 					query = this.supabase
 					  .from('post_with_stats')
-					  .select('*')
+					  .select(feedColumns)
 					  .eq('community', 'nyc')
 					  .is('parent_post_id', null)
 					  .eq('is_deleted', false)
@@ -128,7 +131,7 @@ export class PostsAPI {
 					// Filter by both NYC community and specific subway lines
 					query = this.supabase
 					  .from('post_with_stats')
-					  .select('*')
+					  .select(feedColumns)
 					  .eq('community', 'nyc')
 					  .is('parent_post_id', null)
 					  .eq('is_deleted', false)
@@ -206,8 +209,8 @@ export class PostsAPI {
 
 	private async enrichPosts(posts: any[], limit: number, currentUser?: AnonymousUser | null): Promise<PaginatedResponse<PostWithStats>> {
 		const postsWithVotes = currentUser && posts?.length
-		  ? await this.addUserVotesToPosts(posts, currentUser.id)
-		  : posts || []
+			? await this.addUserVotesToPosts(posts, currentUser.id)
+			: posts || []
 
 		const withAnon = await this.attachAnonymousIdentities(postsWithVotes)
 
@@ -216,13 +219,17 @@ export class PostsAPI {
 		if (withAnon.length > 0) {
 			try {
 				const postIds = withAnon.map(p => p.id)
+				const replyColumns =
+					'id, post_id, parent_comment_id, anonymous_user_id, content, created_at, updated_at, vote_score, reply_count, depth, is_deleted'
+				const maxRepliesToFetch = Math.max(limit * 2, 10)
 				const { data: allReplies, error } = await this.supabase
 					.from('comment_with_stats')
-					.select('*')
+					.select(replyColumns)
 					.in('post_id', postIds)
 					.is('parent_comment_id', null)
 					.order('vote_score', { ascending: false })
 					.order('created_at', { ascending: false })
+					.limit(maxRepliesToFetch)
 
 				if (!error && allReplies) {
 					// Add user votes to replies if we have a current user

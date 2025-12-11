@@ -12,7 +12,7 @@
   import { communityStore } from '$lib/stores/community'
   import type { FeedStore } from '$lib/stores/feeds'
   import { createRealtimeAPI } from '$lib/api/realtime'
-  import type { FeedType, CommunityType, PostWithStats } from '$lib/types'
+  import type { FeedType, CommunityType, GeographicCommunity, PostWithStats } from '$lib/types'
   import { ensureAnonymousUser } from '$lib/auth'
   import { PostsAPI } from '$lib/api/posts'
   import { hapticsStore } from '$lib/stores/haptics'
@@ -40,14 +40,17 @@
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
+  const INITIAL_FEED_LIMIT = 12
+  const PAGINATED_FEED_LIMIT = 15
+  const REFRESH_FEED_LIMIT = 15
 
   // Derived feed store for header
   const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
 
-  const getCacheKey = (type: FeedType, community: CommunityType) =>
+  const getCacheKey = (type: FeedType, community: CommunityType | GeographicCommunity) =>
     `${FEED_CACHE_PREFIX}:${type}:${community}`
 
-  const loadCachedFeed = (type: FeedType, community: CommunityType) => {
+  const loadCachedFeed = (type: FeedType, community: CommunityType | GeographicCommunity) => {
     if (!browser) return null
     try {
       const raw = sessionStorage.getItem(getCacheKey(type, community))
@@ -64,7 +67,7 @@
     }
   }
 
-  const saveCachedFeed = (type: FeedType, community: CommunityType, payload: {
+  const saveCachedFeed = (type: FeedType, community: CommunityType | GeographicCommunity, payload: {
     posts: PostWithStats[]
     hasMore: boolean
     cursor: string | null
@@ -76,6 +79,17 @@
     } catch {
       // Ignore quota/cache errors
     }
+  }
+
+  const getCommunityFilters = (): {
+    subwayLineCommunity: CommunityType
+    geographicCommunity: GeographicCommunity | undefined
+  } => {
+    const communityState = get(communityStore)
+    const geographicCommunity =
+      communityState.selectedPostCommunity === 'dimes_square' ? 'dimes_square' : undefined
+    const subwayLineCommunity = geographicCommunity ? 'nyc' : communityState.selectedCommunity
+    return { subwayLineCommunity, geographicCommunity }
   }
 
   // Watch for community changes and reload feed
@@ -136,9 +150,16 @@
         try {
           // Fetch fresh data to sync vote counts with database
           const user = get(cu)
-          const community = get(communityStore).selectedCommunity
+          const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
 
-          const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
+          const freshData = await postsApi.getFeedPosts(
+            feedType,
+            undefined,
+            REFRESH_FEED_LIMIT,
+            user,
+            subwayLineCommunity,
+            geographicCommunity
+          )
 
           // Smart merge: preserve optimistic vote updates that may not be in DB yet
           // This handles the race condition where user votes, navigates away before
@@ -189,67 +210,88 @@
     }
   })
 
-  onMount(async () => {
+  onMount(() => {
     if (!browser) return
 
-    const saved = (localStorage.getItem('bingbong_feed') as FeedType) || 'hot'
-    feedType = saved
+    ;(async () => {
+      try {
+        const navigation = await import('$app/navigation') as { prefetchRoutes?: (paths?: string[]) => Promise<void> }
+        await navigation.prefetchRoutes?.(['/thread/[id]'])
+      } catch {
+        // Ignore preload failures
+      }
+    })()
 
-    initializing = true
-    try {
-      const selectedCommunity = $communityStore.selectedCommunity
+    ;(async () => {
+      const saved = (localStorage.getItem('bingbong_feed') as FeedType) || 'hot'
+      feedType = saved
 
-      // If SSR provided an initial feed and it matches current filter, hydrate immediately
-      // Don't wait for user - SSR feed is already available and user_vote can be null
-      if (data.initialFeed && data.initialFeed.feedType === feedType && data.initialFeed.community === selectedCommunity) {
-        const feedStore = feedUtils.getFeedStore(feedType)
-        feedStore.setPosts(data.initialFeed.posts)
-        lastFeedSync = data.initialFeed.timestamp
-        saveCachedFeed(feedType, selectedCommunity, {
-          posts: data.initialFeed.posts,
-          hasMore: data.initialFeed.hasMore,
-          cursor: data.initialFeed.cursor,
-          timestamp: data.initialFeed.timestamp
-        })
+      initializing = true
+      try {
+        const selectedCommunity = $communityStore.selectedCommunity
+        const selectedPostCommunity = $communityStore.selectedPostCommunity
+        const communityKey = selectedPostCommunity === 'dimes_square' ? 'dimes_square' : selectedCommunity
 
-        // Mark initialization complete immediately since we have SSR data
-        initializing = false
-        feedUtils.switchFeed(feedType)
-
-        // Refresh with user votes in background once user is available
-        const currentUserValue = get(cu)
-        if (!currentUserValue) {
-          // Subscribe to user becoming available and refresh votes
-          const unsubscribe = cu.subscribe(async (user) => {
-            if (user) {
-              unsubscribe()
-              // Silently refresh to get user_vote states
-              try {
-                const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, selectedCommunity)
-                const feedStore = feedUtils.getFeedStore(feedType)
-                feedStore.setPosts(freshData.data)
-                lastFeedSync = Date.now()
-              } catch {
-                // Ignore - SSR data is still valid
-              }
-            }
+        // If SSR provided an initial feed and it matches current filter, hydrate immediately
+        // Don't wait for user - SSR feed is already available and user_vote can be null
+        if (data.initialFeed && data.initialFeed.feedType === feedType && data.initialFeed.community === selectedCommunity) {
+          const feedStore = feedUtils.getFeedStore(feedType)
+          feedStore.setPosts(data.initialFeed.posts)
+          lastFeedSync = data.initialFeed.timestamp
+          saveCachedFeed(feedType, communityKey, {
+            posts: data.initialFeed.posts,
+            hasMore: data.initialFeed.hasMore,
+            cursor: data.initialFeed.cursor,
+            timestamp: data.initialFeed.timestamp
           })
+
+          // Mark initialization complete immediately since we have SSR data
+          initializing = false
+          feedUtils.switchFeed(feedType)
+
+          // Refresh with user votes in background once user is available
+          const currentUserValue = get(cu)
+          if (!currentUserValue) {
+            // Subscribe to user becoming available and refresh votes
+            const unsubscribe = cu.subscribe(async (user) => {
+              if (user) {
+                unsubscribe()
+                // Silently refresh to get user_vote states
+                try {
+                  const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
+                  const freshData = await postsApi.getFeedPosts(
+                    feedType,
+                    undefined,
+                    REFRESH_FEED_LIMIT,
+                    user,
+                    subwayLineCommunity,
+                    geographicCommunity
+                  )
+                  const feedStore = feedUtils.getFeedStore(feedType)
+                  feedStore.setPosts(freshData.data)
+                  lastFeedSync = Date.now()
+                } catch {
+                  // Ignore - SSR data is still valid
+                }
+              }
+            })
+          }
+          return
         }
-        return
-      }
 
-      // Fall back to cached feed snapshot for instant render
-      const cached = loadCachedFeed(feedType, selectedCommunity)
-      if (cached) {
-        const feedStore = feedUtils.getFeedStore(feedType)
-        feedStore.setPosts(cached.posts)
-        lastFeedSync = cached.timestamp
-      }
+        // Fall back to cached feed snapshot for instant render
+        const cached = loadCachedFeed(feedType, communityKey)
+        if (cached) {
+          const feedStore = feedUtils.getFeedStore(feedType)
+          feedStore.setPosts(cached.posts)
+          lastFeedSync = cached.timestamp
+        }
 
-      await switchFeed(saved, { skipPersist: true })
-    } finally {
-      initializing = false
-    }
+        await switchFeed(saved, { skipPersist: true })
+      } finally {
+        initializing = false
+      }
+    })()
 
     // Refresh feed when page becomes visible (e.g., returning from another app/tab)
     // This handles cases outside SPA navigation (tab switching, app switching on mobile)
@@ -265,8 +307,15 @@
           try {
             // Fetch fresh data for visible posts to update comment counts
             const user = get(cu)
-            const community = get(communityStore).selectedCommunity
-            const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
+            const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
+            const freshData = await postsApi.getFeedPosts(
+              feedType,
+              undefined,
+              REFRESH_FEED_LIMIT,
+              user,
+              subwayLineCommunity,
+              geographicCommunity
+            )
 
             // Smart merge: preserve optimistic vote updates
             const currentState = get(currentFeed)
@@ -334,15 +383,12 @@
 
     try {
       const currentUser = get(cu) || undefined
-      const selectedCommunity = get(communityStore).selectedCommunity
+      const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
 
-      // Determine if viewing a geographic community or subway line filter
-      const geographicCommunity = selectedCommunity === 'dimes_square' ? 'dimes_square' : undefined
-      const subwayLineCommunity = selectedCommunity === 'dimes_square' ? 'nyc' : selectedCommunity
-
+      const pageSize = cursor ? PAGINATED_FEED_LIMIT : INITIAL_FEED_LIMIT
       const response = cursor
-        ? await api.getFeedPosts(type, cursor, 20, currentUser, subwayLineCommunity, geographicCommunity)
-        : await api.loadFeedWithRealtime(type, undefined, 20, currentUser, subwayLineCommunity, geographicCommunity)
+        ? await api.getFeedPosts(type, cursor, pageSize, currentUser, subwayLineCommunity, geographicCommunity)
+        : await api.loadFeedWithRealtime(type, undefined, pageSize, currentUser, subwayLineCommunity, geographicCommunity)
 
       if (cursor) {
         feedStore.addPosts(response.data, response.hasMore, response.nextCursor)
@@ -352,7 +398,10 @@
 
       // Track last sync time for cooldown gating
       lastFeedSync = Date.now()
-      const communityKey = get(communityStore).selectedCommunity
+      const communityState = get(communityStore)
+      const communityKey = communityState.selectedPostCommunity === 'dimes_square'
+        ? 'dimes_square'
+        : communityState.selectedCommunity
       saveCachedFeed(type, communityKey, {
         posts: get(feedStore).posts,
         hasMore: response.hasMore,

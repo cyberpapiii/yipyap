@@ -40,12 +40,40 @@
 	const PULL_THRESHOLD = 80
 	const MAX_PULL = 120
 	const SCROLL_TOP_THRESHOLD = 5
+	const ESTIMATED_CARD_HEIGHT = 240
+	const OVERSCAN = 4
 
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
+	let windowStart = $state(0)
+	let windowEnd = $state(12)
 
 	// Handle community picker
 	function handleOpenPicker() {
 		communityStore.openPicker()
+	}
+
+	function updateWindow() {
+		if (!feedContainer) {
+			windowEnd = Math.min($feedStore.posts.length, Math.max(windowEnd, 12))
+			return
+		}
+
+		const total = $feedStore.posts.length
+		if (!total) {
+			windowStart = 0
+			windowEnd = 0
+			return
+		}
+
+		const { scrollTop, clientHeight } = feedContainer
+		const startIndex = Math.max(Math.floor(scrollTop / ESTIMATED_CARD_HEIGHT) - OVERSCAN, 0)
+		const endIndex = Math.min(
+			total,
+			Math.ceil((scrollTop + clientHeight) / ESTIMATED_CARD_HEIGHT) + OVERSCAN
+		)
+
+		windowStart = startIndex
+		windowEnd = endIndex
 	}
 
 	// Handle infinite scroll
@@ -55,6 +83,8 @@
 		const { scrollTop, scrollHeight, clientHeight } = feedContainer
 		const scrolled = scrollTop + clientHeight
 		const threshold = scrollHeight - (clientHeight * 0.8)
+
+		updateWindow()
 
 		if (scrolled >= threshold && $feedStore.hasMore && !$feedStore.loading) {
 			loadMore()
@@ -203,6 +233,8 @@
 	onMount(() => {
 		if (!feedContainer) return
 
+		updateWindow()
+
 		feedContainer.addEventListener('scroll', handleScroll)
 		feedContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
 		feedContainer.addEventListener('touchmove', handleTouchMove, { passive: false })
@@ -218,6 +250,10 @@
 				feedContainer.removeEventListener('touchcancel', handleTouchCancel)
 			}
 		}
+	})
+
+	$effect(() => {
+		updateWindow()
 	})
 </script>
 
@@ -314,10 +350,11 @@
 		<!-- Posts -->
 		{#if $feedStore.posts.length > 0}
 			<div class="space-y-4" style="opacity: {feedOpacity}; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
-				{#each $feedStore.posts as post, index (post.id)}
+				<div style={`height: ${Math.max(windowStart * ESTIMATED_CARD_HEIGHT, 0)}px`}></div>
+				{#each $feedStore.posts.slice(windowStart, windowEnd) as post, index (post.id)}
 					<div
 						class="animate-stagger-fade-in"
-						style:animation-delay={`${Math.min(index * 50, 300)}ms`}
+						style:animation-delay={`${Math.min((windowStart + index) * 50, 300)}ms`}
 					>
 						<PostCard
 							{post}
@@ -329,6 +366,7 @@
 						/>
 					</div>
 				{/each}
+				<div style={`height: ${Math.max(($feedStore.posts.length - windowEnd) * ESTIMATED_CARD_HEIGHT, 0)}px`}></div>
 			</div>
 
 			<!-- Load more indicator -->

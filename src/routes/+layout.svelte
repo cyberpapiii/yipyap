@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../app.css'
+  import { browser } from '$app/environment'
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
@@ -10,17 +11,18 @@
   import type { AnonymousUser, GeographicCommunity } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/layout/BottomNav.svelte'
-  import CommunityPicker from '$lib/components/community/CommunityPicker.svelte'
   import { composeStore, anonymousUser as currentUserStore, showComposeModal } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import { notificationsStore } from '$lib/stores/notifications'
   import { communityStore } from '$lib/stores/community'
   import { onboardingStore } from '$lib/stores/onboarding'
   import { isPWA, isDesktop, isIOSSafari, canInstallPWA, initPWAInstallListener } from '$lib/utils/pwa'
-  import InstallGate from '$lib/components/onboarding/InstallGate.svelte'
-  import QuickOnboarding from '$lib/components/onboarding/QuickOnboarding.svelte'
   import { hapticsStore } from '$lib/stores/haptics'
   import { config } from '$lib/config'
+
+  type LazyCommunityPicker = typeof import('$lib/components/community/CommunityPicker.svelte').default
+  type LazyInstallGate = typeof import('$lib/components/onboarding/InstallGate.svelte').default
+  type LazyQuickOnboarding = typeof import('$lib/components/onboarding/QuickOnboarding.svelte').default
 
   const { children } = $props()
   const api = createRealtimeAPI(supabase as any)
@@ -34,12 +36,44 @@
 
   // Lazy load ComposeModal component
   let ComposeModal = $state<any>(null)
+  let CommunityPickerComponent = $state<LazyCommunityPicker | null>(null)
+  let InstallGateComponent = $state<LazyInstallGate | null>(null)
+  let QuickOnboardingComponent = $state<LazyQuickOnboarding | null>(null)
 
   // Load ComposeModal when needed
   $effect(() => {
     if ($showComposeModal && !ComposeModal) {
       import('$lib/components/compose/ComposeModal.svelte').then(module => {
         ComposeModal = module.default
+      })
+    }
+  })
+
+  // Lazy load community picker only when opened
+  $effect(() => {
+    if (!browser) return
+    if ($communityStore.isPickerOpen && !CommunityPickerComponent) {
+      import('$lib/components/community/CommunityPicker.svelte').then((module) => {
+        CommunityPickerComponent = module.default
+      })
+    }
+  })
+
+  // Lazy load onboarding overlays when requested
+  $effect(() => {
+    if (!browser) return
+    if ($onboardingStore.showInstallGate && $onboardingStore.installGateType && !InstallGateComponent) {
+      import('$lib/components/onboarding/InstallGate.svelte').then((module) => {
+        InstallGateComponent = module.default
+      })
+    }
+  })
+
+  $effect(() => {
+    if (!browser) return
+    if ($onboardingStore.showQuickOnboarding && !QuickOnboardingComponent) {
+      import('$lib/components/onboarding/QuickOnboarding.svelte').then((module) => {
+        QuickOnboardingComponent = module.default
       })
     }
   })
@@ -197,7 +231,6 @@
   bind:this={hapticInput}
   id="haptic-switch"
   type="checkbox"
-  switch
   class="sr-only"
   aria-hidden="true"
 />
@@ -249,23 +282,30 @@
 <BottomNav active={activePage} />
 
 {#if ComposeModal}
+  <!-- svelte-ignore svelte_component_deprecated -->
   <svelte:component this={ComposeModal} onSubmit={onSubmit} />
 {/if}
 
 <!-- Community Picker Modal - rendered at root level -->
-<CommunityPicker
-  isOpen={$communityStore.isPickerOpen}
-  selectedCommunity={$communityStore.selectedCommunity}
-  onSelect={handleSelectCommunity}
-  onClose={handleClosePicker}
-/>
+{#if CommunityPickerComponent}
+  <!-- svelte-ignore svelte_component_deprecated -->
+  <svelte:component
+    this={CommunityPickerComponent}
+    isOpen={$communityStore.isPickerOpen}
+    selectedCommunity={$communityStore.selectedCommunity}
+    onSelect={handleSelectCommunity}
+    onClose={handleClosePicker}
+  />
+{/if}
 
 <!-- Install Gate - highest z-index, blocks app if not in PWA -->
-{#if $onboardingStore.showInstallGate && $onboardingStore.installGateType}
-  <InstallGate gateType={$onboardingStore.installGateType} />
+{#if InstallGateComponent && $onboardingStore.showInstallGate && $onboardingStore.installGateType}
+  <!-- svelte-ignore svelte_component_deprecated -->
+  <svelte:component this={InstallGateComponent} gateType={$onboardingStore.installGateType} />
 {/if}
 
 <!-- Quick Onboarding - shows after PWA install -->
-{#if $onboardingStore.showQuickOnboarding}
-  <QuickOnboarding />
+{#if QuickOnboardingComponent && $onboardingStore.showQuickOnboarding}
+  <!-- svelte-ignore svelte_component_deprecated -->
+  <svelte:component this={QuickOnboardingComponent} />
 {/if}
