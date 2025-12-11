@@ -197,26 +197,10 @@
 
     initializing = true
     try {
-      // Wait for user to be initialized before loading feed
-      // This ensures is_user_post flags are set correctly on first load
-      let currentUserValue = get(cu)
-      if (!currentUserValue) {
-        // Wait up to 2 seconds for user initialization
-        await new Promise<void>((resolve) => {
-          const timeout = setTimeout(resolve, 2000)
-          const unsubscribe = cu.subscribe((user) => {
-            if (user) {
-              clearTimeout(timeout)
-              unsubscribe()
-              resolve()
-            }
-          })
-        })
-      }
-
       const selectedCommunity = $communityStore.selectedCommunity
 
       // If SSR provided an initial feed and it matches current filter, hydrate immediately
+      // Don't wait for user - SSR feed is already available and user_vote can be null
       if (data.initialFeed && data.initialFeed.feedType === feedType && data.initialFeed.community === selectedCommunity) {
         const feedStore = feedUtils.getFeedStore(feedType)
         feedStore.setPosts(data.initialFeed.posts)
@@ -227,14 +211,39 @@
           cursor: data.initialFeed.cursor,
           timestamp: data.initialFeed.timestamp
         })
-      } else {
-        // Fall back to cached feed snapshot for instant render
-        const cached = loadCachedFeed(feedType, selectedCommunity)
-        if (cached) {
-          const feedStore = feedUtils.getFeedStore(feedType)
-          feedStore.setPosts(cached.posts)
-          lastFeedSync = cached.timestamp
+
+        // Mark initialization complete immediately since we have SSR data
+        initializing = false
+        feedUtils.switchFeed(feedType)
+
+        // Refresh with user votes in background once user is available
+        const currentUserValue = get(cu)
+        if (!currentUserValue) {
+          // Subscribe to user becoming available and refresh votes
+          const unsubscribe = cu.subscribe(async (user) => {
+            if (user) {
+              unsubscribe()
+              // Silently refresh to get user_vote states
+              try {
+                const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, selectedCommunity)
+                const feedStore = feedUtils.getFeedStore(feedType)
+                feedStore.setPosts(freshData.data)
+                lastFeedSync = Date.now()
+              } catch {
+                // Ignore - SSR data is still valid
+              }
+            }
+          })
         }
+        return
+      }
+
+      // Fall back to cached feed snapshot for instant render
+      const cached = loadCachedFeed(feedType, selectedCommunity)
+      if (cached) {
+        const feedStore = feedUtils.getFeedStore(feedType)
+        feedStore.setPosts(cached.posts)
+        lastFeedSync = cached.timestamp
       }
 
       await switchFeed(saved, { skipPersist: true })

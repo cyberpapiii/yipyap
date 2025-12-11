@@ -31,9 +31,16 @@ export const COLOR_CLASSES = {
 /**
  * Generate a device fingerprint using available browser APIs
  * This creates a consistent identifier across sessions
+ * Canvas fingerprint is cached to avoid expensive re-computation
  */
 export function generateDeviceFingerprint(): string {
 	if (!browser) return ''
+
+	// Check for cached fingerprint first (avoids expensive canvas operation)
+	const cachedFingerprint = localStorage.getItem('bingbong_fingerprint')
+	if (cachedFingerprint) {
+		return cachedFingerprint
+	}
 
 	const factors: string[] = []
 
@@ -56,7 +63,7 @@ export function generateDeviceFingerprint(): string {
 		factors.push(browserMatch[0])
 	}
 
-	// Canvas fingerprint (lightweight version)
+	// Canvas fingerprint (lightweight version) - only computed once
 	try {
 		const canvas = document.createElement('canvas')
 		const ctx = canvas.getContext('2d')
@@ -71,7 +78,16 @@ export function generateDeviceFingerprint(): string {
 	}
 
 	// Create hash from all factors
-	return btoa(factors.join('|')).replace(/[/+=]/g, '').slice(0, 32)
+	const fingerprint = btoa(factors.join('|')).replace(/[/+=]/g, '').slice(0, 32)
+
+	// Cache the fingerprint for future loads
+	try {
+		localStorage.setItem('bingbong_fingerprint', fingerprint)
+	} catch {
+		// Ignore storage errors
+	}
+
+	return fingerprint
 }
 
 /**
@@ -149,6 +165,7 @@ export function clearCachedAnonymousUser(): void {
 
 	localStorage.removeItem('bingbong_anonymous_user')
 	localStorage.removeItem('bingbong_device_id')
+	localStorage.removeItem('bingbong_fingerprint')
 }
 
 /**

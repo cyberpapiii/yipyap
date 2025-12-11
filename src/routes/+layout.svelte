@@ -107,7 +107,7 @@
 
   onMount(async () => {
     try {
-      // Initialize PWA install prompt listener
+      // Initialize PWA install prompt listener (sync, no await needed)
       initPWAInstallListener()
 
       const inPWA = isPWA()
@@ -133,49 +133,52 @@
         return // Don't initialize app until installed
       }
 
-      // Initialize anonymous user via helper RPC
-      const deviceId = getDeviceId()
-      if (!deviceId) {
-        console.warn('Device ID could not be generated. Supabase auth bootstrap skipped.')
-      } else {
-        authStore.setDeviceId(deviceId)
-        const { data: user, error } = await (supabase as any).rpc('get_or_create_user', {
-          device_id_param: deviceId
-        })
-
-        if (error) {
-          console.error('Failed to bootstrap anonymous user', error)
-        } else if (user) {
-          cacheAnonymousUser(user as AnonymousUser)
-          authStore.setUser(user as AnonymousUser)
-        }
-      }
-
-      // Initialize haptic feedback system (iOS workaround)
+      // Initialize haptic feedback system immediately (sync, no blocking)
       hapticsStore.initialize(hapticLabel, hapticInput)
 
-      // Initialize realtime system
-      await realtime.initialize(supabase as any)
-
-      // Initialize notifications store
-      notificationsStore.initialize(supabase as any)
-
-      // Fetch initial unread count
-      await notificationsStore.fetchUnreadCount()
-
-      // Subscribe to realtime notification updates
-      notificationsStore.subscribeToRealtime()
-
-      // Check location permission on app startup (don't await - runs in background)
-      // This ensures the location toggle shows correct state when user navigates to profile
-      communityStore.checkLocation().catch((err) => {
-        console.warn('Failed to check location on app startup:', err)
-      })
-
-      // Show quick onboarding if not completed
-      if (!onboardingStore.hasCompleted()) {
-        onboardingStore.startQuickOnboarding()
+      // CRITICAL PATH: Initialize user as fast as possible
+      // Device ID uses cached fingerprint, so this is now fast
+      const deviceId = getDeviceId()
+      if (deviceId) {
+        authStore.setDeviceId(deviceId)
+        // Don't await - let user RPC run in parallel with page render
+        ;(supabase as any).rpc('get_or_create_user', {
+          device_id_param: deviceId
+        }).then(({ data: user, error }: { data: AnonymousUser | null; error: Error | null }) => {
+          if (error) {
+            console.error('Failed to bootstrap anonymous user', error)
+          } else if (user) {
+            cacheAnonymousUser(user as AnonymousUser)
+            authStore.setUser(user as AnonymousUser)
+          }
+        })
       }
+
+      // DEFERRED: Initialize realtime after first paint
+      // This prevents WebSocket handshake from blocking initial render
+      requestIdleCallback(() => {
+        realtime.initialize(supabase as any)
+      }, { timeout: 1000 })
+
+      // DEFERRED: Initialize notifications system after paint
+      requestIdleCallback(() => {
+        notificationsStore.initialize(supabase as any)
+        notificationsStore.fetchUnreadCount()
+        notificationsStore.subscribeToRealtime()
+      }, { timeout: 1500 })
+
+      // DEFERRED: Non-critical operations
+      requestIdleCallback(() => {
+        // Check location permission (already doesn't await)
+        communityStore.checkLocation().catch((err) => {
+          console.warn('Failed to check location on app startup:', err)
+        })
+
+        // Show quick onboarding if not completed
+        if (!onboardingStore.hasCompleted()) {
+          onboardingStore.startQuickOnboarding()
+        }
+      }, { timeout: 2000 })
     } catch (e) {
       console.error('App init failed:', e)
     }
