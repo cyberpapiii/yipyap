@@ -22,6 +22,7 @@
   import { hapticsStore } from '$lib/stores/haptics'
   import { config } from '$lib/config'
 
+  const { children } = $props()
   const api = createRealtimeAPI(supabase as any)
   const cu = currentUserStore
 
@@ -232,8 +233,15 @@
 
 <Toaster position="top-center" />
 
+{#if supabaseOrigin}
+  <svelte:head>
+    <link rel="preconnect" href={supabaseOrigin} />
+    <link rel="dns-prefetch" href={supabaseOrigin} />
+  </svelte:head>
+{/if}
+
 <main class="min-h-screen pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem)">
-  <slot />
+  {@render children()}
   <div class="h-24"></div>
 </main>
 
@@ -245,7 +253,7 @@
 <BottomNav active={activePage} />
 
 {#if ComposeModal}
-  <svelte:component this={ComposeModal} {onSubmit} />
+  <{ComposeModal} onSubmit={onSubmit} />
 {/if}
 
 <!-- Community Picker Modal - rendered at root level -->

@@ -21,16 +21,18 @@
   const postsApi = new PostsAPI(supabase as any)
   const cu = currentUserStore
 
-  export let data: {
-    initialFeed?: {
-      feedType: FeedType
-      community: CommunityType
-      posts: PostWithStats[]
-      hasMore: boolean
-      cursor: string | null
-      timestamp: number
-    } | null
-  }
+  const { data } = $props<{
+    data: {
+      initialFeed?: {
+        feedType: FeedType
+        community: CommunityType
+        posts: PostWithStats[]
+        hasMore: boolean
+        cursor: string | null
+        timestamp: number
+      } | null
+    }
+  }>()
 
   let feedType = $state<FeedType>('hot')
   let initializing = $state(false)
