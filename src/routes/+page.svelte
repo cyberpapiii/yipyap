@@ -24,6 +24,8 @@
   let feedType = $state<FeedType>('hot')
   let initializing = $state(false)
   let refreshing = $state(false)
+  let lastFeedSync = $state(0)
+  const REFRESH_COOLDOWN_MS = 8000
 
   // Derived feed store for header
   const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
@@ -51,6 +53,7 @@
   async function handleRefresh() {
     if (refreshing) return
 
+    // Allow manual refresh even inside cooldown, but still track timestamp
     refreshing = true
     hapticsStore.trigger('selection')
 
@@ -78,7 +81,10 @@
       const currentState = get(currentFeed)
 
       // Only refresh if we have posts and aren't already loading
-      if (currentState.posts.length > 0 && !currentState.loading) {
+      const now = Date.now()
+      const withinCooldown = now - lastFeedSync < REFRESH_COOLDOWN_MS
+
+      if (currentState.posts.length > 0 && !currentState.loading && !withinCooldown) {
         try {
           // Fetch fresh data to sync vote counts with database
           const user = get(cu)
@@ -126,6 +132,7 @@
 
           // Update the feed store with merged data
           currentFeed.setPosts(mergedPosts)
+          lastFeedSync = now
 
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
@@ -170,9 +177,11 @@
       if (!document.hidden && browser) {
         const currentFeed = feedUtils.getFeedStore(feedType)
         const posts = get(currentFeed).posts
+        const now = Date.now()
+        const withinCooldown = now - lastFeedSync < REFRESH_COOLDOWN_MS
 
         // Only refresh if we have posts and aren't already loading
-        if (posts.length > 0 && !get(currentFeed).loading) {
+        if (posts.length > 0 && !get(currentFeed).loading && !withinCooldown) {
           try {
             // Fetch fresh data for visible posts to update comment counts
             const user = get(cu)
@@ -200,6 +209,7 @@
             })
 
             currentFeed.setPosts(mergedPosts)
+            lastFeedSync = now
           } catch (error) {
             console.error('Error refreshing feed on visibility change:', error)
           }
@@ -259,6 +269,9 @@
       } else {
         feedStore.setPosts(response.data)
       }
+
+      // Track last sync time for cooldown gating
+      lastFeedSync = Date.now()
     } catch (error: any) {
       const message = error?.message || 'Failed to load feed'
       feedStore.setError(message)
