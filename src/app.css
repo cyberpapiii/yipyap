@@ -1,5 +1,33 @@
-@config "../tailwind.config.js";
 @import 'tailwindcss';
+
+/* -------------------------------------------------------------------------- */
+/* Loading animations (defined here for reliability)                            */
+/* -------------------------------------------------------------------------- */
+@layer utilities {
+  .bg-skeleton {
+    background-color: rgba(42, 42, 42, 1) !important;
+  }
+
+  /* More visible than pulse-gentle on dark UI */
+  .animate-loading-pulse {
+    animation: bb-loading-pulse 1.2s ease-in-out infinite;
+  }
+
+  /* Shimmer sweep (used by skeleton overlays) */
+  .animate-shimmer {
+    animation: bb-shimmer 1.6s linear infinite;
+  }
+
+  @keyframes bb-loading-pulse {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 0.55; }
+  }
+
+  @keyframes bb-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
 
 @layer base {
   :root {
