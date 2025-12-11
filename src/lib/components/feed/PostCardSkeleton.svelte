@@ -12,7 +12,7 @@
 </script>
 
 <div
-	class="bg-card border border-line rounded-2xl p-4 animate-fade-in"
+	class="bg-card border border-line rounded-2xl p-4 animate-fade-in relative overflow-hidden"
 	style:animation-delay={animationDelay}
 	aria-label="Loading post..."
 	role="status"
@@ -83,23 +83,8 @@
 	<!-- Shimmer effect overlay -->
 	{#if animated}
 		<div
-			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-skeleton-wave rounded-2xl"
+			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"
 			aria-hidden="true"
 		></div>
 	{/if}
 </div>
-
-<style>
-	/* Enhanced skeleton shimmer effect */
-	@keyframes skeleton-wave {
-		0% {
-			transform: translateX(-100%);
-		}
-		50% {
-			transform: translateX(100%);
-		}
-		100% {
-			transform: translateX(100%);
-		}
-	}
-</style>

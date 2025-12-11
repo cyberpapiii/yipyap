@@ -22,7 +22,7 @@
 
 <div class={`${indentClass} ${depth > 0 ? 'border-l border-line/70 pl-4' : ''}`}>
 	<div
-	class="bg-card/50 border border-line/50 rounded-xl p-3 mb-2 animate-fade-in"
+	class="bg-card/50 border border-line/50 rounded-xl p-3 mb-2 animate-fade-in relative overflow-hidden"
 		style:animation-delay={animationDelay}
 		aria-label="Loading comment..."
 		role="status"
@@ -85,7 +85,7 @@
 		<!-- Shimmer effect overlay -->
 		{#if animated}
 			<div
-				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/8 to-transparent animate-skeleton-wave rounded-xl"
+				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"
 				style:animation-delay={`${delay * 80 + 100}ms`}
 				aria-hidden="true"
 			></div>

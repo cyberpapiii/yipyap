@@ -47,6 +47,7 @@ export default {
           foreground: "hsl(var(--card-foreground))"
         },
         line: "hsl(var(--line))",
+        skeleton: "hsl(var(--line) / 0.5)",
         // Anonymous avatar colors
         'anonymous-1': '#8b5cf6', // Purple
         'anonymous-2': '#3b82f6', // Blue
@@ -95,12 +96,14 @@ export default {
 
         // Loading and state animations
         'loading-pulse': 'loading-pulse 1.5s ease-in-out infinite',
+        'pulse-gentle': 'pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fade-in 0.2s ease-out',
         'slide-up': 'slide-up 0.3s ease-out',
 
         // Toast animations
         'toast-slide-in': 'toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'toast-slide-out': 'toast-slide-out 0.2s ease-in forwards',
+        'shimmer': 'shimmer 2s infinite linear',
       },
       keyframes: {
         'vote-bounce': {
@@ -126,6 +129,10 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' }
         },
+        'pulse-gentle': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' }
+        },
         'fade-in': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' }
@@ -141,6 +148,10 @@ export default {
         'toast-slide-out': {
           '0%': { transform: 'translateX(0)', opacity: '1' },
           '100%': { transform: 'translateX(100%)', opacity: '0' }
+        },
+        'shimmer': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' }
         }
       },
       spacing: {
