@@ -180,7 +180,6 @@ async function precacheUrls(urls) {
 
 // Push notification event - Display notification when received
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received:', event);
 
   let notificationData = {
     title: 'YipYap',
@@ -227,7 +226,6 @@ self.addEventListener('push', (event) => {
 
 // Notification click event - Handle when user clicks notification
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification clicked:', event.notification.tag);
 
   event.notification.close();
 

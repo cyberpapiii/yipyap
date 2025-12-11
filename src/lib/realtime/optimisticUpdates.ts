@@ -91,8 +91,6 @@ export class OptimisticUpdateManager {
       this.rollbackVoteOperation(operationId, updateCallback)
     })
 
-    console.log(`Applied optimistic vote: ${currentVote} -> ${newVoteType}, score: ${currentScore} -> ${optimisticScore}`)
-
     return operationId
   }
 
@@ -148,8 +146,6 @@ export class OptimisticUpdateManager {
     this.setupOperationTimeout(operationId, () => {
       this.rollbackPostOperation(operationId, updateCallback)
     })
-
-    console.log('Applied optimistic post creation:', operationId)
 
     return operationId
   }
@@ -208,8 +204,6 @@ export class OptimisticUpdateManager {
       this.rollbackCommentOperation(operationId, updateCallback)
     })
 
-    console.log('Applied optimistic comment creation:', operationId)
-
     return operationId
   }
 
@@ -238,7 +232,6 @@ export class OptimisticUpdateManager {
 
     // If we have server data, we might want to update the UI with the real data
     if (serverData) {
-      console.log(`Operation ${operationId} confirmed with server data`, serverData)
       // Could emit an event here to update UI with real server data
     }
 
@@ -247,7 +240,6 @@ export class OptimisticUpdateManager {
       this.operations.delete(operationId)
     }, 1000)
 
-    console.log(`Confirmed operation: ${operationId}`)
   }
 
   /**
@@ -334,9 +326,7 @@ export class OptimisticUpdateManager {
       this.operations.delete(id)
     }
 
-    if (expiredOperations.length > 0) {
-      console.log(`Cleaned up ${expiredOperations.length} expired operations`)
-    }
+    // Optionally report cleaned operations
   }
 
   /**
@@ -407,7 +397,6 @@ export class OptimisticUpdateManager {
     updateCallback(operation.targetId, updates)
     this.operations.delete(operationId)
 
-    console.log(`Rolled back vote operation: ${operationId}`)
   }
 
   /**
@@ -424,7 +413,6 @@ export class OptimisticUpdateManager {
     removeCallback(operation.postData)
     this.operations.delete(operationId)
 
-    console.log(`Rolled back post operation: ${operationId}`)
   }
 
   /**
@@ -441,6 +429,5 @@ export class OptimisticUpdateManager {
     removeCallback(operation.commentData)
     this.operations.delete(operationId)
 
-    console.log(`Rolled back comment operation: ${operationId}`)
   }
 }

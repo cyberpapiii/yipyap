@@ -109,7 +109,6 @@ export class RealtimeConnectionManager {
       })
 
       this.startHeartbeat()
-      console.log('Realtime connection manager initialized')
     } catch (error) {
       console.error('Failed to initialize connection:', error)
       this.updateConnectionState({
@@ -134,8 +133,6 @@ export class RealtimeConnectionManager {
     },
     callback: (payload: any) => void
   ): () => void {
-    console.log(`Subscribing to channel: ${channelName}`)
-
     const channel = this.supabase.channel(channelName)
 
     // Configure channel based on type
@@ -157,8 +154,6 @@ export class RealtimeConnectionManager {
 
     // Subscribe to channel
     channel.subscribe((status) => {
-      console.log(`Channel ${channelName} status:`, status)
-
       if (status === 'SUBSCRIBED') {
         this.activeChannels.set(channelName, channel)
         this.updateConnectionState(state => ({
@@ -198,7 +193,6 @@ export class RealtimeConnectionManager {
         }
       })
 
-      console.log(`Unsubscribed from channel: ${channelName}`)
     }
   }
 
@@ -206,8 +200,6 @@ export class RealtimeConnectionManager {
    * Disconnect and cleanup all resources
    */
   async disconnect(): Promise<void> {
-    console.log('Disconnecting realtime manager')
-
     // Clear timers
     if (this.reconnectionTimer) {
       clearTimeout(this.reconnectionTimer)
@@ -238,7 +230,6 @@ export class RealtimeConnectionManager {
    * Force reconnection
    */
   async reconnect(): Promise<void> {
-    console.log('Forcing reconnection...')
     await this.disconnect()
     await this.connect()
   }
@@ -280,7 +271,6 @@ export class RealtimeConnectionManager {
    * Handle online event
    */
   private handleOnline = (): void => {
-    console.log('Network came back online')
     this.isOnline = true
     if (this.shouldReconnect()) {
       this.reconnect()
@@ -291,7 +281,6 @@ export class RealtimeConnectionManager {
    * Handle offline event
    */
   private handleOffline = (): void => {
-    console.log('Network went offline')
     this.isOnline = false
     this.updateConnectionState({
       status: 'disconnected',
@@ -304,7 +293,6 @@ export class RealtimeConnectionManager {
    */
   private handleVisibilityChange = (): void => {
     this.isDocumentVisible = !document.hidden
-    console.log('Page visibility changed:', this.isDocumentVisible ? 'visible' : 'hidden')
 
     if (this.isDocumentVisible && this.shouldReconnect()) {
       // Page became visible, check if we need to reconnect
@@ -316,7 +304,6 @@ export class RealtimeConnectionManager {
    * Handle window focus
    */
   private handleFocus = (): void => {
-    console.log('Window focused')
     if (this.shouldReconnect()) {
       this.reconnect()
     }
@@ -326,7 +313,6 @@ export class RealtimeConnectionManager {
    * Handle window blur
    */
   private handleBlur = (): void => {
-    console.log('Window blurred')
     // Could implement reduced activity here
   }
 
@@ -366,7 +352,6 @@ export class RealtimeConnectionManager {
 
     // Check if we've been disconnected for too long
     if (currentState.status === 'disconnected' && this.shouldReconnect()) {
-      console.log('Connection health check triggered reconnection')
       this.scheduleReconnection()
     }
   }
@@ -415,7 +400,6 @@ export class RealtimeConnectionManager {
     }
 
     const delay = this.calculateBackoffDelay(currentState.reconnectAttempts)
-    console.log(`Scheduling reconnection in ${delay}ms (attempt ${currentState.reconnectAttempts + 1})`)
 
     this.updateConnectionState(state => ({
       ...state,

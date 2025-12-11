@@ -223,7 +223,6 @@ export async function subscribeToPushNotifications(
     // Save subscription to database
     await savePushSubscription(supabase, pushSub)
 
-    console.log('[PushNotifications] Successfully subscribed to push notifications')
     return {
       success: true,
       subscription: pushSub
@@ -259,7 +258,6 @@ export async function unsubscribeFromPushNotifications(
     // Remove from database
     await removePushSubscription(supabase, userId, deviceId)
 
-    console.log('[PushNotifications] Successfully unsubscribed from push notifications')
     return { success: true }
   } catch (error) {
     console.error('[PushNotifications] Error unsubscribing from push:', error)

@@ -93,7 +93,6 @@ export const voteNotifications = {
           label: 'Retry',
           handler: () => {
             // Could emit a retry event here
-            console.log('Vote retry requested')
           }
         }
       }

@@ -73,12 +73,10 @@ export function initPWAInstallListener(): void {
     e.preventDefault()
     // Stash the event so it can be triggered later
     deferredPrompt = e
-    console.log('[PWA] Install prompt ready')
   })
 
   // Listen for successful app install
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App installed successfully')
     deferredPrompt = null
   })
 }
@@ -125,8 +123,6 @@ export async function promptInstall(): Promise<'installed' | 'dismissed' | 'unav
 
     // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice
-
-    console.log(`[PWA] User ${outcome} the install prompt`)
 
     // Clear the deferred prompt
     deferredPrompt = null

@@ -27,11 +27,6 @@ export type LocationPermission = 'granted' | 'denied' | 'prompt' | 'unsupported'
  */
 const TEST_MODE = browser && import.meta.env.PUBLIC_GEOFENCE_TEST_MODE === 'true'
 
-// Debug: Log test mode status on module load
-if (browser) {
-  console.log('[Geofence] Test mode:', TEST_MODE, '| Env var:', import.meta.env.PUBLIC_GEOFENCE_TEST_MODE)
-}
-
 /**
  * Calculate distance between two coordinates using Haversine formula
  * Returns distance in miles

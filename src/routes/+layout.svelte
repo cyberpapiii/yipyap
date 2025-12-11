@@ -106,13 +106,9 @@
       // Initialize PWA install prompt listener
       initPWAInstallListener()
 
-      // FIRST CHECK: Are we in PWA mode?
       const inPWA = isPWA()
 
       if (!inPWA) {
-        // NOT IN PWA - Show install gate and block app
-        console.log('[Onboarding] Not in PWA, showing install gate')
-
         if (isDesktop()) {
           onboardingStore.showGate('desktop-block')
           return // Don't initialize app
@@ -132,9 +128,6 @@
         }
         return // Don't initialize app until installed
       }
-
-      // IN PWA - Initialize app normally
-      console.log('[Onboarding] In PWA mode, initializing app')
 
       // Initialize anonymous user via helper RPC
       const deviceId = getDeviceId()
@@ -177,7 +170,6 @@
 
       // Show quick onboarding if not completed
       if (!onboardingStore.hasCompleted()) {
-        console.log('[Onboarding] Starting quick onboarding')
         onboardingStore.startQuickOnboarding()
       }
     } catch (e) {

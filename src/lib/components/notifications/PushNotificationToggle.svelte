@@ -37,7 +37,6 @@
 
 	async function checkStatus() {
 		status = await getPushSubscriptionStatus()
-		console.log('[PushNotificationToggle] Status:', status)
 	}
 
 	async function handleToggle() {

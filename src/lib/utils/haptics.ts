@@ -75,24 +75,11 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 
 	hapticAttempts++
 
-	// Debug logging
-	if (import.meta.env.DEV) {
-		console.log(`[Haptics] Attempt #${hapticAttempts}: ${action}`, {
-			isIOS: isIOS(),
-			hasLabel: !!iosHapticLabel,
-			supportsVibrate: supportsVibration(),
-			bypassDebounce
-		})
-	}
-
 	// Debounce rapid haptic triggers (unless bypassed for gestures)
 	if (!bypassDebounce) {
 		const now = Date.now()
 		const timeSinceLast = now - lastHapticTime
 		if (timeSinceLast < DEBOUNCE_MS) {
-			if (import.meta.env.DEV) {
-				console.log(`[Haptics] BLOCKED by debounce (${timeSinceLast}ms since last)`)
-			}
 			return
 		}
 		lastHapticTime = now
@@ -104,9 +91,6 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 	if (isIOS() && iosHapticLabel) {
 		// iOS haptic only fires from label.click(), NOT from checkbox.checked changes
 		// Must be called synchronously within user gesture context (touchend, click, etc.)
-		if (import.meta.env.DEV) {
-			console.log('[Haptics] iOS: Clicking label for haptic (synchronous)')
-		}
 
 		// Click the label synchronously - this triggers the checkbox toggle and haptic
 		iosHapticLabel.click()
@@ -117,9 +101,6 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 	// Android/Desktop with Vibration API
 	if (supportsVibration()) {
 		try {
-			if (import.meta.env.DEV) {
-				console.log(`[Haptics] Android: navigator.vibrate(${JSON.stringify(pattern)})`)
-			}
 			navigator.vibrate(pattern)
 		} catch (error) {
 			// Silently fail - haptics are a nice-to-have, not critical
@@ -131,9 +112,6 @@ export function triggerHaptic(action: HapticAction, bypassDebounce = false): voi
 	}
 
 	// Unsupported device - gracefully do nothing
-	if (import.meta.env.DEV) {
-		console.log(`[Haptics] NOT SUPPORTED on this device`)
-	}
 }
 
 /**
