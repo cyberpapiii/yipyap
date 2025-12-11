@@ -8,10 +8,12 @@ import { createClient } from '@supabase/supabase-js'
 import { PostsAPI } from '$lib/api/posts'
 import type { AnonymousUser } from '$lib/types'
 
-const supabase = createClient(
-	'http://127.0.0.1:54321',
+const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
+const supabaseKey =
+	process.env.PUBLIC_SUPABASE_ANON_KEY ||
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6Imh0dHA6Ly8xMjcuMC4wLjE6NTQzMjEvYXV0aC92MSIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAiLCJpYXQiOjE3NTg4MjcxMzksImV4cCI6MjA3NDQwMzEzOX0.byK4I20bS0CpsjSErsR7acfZNxDLlDTLHQJu6kcYM8M'
-)
+
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 const api = new PostsAPI(supabase as any)
 

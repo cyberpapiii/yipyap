@@ -83,8 +83,6 @@ function createRealtimeStore() {
         return
       }
 
-      console.log('Initializing real-time system...')
-
       try {
         // Create manager instances
         connectionManager = new RealtimeConnectionManager(supabase)
@@ -119,8 +117,6 @@ function createRealtimeStore() {
           error: null
         }))
 
-        console.log('Real-time system initialized successfully')
-
         // Auto-subscribe to active feed
         const activeType = get(activeFeedType)
         await realtime.subscribeToFeed(activeType)
@@ -146,11 +142,8 @@ function createRealtimeStore() {
 
       // Don't subscribe if already subscribed
       if (feedUnsubscribers.has(feedType)) {
-        console.log(`Already subscribed to ${feedType} feed`)
         return
       }
-
-      console.log(`Subscribing to ${feedType} feed updates`)
 
       const feedStore = feedUtils.getFeedStore(feedType)
 
@@ -158,16 +151,11 @@ function createRealtimeStore() {
         feedType,
         // Handle new posts - filter by community
         (newPost: PostWithStats) => {
-          console.log(`New ${feedType} post received:`, newPost.id)
-
           // Check if post already exists (from optimistic update)
           const currentPosts = get(feedStore)
           const postExists = currentPosts.posts.some(p => p.id === newPost.id)
 
-          if (postExists) {
-            console.log(`Post ${newPost.id} already exists, skipping duplicate`)
-            return
-          }
+          if (postExists) return
 
           // Check if post belongs to current community filter
           const currentCommunity = get(communityStore).selectedCommunity
@@ -178,25 +166,14 @@ function createRealtimeStore() {
 
           if (postBelongsToCommunity) {
             feedStore.addPost(newPost)
-          } else {
-            console.log(`Post ${newPost.id} filtered out (community: ${currentCommunity})`)
           }
         },
         // Handle post updates
         (postId: string, updates: Partial<PostWithStats>) => {
-          console.log(`[REALTIME] Post UPDATE for ${postId.slice(0,8)}:`, updates)
-          const beforeState = get(feedStore)
-          const beforePost = beforeState.posts.find(p => p.id === postId)
-          console.log(`[REALTIME] BEFORE update: score=${beforePost?.vote_score}, user_vote=${beforePost?.user_vote}`)
-
           feedStore.updatePost(postId, updates)
-          const afterState = get(feedStore)
-          const afterPost = afterState.posts.find(p => p.id === postId)
-          console.log(`[REALTIME] AFTER update: score=${afterPost?.vote_score}, user_vote=${afterPost?.user_vote}`)
         },
         // Handle post deletions
         (postId: string) => {
-          console.log(`Post deleted:`, postId)
           feedStore.removePost(postId)
         }
       )
@@ -233,7 +210,6 @@ function createRealtimeStore() {
           }
         })
 
-        console.log(`Unsubscribed from ${feedType} feed`)
       }
     },
 
@@ -248,32 +224,25 @@ function createRealtimeStore() {
 
       // Don't subscribe if already subscribed
       if (threadUnsubscribers.has(postId)) {
-        console.log(`Already subscribed to thread ${postId}`)
         return
       }
-
-      console.log(`Subscribing to thread updates: ${postId}`)
 
       const unsubscribe = threadSubscriptionManager.subscribeToThread(
         postId,
         // Handle new comments
         (newComment: CommentWithStats) => {
-          console.log(`New comment received:`, newComment.id)
           threadStore.addComment(newComment)
         },
         // Handle comment updates
         (commentId: string, updates: Partial<CommentWithStats>) => {
-          console.log(`Comment update received:`, commentId, updates)
           threadStore.updateComment(commentId, updates)
         },
         // Handle comment deletions
         (commentId: string) => {
-          console.log(`Comment deleted:`, commentId)
           // Could implement comment deletion if needed
         },
         // Handle post updates
         (postId: string, updates: Partial<PostWithStats>) => {
-          console.log(`Thread post update received:`, postId, updates)
           threadStore.updatePost(updates)
         }
       )
@@ -310,7 +279,6 @@ function createRealtimeStore() {
           }
         })
 
-        console.log(`Unsubscribed from thread ${postId}`)
       }
     },
 
@@ -505,7 +473,6 @@ function createRealtimeStore() {
           feedUtils.replacePostInFeeds(optimisticId, normalizedPost)
         }
 
-        console.log(`Post creation confirmed: ${operationId}`)
         return realPost
 
       } catch (error) {
@@ -582,7 +549,6 @@ function createRealtimeStore() {
         threadStore.removeComment(`optimistic_${operationId}`)
         threadStore.addComment(realComment)
 
-        console.log(`Comment creation confirmed: ${operationId}`)
         return realComment
 
       } catch (error) {
@@ -628,8 +594,6 @@ function createRealtimeStore() {
      * Cleanup and disconnect
      */
     async cleanup(): Promise<void> {
-      console.log('Cleaning up real-time system...')
-
       // Unsubscribe from all feeds
       for (const feedType of feedUnsubscribers.keys()) {
         realtime.unsubscribeFromFeed(feedType)
@@ -671,7 +635,6 @@ function createRealtimeStore() {
         }
       })
 
-      console.log('Real-time system cleaned up')
     }
   }
 }

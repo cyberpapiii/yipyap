@@ -94,8 +94,6 @@ export class FeedSubscriptionManager {
   ): () => void {
     const channelName = `feed_${feedType}_posts`
 
-    console.log(`Subscribing to feed posts: ${feedType}`)
-
     const unsubscribe = this.connectionManager.subscribeToChannel(
       channelName,
       {
@@ -150,7 +148,6 @@ export class FeedSubscriptionManager {
       }
     }
 
-    console.log(`Unsubscribed from feed: ${feedType}`)
   }
 
   /**
@@ -162,8 +159,6 @@ export class FeedSubscriptionManager {
     onPostUpdate: (postId: string, updates: Partial<PostWithStats>) => void,
     onPostDelete: (postId: string) => void
   ): void {
-    console.log('Post event:', payload.eventType, payload)
-
     switch (payload.eventType) {
       case 'INSERT':
         if (payload.new && !(payload.new as any).deleted_at) {
@@ -373,8 +368,6 @@ export class ThreadSubscriptionManager {
   ): () => void {
     this.currentThreadId = postId
 
-    console.log(`Subscribing to thread: ${postId}`)
-
     // Subscribe to new comments
     const commentsChannelName = `thread_${postId}_comments`
     const commentsUnsubscribe = this.connectionManager.subscribeToChannel(
@@ -454,7 +447,6 @@ export class ThreadSubscriptionManager {
       this.currentThreadId = null
     }
 
-    console.log(`Unsubscribed from thread: ${postId}`)
   }
 
   /**
@@ -466,8 +458,6 @@ export class ThreadSubscriptionManager {
     onCommentUpdate: (commentId: string, updates: Partial<CommentWithStats>) => void,
     onCommentDelete: (commentId: string) => void
   ): void {
-    console.log('Comment event:', payload.eventType, payload)
-
     switch (payload.eventType) {
       case 'INSERT':
         if (payload.new && !payload.new.is_deleted) {
@@ -523,8 +513,6 @@ export class ThreadSubscriptionManager {
     payload: VoteRealtimePayload,
     onCommentUpdate: (commentId: string, updates: Partial<CommentWithStats>) => void
   ): void {
-    console.log('Comment vote event:', payload.eventType, payload)
-
     const vote = payload.new || payload.old
     if (!vote?.comment_id) return
 
@@ -538,7 +526,6 @@ export class ThreadSubscriptionManager {
 
       // Skip score update if optimistic update already applied (prevent double-count)
       if (this.isVotePending(vote.comment_id)) {
-        console.log(`Skipping score delta for pending vote on comment ${vote.comment_id}`)
         onCommentUpdate(vote.comment_id, { user_vote: userVote })
         this.clearPendingVote(vote.comment_id)
         return
@@ -572,8 +559,6 @@ export class ThreadSubscriptionManager {
     payload: VoteRealtimePayload,
     onPostUpdate: (postId: string, updates: Partial<PostWithStats>) => void
   ): void {
-    console.log('Post vote event:', payload.eventType, payload)
-
     const vote = payload.new || payload.old
     if (!vote?.post_id) return
 
@@ -590,7 +575,6 @@ export class ThreadSubscriptionManager {
 
       // Skip score update if optimistic update already applied (prevent double-count)
       if (this.isVotePending(vote.post_id)) {
-        console.log(`Skipping score delta for pending vote on post ${vote.post_id}`)
         onPostUpdate(vote.post_id, { user_vote: userVote })
         this.clearPendingVote(vote.post_id)
         return
