@@ -190,6 +190,8 @@
       }
 
       // Initialize haptic feedback system immediately (sync, no blocking)
+      // Ensure iOS 18+ workaround attribute exists at runtime (avoid TS typing issues)
+      hapticInput?.setAttribute('switch', '')
       hapticsStore.initialize(hapticLabel, hapticInput)
 
       // CRITICAL PATH: Initialize user as fast as possible

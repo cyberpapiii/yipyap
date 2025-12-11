@@ -108,7 +108,8 @@
 		}
 	}
 
-	onMount(() => {
+	$effect(() => {
+		if (!showOptionsMenu) return
 		document.addEventListener('click', handleClickOutside)
 		return () => {
 			document.removeEventListener('click', handleClickOutside)

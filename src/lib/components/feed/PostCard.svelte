@@ -182,11 +182,17 @@ import { goto } from '$app/navigation'
 		}
 	}
 
-	// Cleanup ripples on unmount
-	onMount(() => {
+	$effect(() => {
+		if (!showOptionsMenu) return
 		document.addEventListener('click', handleClickOutside)
 		return () => {
 			document.removeEventListener('click', handleClickOutside)
+		}
+	})
+
+	// Cleanup ripples on unmount
+	onMount(() => {
+		return () => {
 			rippleElements.forEach(ripple => {
 				if (ripple.parentNode) {
 					ripple.parentNode.removeChild(ripple)
