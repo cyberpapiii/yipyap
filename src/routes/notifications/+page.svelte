@@ -40,7 +40,7 @@
 		'L': 'mta-grey'
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		// Get device ID
 		deviceId = getDeviceId()
 
@@ -52,14 +52,16 @@
 			user = value
 		})
 
-		// Fetch initial notifications
-		if (user) {
-			await notificationsStore.fetchNotifications(0, 20, false)
-			await notificationsStore.fetchUnreadCount()
-			notificationsStore.subscribeToRealtime()
-		}
+		// Fetch initial notifications (async; don't block mount)
+		void (async () => {
+			if (user) {
+				await notificationsStore.fetchNotifications(0, 20, false)
+				await notificationsStore.fetchUnreadCount()
+				notificationsStore.subscribeToRealtime()
+			}
+		})()
 
-		// Add touch event listeners with passive: false
+		// Add touch event listeners
 		document.addEventListener('touchstart', handleTouchStart, { passive: true })
 		document.addEventListener('touchmove', handleTouchMove, { passive: false })
 		document.addEventListener('touchend', handleTouchEnd, { passive: true })
@@ -96,7 +98,7 @@
 
 		try {
 			// Call RPC to update subway line
-			const { data, error } = await supabase.rpc('rpc_update_subway_line', {
+			const { data, error } = await (supabase as any).rpc('rpc_update_subway_line', {
 				p_user: user.id,
 				p_subway_line: newLine
 			})
@@ -298,10 +300,10 @@
 							style="background-color: #1E1E1E; border: 1px solid rgba(107, 107, 107, 0.1); border-radius: 12px; padding: 16px;"
 						>
 							<div class="flex gap-3">
-								<div class="skeleton-avatar" style="width: 36px; height: 36px; border-radius: 50%; background-color: #2A2A2A;"></div>
+								<div class="skeleton-avatar animate-loading-pulse" style="width: 32px; height: 32px; border-radius: 50%; background-color: #2A2A2A;"></div>
 								<div class="flex-1">
-									<div class="skeleton-line" style="width: 70%; height: 14px; background-color: #2A2A2A; border-radius: 4px; margin-bottom: 8px;"></div>
-									<div class="skeleton-line" style="width: 90%; height: 12px; background-color: #252525; border-radius: 4px;"></div>
+									<div class="skeleton-line animate-loading-pulse" style="width: 70%; height: 12px; background-color: #2A2A2A; border-radius: 4px; margin-bottom: 8px;"></div>
+									<div class="skeleton-line animate-loading-pulse" style="width: 90%; height: 11px; background-color: #252525; border-radius: 4px;"></div>
 								</div>
 							</div>
 						</div>

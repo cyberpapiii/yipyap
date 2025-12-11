@@ -14,69 +14,55 @@
 <div
 	class="bg-card border border-line rounded-2xl p-4 animate-fade-in relative overflow-hidden"
 	style:animation-delay={animationDelay}
-	style:min-height="200px"
+	style:min-height="150px"
 	aria-label="Loading post..."
 	role="status"
 >
-	<div class="flex gap-3">
-		<!-- Vote buttons skeleton -->
-		<div class="flex flex-col items-center gap-2">
-			<div
-				class="h-10 w-10 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
-			></div>
-			<div
-				class="h-4 w-8 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
-				style:animation-delay={`${delay * 100 + 150}ms`}
-			></div>
-			<div
-				class="h-10 w-10 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
-				style:animation-delay={`${delay * 100 + 300}ms`}
-			></div>
-		</div>
+	<div class="flex gap-3 items-start">
+		<!-- Avatar skeleton -->
+		<div
+			class="h-10 w-10 bg-skeleton rounded-full {animated ? 'animate-loading-pulse' : ''}"
+			style:animation-delay={`${delay * 100 + 100}ms`}
+		></div>
 
-		<!-- Post content skeleton -->
+		<!-- Content skeleton (mirrors PostCard layout) -->
 		<div class="flex-1 min-w-0 space-y-3">
-			<!-- Header skeleton -->
+			<!-- Header row (time + menu) -->
 			<div class="flex items-center gap-2">
 				<div
-					class="h-6 w-6 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 100 + 200}ms`}
+					class="h-3 w-20 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
+					style:animation-delay={`${delay * 100 + 150}ms`}
 				></div>
+				<div class="ml-auto">
+					<div
+						class="h-5 w-5 bg-skeleton rounded-md {animated ? 'animate-loading-pulse' : ''}"
+						style:animation-delay={`${delay * 100 + 200}ms`}
+					></div>
+				</div>
+			</div>
+
+			<!-- Body -->
+			<div class="space-y-2">
 				<div
-					class="h-3 w-16 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-4 w-full bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 					style:animation-delay={`${delay * 100 + 250}ms`}
 				></div>
 				<div
-					class="ml-auto h-6 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-4 w-5/6 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 					style:animation-delay={`${delay * 100 + 300}ms`}
 				></div>
 			</div>
 
-			<!-- Content skeleton -->
-			<div class="space-y-2">
+			<!-- Actions row (comment + votes) -->
+			<div class="flex items-center justify-end gap-3">
 				<div
-					class="h-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-6 w-14 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 					style:animation-delay={`${delay * 100 + 350}ms`}
 				></div>
 				<div
-					class="h-4 w-4/5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+					class="h-6 w-20 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 					style:animation-delay={`${delay * 100 + 400}ms`}
 				></div>
-				<div
-					class="h-4 w-3/5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 100 + 450}ms`}
-				></div>
-			</div>
-
-			<!-- Actions skeleton -->
-			<div class="flex items-center gap-4">
-				<div
-					class="flex items-center gap-1"
-					style:animation-delay={`${delay * 100 + 500}ms`}
-				>
-					<div class="h-4 w-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"></div>
-					<div class="h-3 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"></div>
-				</div>
 			</div>
 		</div>
 	</div>

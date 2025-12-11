@@ -28,36 +28,26 @@
 		role="status"
 	>
 		<div class="flex gap-3">
-			<!-- Vote buttons skeleton (smaller for comments) -->
-			<div class="flex flex-col items-center gap-1">
-				<div
-					class="h-8 w-8 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 80 + 100}ms`}
-				></div>
-				<div
-					class="h-3 w-6 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 80 + 150}ms`}
-				></div>
-				<div
-					class="h-8 w-8 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 80 + 200}ms`}
-				></div>
-			</div>
+			<!-- Avatar -->
+			<div
+				class="h-9 w-9 bg-skeleton rounded-full {animated ? 'animate-loading-pulse' : ''}"
+				style:animation-delay={`${delay * 80 + 100}ms`}
+			></div>
 
 			<!-- Comment content skeleton -->
 			<div class="flex-1 min-w-0 space-y-2">
 				<!-- Header skeleton -->
 				<div class="flex items-center gap-2">
 					<div
-						class="h-5 w-5 bg-skeleton rounded-full {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-2.5 w-14 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 80 + 120}ms`}
 					></div>
 					<div
-						class="h-2.5 w-12 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-2.5 w-10 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 80 + 170}ms`}
 					></div>
 					<div
-						class="ml-auto h-4 w-4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+						class="ml-auto h-4 w-4 bg-skeleton rounded-md {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 80 + 220}ms`}
 					></div>
 				</div>
@@ -65,20 +55,22 @@
 				<!-- Content skeleton -->
 				<div class="space-y-1.5">
 					<div
-						class="h-3.5 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-3.5 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 80 + 250}ms`}
 					></div>
 					<div
-						class="h-3.5 w-3/4 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
+						class="h-3.5 w-4/5 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 80 + 300}ms`}
 					></div>
 				</div>
 
-				<!-- Reply button skeleton -->
-				<div
-					class="h-2.5 w-8 bg-skeleton rounded-lg {animated ? 'animate-pulse-gentle' : ''}"
-					style:animation-delay={`${delay * 80 + 350}ms`}
-				></div>
+				<!-- Actions skeleton -->
+				<div class="flex justify-end">
+					<div
+						class="h-5 w-16 bg-skeleton rounded-lg {animated ? 'animate-loading-pulse' : ''}"
+						style:animation-delay={`${delay * 80 + 350}ms`}
+					></div>
+				</div>
 			</div>
 		</div>
 
