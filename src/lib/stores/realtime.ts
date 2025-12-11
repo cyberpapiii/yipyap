@@ -188,6 +188,7 @@ function createRealtimeStore() {
           const beforeState = get(feedStore)
           const beforePost = beforeState.posts.find(p => p.id === postId)
           console.log(`[REALTIME] BEFORE update: score=${beforePost?.vote_score}, user_vote=${beforePost?.user_vote}`)
+
           feedStore.updatePost(postId, updates)
           const afterState = get(feedStore)
           const afterPost = afterState.posts.find(p => p.id === postId)

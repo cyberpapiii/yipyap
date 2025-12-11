@@ -21,12 +21,17 @@ function createFeedStore() {
 		setError: (error: string | null) => update(state => ({ ...state, error, loading: false })),
 
 		// Set posts (replace all)
-		setPosts: (posts: PostWithStats[]) => update(state => ({
-			...state,
-			posts,
-			loading: false,
-			error: null
-		})),
+		setPosts: (posts: PostWithStats[]) => update(state => {
+			const beforeFirst = state.posts[0]
+			const afterFirst = posts[0]
+
+			return {
+				...state,
+				posts,
+				loading: false,
+				error: null
+			}
+		}),
 
 		// Add posts (append)
 		addPosts: (newPosts: PostWithStats[], hasMore: boolean, cursor: string | null) =>
@@ -52,18 +57,24 @@ function createFeedStore() {
 				posts: state.posts.map(post => {
 					if (post.id !== postId) return post
 
+					const before = { score: post.vote_score, vote: post.user_vote }
+
 					// Handle incremental score delta from realtime vote events
 					if (updates._scoreDelta !== undefined) {
 						const { _scoreDelta, ...restUpdates } = updates
-						return {
+						const next = {
 							...post,
 							...restUpdates,
 							vote_score: post.vote_score + _scoreDelta
 						}
+
+						return next
 					}
 
+					const next = { ...post, ...updates }
+
 					// Standard update (absolute values)
-					return { ...post, ...updates }
+					return next
 				})
 			})),
 
