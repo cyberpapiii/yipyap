@@ -187,6 +187,22 @@ function createCommunityStore() {
     },
 
     /**
+     * Atomically set feed and post communities (prevents double updates)
+     */
+    setSelection: (selection: { community: CommunityType; postCommunity: GeographicCommunity }) => {
+      update(state => {
+        saveCommunity(selection.community)
+        savePostCommunity(selection.postCommunity)
+        return {
+          ...state,
+          selectedCommunity: selection.community,
+          selectedPostCommunity: selection.postCommunity,
+          isPickerOpen: false
+        }
+      })
+    },
+
+    /**
      * Open the community picker modal
      */
     openPicker: () => {

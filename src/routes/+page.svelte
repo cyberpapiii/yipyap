@@ -48,6 +48,7 @@
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
   const REFRESH_FEED_LIMIT = 15
+  let feedLoadSeq = 0
 
   // Derived feed store for header
   const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
@@ -381,6 +382,7 @@
   }
 
   async function loadFeed(type: FeedType, cursor?: string) {
+    const requestSeq = ++feedLoadSeq
     const feedStore: FeedStore = feedUtils.getFeedStore(type)
     if (!cursor) {
       feedStore.setLoading(true)
@@ -389,11 +391,18 @@
     try {
       const currentUser = get(cu) || undefined
       const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
+      const requestKey = `${type}:${cursor ?? ''}:${subwayLineCommunity}:${geographicCommunity ?? 'nyc'}`
 
       const pageSize = cursor ? PAGINATED_FEED_LIMIT : INITIAL_FEED_LIMIT
       const response = cursor
         ? await api.getFeedPosts(type, cursor, pageSize, currentUser, subwayLineCommunity, geographicCommunity)
         : await api.loadFeedWithRealtime(type, undefined, pageSize, currentUser, subwayLineCommunity, geographicCommunity)
+
+      // If the user switched feed/community while this request was in flight, ignore stale responses.
+      if (requestSeq !== feedLoadSeq) return
+      const nowFilters = getCommunityFilters()
+      const nowKey = `${type}:${cursor ?? ''}:${nowFilters.subwayLineCommunity}:${nowFilters.geographicCommunity ?? 'nyc'}`
+      if (nowKey !== requestKey) return
 
       if (cursor) {
         feedStore.addPosts(response.data, response.hasMore, response.nextCursor)

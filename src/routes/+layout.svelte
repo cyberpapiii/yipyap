@@ -8,7 +8,7 @@
   import { realtime } from '$lib/stores/realtime'
   import { authStore } from '$lib/stores/auth'
   import { cacheAnonymousUser, getDeviceId, ensureAnonymousUser } from '$lib/auth'
-  import type { AnonymousUser, GeographicCommunity } from '$lib/types'
+  import type { AnonymousUser, CommunityType, GeographicCommunity } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/layout/BottomNav.svelte'
   import { composeStore, anonymousUser as currentUserStore, showComposeModal } from '$lib/stores'
@@ -85,14 +85,30 @@
     'home'
   )
 
-  function handleSelectCommunity(community: any) {
+  const selectedDisplayCommunity = $derived(
+    $communityStore.selectedPostCommunity === 'dimes_square'
+      ? 'dimes_square'
+      : $communityStore.selectedCommunity
+  )
+
+  function handleSelectCommunity(community: CommunityType | GeographicCommunity) {
     if (community === 'dimes_square') {
-      communityStore.setPostCommunity('dimes_square')
-      communityStore.selectCommunity('nyc')
-    } else {
-      communityStore.setPostCommunity('nyc')
-      communityStore.selectCommunity(community)
+      // Keep the user's subway-line filter for when they return to NYC.
+      communityStore.setSelection({
+        community: $communityStore.selectedCommunity,
+        postCommunity: 'dimes_square'
+      })
+      return
     }
+
+    // Selecting NYC (geographic) resets post community to NYC.
+    if (community === 'nyc') {
+      communityStore.setSelection({ community: 'nyc', postCommunity: 'nyc' })
+      return
+    }
+
+    // Subway-line community filter within NYC.
+    communityStore.setSelection({ community, postCommunity: 'nyc' })
   }
 
   function handleClosePicker() {
@@ -298,7 +314,7 @@
   <svelte:component
     this={CommunityPickerComponent}
     isOpen={$communityStore.isPickerOpen}
-    selectedCommunity={$communityStore.selectedCommunity}
+    selectedCommunity={selectedDisplayCommunity}
     onSelect={handleSelectCommunity}
     onClose={handleClosePicker}
   />
