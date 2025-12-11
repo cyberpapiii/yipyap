@@ -47,7 +47,7 @@ export default {
           foreground: "hsl(var(--card-foreground))"
         },
         line: "hsl(var(--line))",
-        skeleton: "hsl(var(--line) / 0.5)",
+        skeleton: "hsl(0 0% 20%)",
         // Anonymous avatar colors
         'anonymous-1': '#8b5cf6', // Purple
         'anonymous-2': '#3b82f6', // Blue

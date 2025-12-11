@@ -85,7 +85,7 @@
 		<!-- Shimmer effect overlay -->
 		{#if animated}
 			<div
-				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"
+				class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"
 				style:animation-delay={`${delay * 80 + 100}ms`}
 				aria-hidden="true"
 			></div>

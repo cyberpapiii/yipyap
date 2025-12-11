@@ -83,7 +83,7 @@
 	<!-- Shimmer effect overlay -->
 	{#if animated}
 		<div
-			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"
+			class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"
 			aria-hidden="true"
 		></div>
 	{/if}
