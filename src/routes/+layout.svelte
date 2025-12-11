@@ -233,13 +233,6 @@
 
 <Toaster position="top-center" />
 
-{#if supabaseOrigin}
-  <svelte:head>
-    <link rel="preconnect" href={supabaseOrigin} />
-    <link rel="dns-prefetch" href={supabaseOrigin} />
-  </svelte:head>
-{/if}
-
 <main class="min-h-screen pb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 6rem)">
   {@render children()}
   <div class="h-24"></div>
@@ -253,7 +246,7 @@
 <BottomNav active={activePage} />
 
 {#if ComposeModal}
-  <{ComposeModal} onSubmit={onSubmit} />
+  <svelte:component this={ComposeModal} onSubmit={onSubmit} />
 {/if}
 
 <!-- Community Picker Modal - rendered at root level -->
