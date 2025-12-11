@@ -86,7 +86,13 @@
   )
 
   function handleSelectCommunity(community: any) {
-    communityStore.selectCommunity(community)
+    if (community === 'dimes_square') {
+      communityStore.setPostCommunity('dimes_square')
+      communityStore.selectCommunity('nyc')
+    } else {
+      communityStore.setPostCommunity('nyc')
+      communityStore.selectCommunity(community)
+    }
   }
 
   function handleClosePicker() {

@@ -20,6 +20,11 @@
   const api = createRealtimeAPI(supabase as any)
   const postsApi = new PostsAPI(supabase as any)
   const cu = currentUserStore
+  const selectedDisplayCommunity = $derived(
+    $communityStore.selectedPostCommunity === 'dimes_square'
+      ? 'dimes_square'
+      : $communityStore.selectedCommunity
+  )
 
   const { data } = $props<{
     data: {
@@ -94,7 +99,7 @@
 
   // Watch for community changes and reload feed
   $effect(() => {
-    const community = $communityStore.selectedCommunity
+    const communityKey = `${$communityStore.selectedCommunity}:${$communityStore.selectedPostCommunity}`
     if (browser && !initializing) {
       // Reload current feed when community changes
       loadFeed(feedType)
@@ -461,7 +466,7 @@
     <div class="max-w-2xl mx-auto px-4">
       <div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">
         <CommunitySelector
-          selectedCommunity={$communityStore.selectedCommunity}
+          selectedCommunity={selectedDisplayCommunity}
           postCount={$currentFeedStore.posts.length}
           onClick={handleOpenPicker}
         />
