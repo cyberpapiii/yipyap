@@ -6,6 +6,8 @@
   import { RefreshCw, ChevronDown } from 'lucide-svelte'
   import PostCard from '$lib/components/feed/PostCard.svelte'
   import CommentCard from '$lib/components/feed/CommentCard.svelte'
+  import PostCardSkeleton from '$lib/components/feed/PostCardSkeleton.svelte'
+  import CommentCardSkeleton from '$lib/components/feed/CommentCardSkeleton.svelte'
   import { composeStore, showComposeModal, threadStore, realtime, anonymousUser as currentUserStore, feedUtils, activeFeedType } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import type { CommentWithStats, ComposeState, PostWithStats } from '$lib/types'
@@ -86,25 +88,27 @@
   const MAX_PULL = 120
   const SCROLL_TOP_THRESHOLD = 5
 
-  onMount(async () => {
+  onMount(() => {
     if (!browser) return
 
     const pageData = get(pageStore)
     postId = pageData.params.id
 
-    initializing = true
-    try {
-      // Layout already initialized user and realtime - load thread and subscribe in parallel
-      await Promise.all([
-        hydrateThread(postId),
-        realtime.subscribeToThread(postId)
-      ])
-    } catch (error) {
-      console.error('Thread load failed', error)
-      loadError = error instanceof Error ? error.message : 'Failed to load thread'
-    } finally {
-      initializing = false
-    }
+    void (async () => {
+      initializing = true
+      try {
+        // Layout already initialized user and realtime - load thread and subscribe in parallel
+        await Promise.all([
+          hydrateThread(postId),
+          realtime.subscribeToThread(postId)
+        ])
+      } catch (error) {
+        console.error('Thread load failed', error)
+        loadError = error instanceof Error ? error.message : 'Failed to load thread'
+      } finally {
+        initializing = false
+      }
+    })()
 
     // Setup touch event listeners
     if (threadContainer) {
@@ -493,8 +497,11 @@
 
   {#if initializing || $thread.loading}
     <div class="max-w-2xl mx-auto p-4 space-y-4">
-      <div class="h-28 rounded-xl bg-muted animate-pulse"></div>
-      <div class="h-40 rounded-xl bg-muted animate-pulse"></div>
+      <PostCardSkeleton />
+      <div class="space-y-2">
+        <CommentCardSkeleton depth={0} delay={0} showReplies={false} />
+        <CommentCardSkeleton depth={0} delay={1} showReplies={false} />
+      </div>
     </div>
   {:else if loadError}
     <div class="p-8 text-center text-destructive">{loadError}</div>
