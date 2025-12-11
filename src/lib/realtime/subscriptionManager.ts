@@ -657,8 +657,6 @@ export class ThreadSubscriptionManager {
 
 
 
-
-
   /**
    * Cleanup all subscriptions
    */

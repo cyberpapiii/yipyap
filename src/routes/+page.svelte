@@ -65,7 +65,6 @@
   // Refresh feed when navigating back from thread (SvelteKit SPA navigation)
   // visibilitychange doesn't fire for SPA navigation, so we use afterNavigate
   afterNavigate(async ({ from }) => {
-    // console.log('afterNavigate triggered', { fromId: from?.route.id, browser, initializing });
     const isThreadReturn = Boolean(from?.route?.id?.startsWith('/thread/'))
 
     if (!browser) return
@@ -85,20 +84,7 @@
           const user = get(cu)
           const community = get(communityStore).selectedCommunity
 
-          // DEBUG: Log BEFORE state
-          // console.log('=== afterNavigate DEBUG ===')
-          // console.log('BEFORE fetch - current store state:')
-          // currentState.posts.slice(0, 3).forEach(p => {
-          //   console.log(`  ${p.id.slice(0,8)}: score=${p.vote_score}, user_vote=${p.user_vote}`)
-          // })
-
           const freshData = await postsApi.getFeedPosts(feedType, undefined, 20, user, community)
-
-          // DEBUG: Log what API returned
-          // console.log('API returned:')
-          // freshData.data.slice(0, 3).forEach(p => {
-          //   console.log(`  ${p.id.slice(0,8)}: score=${p.vote_score}, user_vote=${p.user_vote}`)
-          // })
 
           // Smart merge: preserve optimistic vote updates that may not be in DB yet
           // This handles the race condition where user votes, navigates away before
@@ -138,22 +124,9 @@
             return freshPost
           })
 
-          // DEBUG: Log AFTER merge
-          // console.log('AFTER merge:')
-          // mergedPosts.slice(0, 3).forEach(p => {
-          //   console.log(`  ${p.id.slice(0,8)}: score=${p.vote_score}, user_vote=${p.user_vote}`)
-          // })
-
           // Update the feed store with merged data
           currentFeed.setPosts(mergedPosts)
 
-          // DEBUG: Log final store state
-          // const finalState = get(currentFeed)
-          // console.log('FINAL store state:')
-          // finalState.posts.slice(0, 3).forEach(p => {
-          //   console.log(`  ${p.id.slice(0,8)}: score=${p.vote_score}, user_vote=${p.user_vote}`)
-          // })
-          // console.log('=== END afterNavigate DEBUG ===')
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
         }
