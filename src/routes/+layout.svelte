@@ -316,16 +316,12 @@
     <!-- Loading fallback: blocks interaction while ComposeModal lazy-loads -->
     <button
       type="button"
-      class="fixed inset-0 bg-transparent flex items-center justify-center focus:outline-none"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center focus:outline-none"
       style="z-index: 1000;"
       onclick={() => composeStore.closeModal()}
       aria-label="Close compose"
     >
-      <div class="rounded-2xl px-4 py-3 text-muted-foreground text-sm"
-        style="background: rgba(16, 16, 16, 0.9); border: 1px solid rgba(107, 107, 107, 0.1); box-shadow: 0 0 80px 30px rgba(0,0,0,0.65);"
-      >
-        Loading…
-      </div>
+      <div class="text-muted-foreground text-sm">Loading…</div>
     </button>
   {/if}
 {/if}

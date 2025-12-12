@@ -480,45 +480,16 @@
 		}
 	}
 
+	.modal-overlay-exit {
+		animation: overlay-fade-out 0.3s ease-out forwards;
+	}
+
 	@keyframes overlay-fade-out {
 		0% {
 			opacity: 1;
 		}
 		100% {
 			opacity: 0;
-		}
-	}
-
-	/* Localized outer glow behind the modal (no full-screen backdrop). */
-	.modal-glow {
-		position: absolute;
-		inset: -80px;
-		border-radius: 2rem;
-		pointer-events: none;
-		opacity: 1;
-		background: radial-gradient(
-			ellipse at center,
-			rgba(0, 0, 0, 0.75) 0%,
-			rgba(0, 0, 0, 0.45) 35%,
-			rgba(0, 0, 0, 0) 70%
-		);
-		filter: blur(10px);
-	}
-
-	.modal-glow-enter {
-		animation: glow-fade-in 0.25s ease-out;
-	}
-
-	.modal-glow-exit {
-		animation: overlay-fade-out 0.3s ease-out forwards;
-	}
-
-	@keyframes glow-fade-in {
-		0% {
-			opacity: 0;
-		}
-		100% {
-			opacity: 1;
 		}
 	}
 
@@ -560,10 +531,9 @@
 			transition: opacity 0.2s ease;
 		}
 
-		.modal-glow-enter,
-		.modal-glow-exit {
+		.modal-overlay-exit {
 			animation: none !important;
-			opacity: 1;
+			transition: opacity 0.2s ease;
 		}
 
 		.success-indicator {
@@ -594,24 +564,21 @@
 		<!-- Backdrop (interactive for click-to-close) -->
 		<button
 			type="button"
-			class="absolute inset-0 bg-transparent focus:outline-none"
+			class="absolute inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''} focus:outline-none"
 			style="z-index: 0;"
 			disabled={$composeState.isSubmitting}
 			onclick={handleClose}
 			aria-label="Close compose"
 		></button>
 
-		<!-- Modal glow + content (localized spotlight) -->
-		<div class="relative w-full max-w-lg" style="z-index: 1;">
-			<div class="modal-glow {isClosing ? 'modal-glow-exit' : 'modal-glow-enter'}"></div>
-
-			<div
-				bind:this={modalContainerElement}
-				class="modal-content-area relative w-full max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-				style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-				role="dialog"
-				tabindex="-1"
-			>
+		<!-- Modal content -->
+		<div
+			bind:this={modalContainerElement}
+			class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
+			role="dialog"
+			tabindex="-1"
+		>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
@@ -756,7 +723,6 @@
 						</div>
 				</div>
 			</form>
-			</div>
 		</div>
 	</div>
 {/if}
