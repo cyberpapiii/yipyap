@@ -662,7 +662,7 @@
 				{/if}
 
 				<!-- Bottom spacer for floating reply box -->
-				<div class="h-32"></div>
+				<div class="h-24"></div>
 			</div>
 		{/if}
 	</div>
@@ -670,7 +670,7 @@
 	<!-- Floating reply text box - use absolute positioning since parent has transform -->
 	<div
 		class="absolute left-4 right-4 max-w-2xl mx-auto z-50"
-		style="bottom: calc(5rem + env(safe-area-inset-bottom))"
+		style="bottom: calc(1rem + env(safe-area-inset-bottom))"
 	>
 		<div class="bg-card border border-border rounded-2xl shadow-lg">
 			<button
