@@ -29,17 +29,11 @@
 	})
 
 	let loading = $state(false)
+	let disableTransitions = $state(true)
 	let error = $state<string | null>(null)
 
 	onMount(() => {
 		void checkStatus()
-
-		// Re-check once the service worker is ready (first-load flakiness)
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.ready.then(() => {
-				void checkStatus()
-			}).catch(() => {})
-		}
 
 		// Re-sync when returning to the page/app
 		const onVisible = () => {
@@ -54,6 +48,14 @@
 
 	async function checkStatus() {
 		status = await getPushSubscriptionStatus()
+
+		// Prevent the initial render from animating from the default (off) state.
+		// We enable transitions on the next frame so user interactions still animate.
+		if (disableTransitions) {
+			requestAnimationFrame(() => {
+				disableTransitions = false
+			})
+		}
 	}
 
 	async function handleToggle() {
@@ -162,13 +164,13 @@
 		>
 			<!-- Background -->
 			<div
-				class="absolute inset-0 rounded-full transition-colors duration-200"
+				class="absolute inset-0 rounded-full {disableTransitions ? '' : 'transition-colors duration-200'}"
 				style="background-color: {status.subscribed && canToggle() ? '#00933C' : 'rgba(107, 107, 107, 0.3)'};"
 			></div>
 
 			<!-- Knob -->
 			<div
-				class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform duration-200 shadow-lg"
+				class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full {disableTransitions ? '' : 'transition-transform duration-200'} shadow-lg"
 				style="transform: translateX({status.subscribed && canToggle() ? '20px' : '0'});"
 			>
 				{#if loading}
