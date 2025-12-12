@@ -667,8 +667,11 @@
 		{/if}
 	</div>
 
-	<!-- Floating reply text box -->
-	<div class="fixed bottom-20 left-4 right-4 max-w-2xl mx-auto z-50 pb-4">
+	<!-- Floating reply text box - use absolute positioning since parent has transform -->
+	<div
+		class="absolute left-4 right-4 max-w-2xl mx-auto z-50"
+		style="bottom: calc(5rem + env(safe-area-inset-bottom))"
+	>
 		<div class="bg-card border border-border rounded-2xl shadow-lg">
 			<button
 				class="w-full text-left text-muted-foreground text-sm p-3 rounded-xl hover:bg-accent/50 transition-colors"
