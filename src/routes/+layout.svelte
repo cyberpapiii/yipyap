@@ -265,8 +265,8 @@
   aria-hidden="true"
 ></label>
 
-<header class="sticky top-0 z-90 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1); padding-top: env(safe-area-inset-top)">
-  <!-- Navigation layer: z-100-199 (header at z-90) -->
+<header class="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" style="border-bottom: 1px solid rgba(107, 107, 107, 0.1); padding-top: env(safe-area-inset-top)">
+  <!-- Navigation layer: z-50 -->
   <div class="mx-auto max-w-md px-4 h-12 flex items-center justify-center">
     <a href="/" class="flex items-center" aria-label="BingBong home">
       <svg width="188" height="19" viewBox="0 0 188 19" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -298,28 +298,32 @@
   <div class="h-24"></div>
 </main>
 
-<!-- Gradient overlay above bottom nav - Page elements layer: z-1-99 -->
-<div class="fixed bottom-0 left-0 right-0 h-48 pointer-events-none z-40"
-     style="background: linear-gradient(to top, rgba(16, 16, 16, 1) 0%, rgba(16, 16, 16, 0.8) 40%, transparent 100%); padding-bottom: env(safe-area-inset-bottom)">
-</div>
+{#if !$showComposeModal}
+  <!-- Gradient overlay above bottom nav - Page elements layer: z-40 -->
+  <div class="fixed bottom-0 left-0 right-0 h-48 pointer-events-none z-40"
+       style="background: linear-gradient(to top, rgba(16, 16, 16, 1) 0%, rgba(16, 16, 16, 0.8) 40%, transparent 100%); padding-bottom: env(safe-area-inset-bottom)">
+  </div>
+{/if}
 
 <BottomNav active={activePage} />
 
-<!-- Compose Modal Backdrop - completely independent layer at layout level -->
+<!-- Compose Modal - owned by the ComposeModal component (single overlay/backdrop) -->
 {#if $showComposeModal}
-  <div
-    class="fixed inset-0 bg-black/60"
-    style="z-index: 1000;"
-    onclick={() => composeStore.closeModal()}
-    role="button"
-    tabindex="-1"
-    aria-label="Close modal"
-  ></div>
-{/if}
-
-{#if ComposeModal}
-  <!-- svelte-ignore svelte_component_deprecated -->
-  <svelte:component this={ComposeModal} onSubmit={onSubmit} />
+  {#if ComposeModal}
+    <!-- svelte-ignore svelte_component_deprecated -->
+    <svelte:component this={ComposeModal} onSubmit={onSubmit} />
+  {:else}
+    <!-- Loading fallback: blocks interaction while ComposeModal lazy-loads -->
+    <button
+      type="button"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center focus:outline-none"
+      style="z-index: 1000;"
+      onclick={() => composeStore.closeModal()}
+      aria-label="Close compose"
+    >
+      <div class="text-muted-foreground text-sm">Loading…</div>
+    </button>
+  {/if}
 {/if}
 
 <!-- Community Picker Modal - rendered at root level -->

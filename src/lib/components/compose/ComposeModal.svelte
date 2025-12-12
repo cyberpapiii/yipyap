@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
 	import { X, Send, Loader2, MapPin, Lock, Check } from 'lucide-svelte'
-	import { onMount, tick } from 'svelte'
+	import { onMount } from 'svelte'
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import { Button } from '$lib/components/ui'
 	import { composeStore, showComposeModal, composeState } from '$lib/stores'
@@ -245,6 +245,17 @@
 		}
 	}
 
+	// Only listen for keyboard shortcuts while the modal is open.
+	$effect(() => {
+		if (!browser) return
+		if (!$showComposeModal) return
+
+		document.addEventListener('keydown', handleKeydown)
+		return () => {
+			document.removeEventListener('keydown', handleKeydown)
+		}
+	})
+
 	// Character count and validation
 	const maxLength = 500
 	const charCount = $derived.by(() => content.length)
@@ -314,8 +325,6 @@
 	})
 
 	onMount(() => {
-		document.addEventListener('keydown', handleKeydown)
-
 		let viewport: VisualViewport | null = null
 		baselineInnerHeight = browser ? window.innerHeight : 0
 		let rafId: number | null = null
@@ -398,8 +407,6 @@
 			if (pendingAnimationTimeout) {
 				clearTimeout(pendingAnimationTimeout)
 			}
-
-			document.removeEventListener('keydown', handleKeydown)
 			if (viewport) {
 				viewport.removeEventListener('resize', updateOffset)
 				viewport.removeEventListener('scroll', updateOffset)
@@ -551,14 +558,23 @@
 {#if $showComposeModal}
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
+		class="fixed inset-0 relative flex items-end justify-center p-4"
 		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
-		onclick={(e) => e.target === e.currentTarget && handleClose()}
 	>
+		<!-- Backdrop (interactive for click-to-close) -->
+		<button
+			type="button"
+			class="absolute inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''} focus:outline-none"
+			style="z-index: 0;"
+			disabled={$composeState.isSubmitting}
+			onclick={handleClose}
+			aria-label="Close compose"
+		></button>
+
 		<!-- Modal content -->
 		<div
 			bind:this={modalContainerElement}
-			class="modal-content-area w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
 			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 			role="dialog"
 			tabindex="-1"
