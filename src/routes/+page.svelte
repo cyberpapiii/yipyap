@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
   import { afterNavigate, onNavigate } from '$app/navigation'
-  import { onMount, onDestroy, tick } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/feed/Feed.svelte'
@@ -19,9 +19,10 @@
   import type { Snapshot } from './$types'
 
   // Snapshot type for scroll position preservation
+  // NOTE: The feed containers use flex-1 but have no flex parent with constrained height,
+  // so the window scrolls instead of the containers. We capture window.scrollY.
   interface ScrollSnapshot {
-    hot: number
-    new: number
+    scrollY: number
     activeFeed: FeedType
   }
 
@@ -162,12 +163,10 @@
   // This is the recommended pattern for preserving ephemeral DOM state
   export const snapshot: Snapshot<ScrollSnapshot> = {
     capture: () => {
-      // Capture scroll positions for both feeds before navigation
-      const hotContainer = document.querySelector('[data-feed-container][data-feed-type="hot"]') as HTMLElement | null
-      const newContainer = document.querySelector('[data-feed-container][data-feed-type="new"]') as HTMLElement | null
+      // The feed containers don't actually scroll (they expand to fit content).
+      // The window/document scrolls instead. Capture window.scrollY.
       return {
-        hot: hotContainer?.scrollTop ?? 0,
-        new: newContainer?.scrollTop ?? 0,
+        scrollY: window.scrollY,
         activeFeed: feedType
       }
     },
@@ -175,16 +174,12 @@
       // Restore scroll position after navigating back
       // Wait for DOM to be ready with the feed content
       tick().then(() => {
-        // Use requestAnimationFrame to ensure DOM is fully rendered
+        // Double RAF ensures layout is complete after Svelte renders
         requestAnimationFrame(() => {
-          const container = document.querySelector(
-            `[data-feed-container][data-feed-type="${value.activeFeed}"]`
-          ) as HTMLElement | null
-          if (container) {
-            const targetScroll = value[value.activeFeed] ?? 0
-            const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight)
-            container.scrollTop = Math.min(targetScroll, maxScroll)
-          }
+          requestAnimationFrame(() => {
+            // Restore window scroll position
+            window.scrollTo(0, value.scrollY)
+          })
         })
       })
     }
