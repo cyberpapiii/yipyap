@@ -18,8 +18,8 @@
   }
 </script>
 
-<nav class="fixed bottom-0 left-0 right-0 z-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-     style="border-top: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom)">
+<nav class="fixed top-0 left-0 right-0 z-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+     style="border-top: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom); transform: translateY(calc(100vh - 100%));">
   <!-- Navigation layer: z-100-199 -->
   <div class="mx-auto flex h-12 max-w-md items-center justify-around px-8">
     <a
