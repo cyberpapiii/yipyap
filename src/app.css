@@ -313,9 +313,12 @@
     font-feature-settings: 'tnum' on, 'lnum' on;
   }
 
-  /* Smooth scroll behavior */
+  /* IMPORTANT:
+     Avoid global smooth scrolling. SvelteKit uses programmatic scroll restoration on
+     history navigations (e.g. iOS swipe-back). With `smooth`, that restoration turns
+     into an animation and can cause a subtle "blink" at the top of the feed. */
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
 
   /* Better mobile viewport handling */
