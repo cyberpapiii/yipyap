@@ -33,6 +33,7 @@
 	let baselineInnerHeight = 0
 	const KEYBOARD_THRESHOLD = 120
 	const MAX_KEYBOARD_HEIGHT = 400 // iOS keyboards are typically 260-350px, cap to prevent crazy values
+	const IOS_TOOLBAR_BUFFER = 44 // Extra padding for iOS autocomplete/suggestion toolbar
 	let keyboardSettleTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Community selector state
@@ -394,7 +395,8 @@
 					const finalOffset = Math.abs(currentOffset - targetKeyboardOffset) < 50
 						? targetKeyboardOffset
 						: currentOffset
-					keyboardOffset = Math.min(finalOffset, MAX_KEYBOARD_HEIGHT)
+					// Add buffer for iOS autocomplete toolbar that sits above keyboard
+					keyboardOffset = Math.min(finalOffset, MAX_KEYBOARD_HEIGHT) + IOS_TOOLBAR_BUFFER
 					keyboardSettleTimeout = null
 				}, 100) // 100ms settle time
 
