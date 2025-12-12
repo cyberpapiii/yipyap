@@ -271,45 +271,18 @@
 		return line ? `${line} Anonymous` : 'Anonymous'
 	})
 
-	// Lock body scroll when modal is open to prevent iOS scroll-to-focus behavior
-	// Uses simpler overflow hidden approach to avoid layout shifts
+	// Focus textarea when modal opens - no body scroll lock needed
+	// Body scroll lock was causing iOS to miscalculate fixed element positions
 	$effect(() => {
 		if (!browser) return
 
 		if ($showComposeModal) {
-			// Store original overflow styles
-			const originalBodyOverflow = document.body.style.overflow
-			const originalDocumentOverflow = document.documentElement.style.overflow
-
-			// Simple overflow hidden - less aggressive than position:fixed
-			document.body.style.overflow = 'hidden'
-			document.documentElement.style.overflow = 'hidden'
-
-			// Block touchmove on the backdrop (but allow it on the modal content)
-			const preventBackdropTouch = (e: TouchEvent) => {
-				const target = e.target as HTMLElement
-				// Allow touches inside the modal dialog and its children
-				if (!target.closest('[role="dialog"]') && !target.closest('.modal-content-area')) {
-					e.preventDefault()
-				}
-			}
-			document.addEventListener('touchmove', preventBackdropTouch, { passive: false })
-
 			// Focus textarea after a short delay to let iOS settle
 			setTimeout(() => {
 				if (textareaElement) {
 					textareaElement.focus({ preventScroll: true })
 				}
 			}, 50)
-
-			return () => {
-				// Remove event listener
-				document.removeEventListener('touchmove', preventBackdropTouch)
-
-				// Restore original styles
-				document.body.style.overflow = originalBodyOverflow
-				document.documentElement.style.overflow = originalDocumentOverflow
-			}
 		}
 	})
 
