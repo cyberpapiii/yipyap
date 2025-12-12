@@ -31,8 +31,25 @@
 	let loading = $state(false)
 	let error = $state<string | null>(null)
 
-	onMount(async () => {
-		await checkStatus()
+	onMount(() => {
+		void checkStatus()
+
+		// Re-check once the service worker is ready (first-load flakiness)
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.ready.then(() => {
+				void checkStatus()
+			}).catch(() => {})
+		}
+
+		// Re-sync when returning to the page/app
+		const onVisible = () => {
+			if (!document.hidden) void checkStatus()
+		}
+		document.addEventListener('visibilitychange', onVisible)
+
+		return () => {
+			document.removeEventListener('visibilitychange', onVisible)
+		}
 	})
 
 	async function checkStatus() {

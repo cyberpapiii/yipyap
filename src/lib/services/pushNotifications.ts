@@ -23,6 +23,28 @@ export interface PushNotificationStatus {
   serviceWorkerActive: boolean
 }
 
+async function getActiveServiceWorkerRegistration(timeoutMs = 1500): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null
+
+  // Fast path
+  const existing = await navigator.serviceWorker.getRegistration()
+  if (existing?.active) return existing
+
+  // Wait for readiness (but don't hang forever)
+  try {
+    const ready = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs))
+    ])
+    if (ready) return ready
+  } catch {
+    // ignore
+  }
+
+  // Fallback: try again
+  return (await navigator.serviceWorker.getRegistration()) ?? null
+}
+
 /**
  * Check if device is iOS in PWA standalone mode
  */
@@ -99,8 +121,8 @@ export async function getPushSubscriptionStatus(): Promise<PushNotificationStatu
   status.permission = Notification.permission
 
   // Check if service worker is active
-  const registration = await navigator.serviceWorker.getRegistration()
-  status.serviceWorkerActive = !!registration?.active
+  const registration = await getActiveServiceWorkerRegistration()
+  status.serviceWorkerActive = Boolean(registration?.active)
 
   if (!status.serviceWorkerActive) {
     return status
@@ -109,7 +131,7 @@ export async function getPushSubscriptionStatus(): Promise<PushNotificationStatu
   // Check if already subscribed
   try {
     const subscription = await registration.pushManager.getSubscription()
-    status.subscribed = !!subscription
+    status.subscribed = Boolean(subscription) && status.permission === 'granted'
     status.canSubscribe = !status.subscribed && status.permission !== 'denied'
   } catch (error) {
     console.error('[PushNotifications] Error checking subscription:', error)
@@ -152,15 +174,17 @@ export async function subscribeToPushNotifications(
     }
   }
 
-  // Request notification permission
-  let permission: NotificationPermission
-  try {
-    permission = await Notification.requestPermission()
-  } catch (error) {
-    console.error('[PushNotifications] Error requesting permission:', error)
-    return {
-      success: false,
-      error: 'Failed to request notification permission'
+  // Request notification permission only if needed (avoid re-prompting)
+  let permission: NotificationPermission = Notification.permission
+  if (permission !== 'granted') {
+    try {
+      permission = await Notification.requestPermission()
+    } catch (error) {
+      console.error('[PushNotifications] Error requesting permission:', error)
+      return {
+        success: false,
+        error: 'Failed to request notification permission'
+      }
     }
   }
 
@@ -171,10 +195,10 @@ export async function subscribeToPushNotifications(
     }
   }
 
-  // Get service worker registration
+  // Get service worker registration (wait briefly for activation)
   let registration: ServiceWorkerRegistration
   try {
-    const reg = await navigator.serviceWorker.getRegistration()
+    const reg = await getActiveServiceWorkerRegistration(2500)
     if (!reg) {
       return {
         success: false,
