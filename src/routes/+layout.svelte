@@ -305,6 +305,18 @@
 
 <BottomNav active={activePage} />
 
+<!-- Compose Modal Backdrop - completely independent layer at layout level -->
+{#if $showComposeModal}
+  <div
+    class="fixed inset-0 bg-black/60"
+    style="z-index: 1000;"
+    onclick={() => composeStore.closeModal()}
+    role="button"
+    tabindex="-1"
+    aria-label="Close modal"
+  ></div>
+{/if}
+
 {#if ComposeModal}
   <!-- svelte-ignore svelte_component_deprecated -->
   <svelte:component this={ComposeModal} onSubmit={onSubmit} />

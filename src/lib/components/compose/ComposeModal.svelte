@@ -549,16 +549,6 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Backdrop - covers full screen including area behind keyboard -->
-	<div
-		class="fixed bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
-		style="z-index: 1000; top: 0; left: 0; right: 0; bottom: -500px; height: calc(100% + 500px);"
-		onclick={handleClose}
-		role="button"
-		tabindex="-1"
-		aria-label="Close modal"
-	></div>
-
 	<!-- Modal positioning container - handles keyboard offset -->
 	<div
 		class="fixed inset-0 flex items-end justify-center p-4 pointer-events-none"
