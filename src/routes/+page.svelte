@@ -168,20 +168,6 @@
 
     if (!browser) return
 
-    // Restore scroll position when returning from thread
-    if (isThreadReturn) {
-      const savedScroll = sessionStorage.getItem(SCROLL_KEY)
-      if (savedScroll) {
-        const scrollY = parseInt(savedScroll, 10)
-        // Wait for content to render, then scroll
-        await tick()
-        // Use RAF to ensure layout is complete
-        requestAnimationFrame(() => {
-          window.scrollTo(0, scrollY)
-        })
-      }
-    }
-
     // Allow thread returns even if initializing is still true to avoid skipping refresh
     if (initializing && !isThreadReturn) return
 
@@ -262,6 +248,23 @@
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
         }
+      }
+
+      // Restore scroll AFTER all feed updates are complete
+      // This ensures DOM is stable before we scroll
+      const savedScroll = sessionStorage.getItem(SCROLL_KEY)
+      if (savedScroll) {
+        const scrollY = parseInt(savedScroll, 10)
+        // Wait for any pending Svelte updates
+        await tick()
+        // Double RAF to ensure layout is fully computed
+        // First RAF: browser processes pending style/layout changes
+        // Second RAF: we scroll after browser has painted
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.scrollTo(0, scrollY)
+          })
+        })
       }
     }
   })
