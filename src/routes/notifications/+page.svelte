@@ -17,7 +17,8 @@
 	let showLinePicker = $state(false)
 	let isUpdating = $state(false)
 	let refreshing = $state(false)
-	let pullToRefreshY = $state(0)
+	let pullToRefreshY = $state(0) // rendered (smoothed)
+	let rawPullToRefreshY = $state(0) // raw gesture value
 	let isPulling = $state(false)
 	let gestureAxis = $state<'none' | 'vertical' | 'horizontal'>('none')
 	let startY = 0
@@ -25,11 +26,13 @@
 	let startX = 0
 	let currentX = 0
 	let feedOpacity = $state(1)
+	let pullRaf = 0
 
 	const PULL_THRESHOLD = 80
 	const MAX_PULL = 120
 	const SCROLL_TOP_THRESHOLD = 5
 	const GESTURE_LOCK_THRESHOLD = 10
+	const PULL_SMOOTHING = 0.35
 
 	// Subway line to color mapping
 	const subwayLineColors: Record<string, string> = {
@@ -158,9 +161,24 @@
 		} finally {
 			feedOpacity = 1
 			refreshing = false
-			pullToRefreshY = 0
+			rawPullToRefreshY = 0
+			schedulePullRender()
 			isPulling = false
 		}
+	}
+
+	function schedulePullRender() {
+		if (pullRaf) return
+		pullRaf = requestAnimationFrame(() => {
+			pullRaf = 0
+			const next = pullToRefreshY + (rawPullToRefreshY - pullToRefreshY) * PULL_SMOOTHING
+			if (Math.abs(rawPullToRefreshY - next) < 0.5) {
+				pullToRefreshY = rawPullToRefreshY
+				return
+			}
+			pullToRefreshY = next
+			schedulePullRender()
+		})
 	}
 
 	function handleTouchStart(e: TouchEvent) {
@@ -169,6 +187,7 @@
 		startY = e.touches[0].clientY
 		currentX = startX
 		currentY = startY
+		rawPullToRefreshY = 0
 		pullToRefreshY = 0
 		isPulling = false
 		gestureAxis = 'none'
@@ -201,7 +220,8 @@
 
 		if (gestureAxis === 'horizontal') {
 			isPulling = false
-			pullToRefreshY = 0
+			rawPullToRefreshY = 0
+			schedulePullRender()
 			return
 		}
 
@@ -213,16 +233,19 @@
 			isPulling = true
 			startY = currentY
 			startX = currentX
-			pullToRefreshY = 0
+			rawPullToRefreshY = 0
+			schedulePullRender()
 			return
 		}
 
 		if (isPulling && scrollTop <= SCROLL_TOP_THRESHOLD && deltaY > 0) {
 			e.preventDefault()
-			pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+			rawPullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+			schedulePullRender()
 		} else {
 			isPulling = false
-			pullToRefreshY = 0
+			rawPullToRefreshY = 0
+			schedulePullRender()
 		}
 	}
 
@@ -234,7 +257,8 @@
 		if (pullToRefreshY >= PULL_THRESHOLD) {
 			refreshNotifications()
 		} else {
-			pullToRefreshY = 0
+			rawPullToRefreshY = 0
+			schedulePullRender()
 		}
 	}
 </script>

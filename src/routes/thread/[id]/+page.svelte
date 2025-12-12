@@ -78,19 +78,22 @@
   // Pull to refresh state
   let threadContainer: HTMLElement
   let refreshing = $state(false)
-  let pullToRefreshY = $state(0)
+  let pullToRefreshY = $state(0) // rendered (smoothed)
+  let rawPullToRefreshY = $state(0) // raw gesture value
   let isPulling = $state(false)
   let gestureAxis = $state<'none' | 'vertical' | 'horizontal'>('none')
   let startY = 0
   let currentY = 0
   let startX = 0
   let currentX = 0
+  let pullRaf = 0
 
   // Pull to refresh constants
   const PULL_THRESHOLD = 80
   const MAX_PULL = 120
   const SCROLL_TOP_THRESHOLD = 5
   const GESTURE_LOCK_THRESHOLD = 10
+  const PULL_SMOOTHING = 0.35
 
   onMount(() => {
     if (!browser) return
@@ -328,9 +331,24 @@
   }
 
   // Pull to refresh handlers
+  function schedulePullRender() {
+    if (pullRaf) return
+    pullRaf = requestAnimationFrame(() => {
+      pullRaf = 0
+      const next = pullToRefreshY + (rawPullToRefreshY - pullToRefreshY) * PULL_SMOOTHING
+      if (Math.abs(rawPullToRefreshY - next) < 0.5) {
+        pullToRefreshY = rawPullToRefreshY
+        return
+      }
+      pullToRefreshY = next
+      schedulePullRender()
+    })
+  }
+
   function resetPullState() {
     isPulling = false
-    pullToRefreshY = 0
+    rawPullToRefreshY = 0
+    schedulePullRender()
   }
 
   function getGlobalScrollTop() {
@@ -373,7 +391,8 @@
       }
     } finally {
       refreshing = false
-      pullToRefreshY = 0
+      rawPullToRefreshY = 0
+      schedulePullRender()
       isPulling = false
     }
   }
@@ -388,6 +407,7 @@
     startY = e.touches[0].clientY
     currentX = startX
     currentY = startY
+    rawPullToRefreshY = 0
     pullToRefreshY = 0
     isPulling = false
     gestureAxis = 'none'
@@ -445,7 +465,8 @@
         isPulling = true
         startY = currentY
         startX = currentX
-        pullToRefreshY = 0
+        rawPullToRefreshY = 0
+        schedulePullRender()
       }
       return
     }
@@ -457,7 +478,8 @@
 
     if (deltaY > 0) {
       e.preventDefault()
-      pullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+      rawPullToRefreshY = Math.min(deltaY * 0.5, MAX_PULL)
+      schedulePullRender()
     } else {
       resetPullState()
     }
@@ -478,7 +500,8 @@
     if (pullToRefreshY >= PULL_THRESHOLD) {
       refreshThread()
     } else {
-      pullToRefreshY = 0
+      rawPullToRefreshY = 0
+      schedulePullRender()
     }
   }
 
