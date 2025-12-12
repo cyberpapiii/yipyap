@@ -227,6 +227,8 @@
 
 		if (!isPulling) {
 			if (deltaY > 0 && atTop) {
+				// Prevent iOS rubber-band overscroll from pulling the whole page (layout header included)
+				e.preventDefault()
 				isPulling = true
 				startY = currentY
 				startX = currentX

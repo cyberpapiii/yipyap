@@ -208,6 +208,8 @@
 		if (gestureAxis !== 'vertical') return
 
 		if (!isPulling && deltaY > 0 && scrollTop <= SCROLL_TOP_THRESHOLD) {
+			// Prevent iOS rubber-band overscroll from pulling the whole page
+			e.preventDefault()
 			isPulling = true
 			startY = currentY
 			startX = currentX
