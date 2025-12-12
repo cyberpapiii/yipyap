@@ -522,19 +522,14 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal positioning container - handles keyboard offset -->
+	<!-- Modal positioned directly - no full-screen wrapper to avoid iOS fixed positioning bugs -->
 	<div
-		class="fixed inset-0 flex items-end justify-center p-4 pointer-events-none"
-		style={`z-index: 1001; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); transition: padding-bottom 0.15s ease-out;`}
+		bind:this={modalContainerElement}
+		class="modal-content-area fixed left-4 right-4 mx-auto w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+		style={`z-index: 1001; bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px + 1rem); background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); transition: bottom 0.15s ease-out;`}
+		role="dialog"
+		tabindex="-1"
 	>
-		<!-- Modal content -->
-		<div
-			bind:this={modalContainerElement}
-			class="modal-content-area pointer-events-auto w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-			role="dialog"
-			tabindex="-1"
-		>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
@@ -679,6 +674,5 @@
 						</div>
 				</div>
 			</form>
-		</div>
 	</div>
 {/if}
