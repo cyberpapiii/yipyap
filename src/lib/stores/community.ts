@@ -230,11 +230,41 @@ function createCommunityStore() {
     },
 
     /**
+     * Sync permission state without prompting for location.
+     * This avoids flapping (e.g. iOS Permissions API quirks) and avoids
+     * triggering geolocation on page load.
+     */
+    syncLocationPermission: async (): Promise<LocationPermission> => {
+      if (!browser || !navigator.geolocation) {
+        update(state => ({ ...state, locationPermission: 'unsupported' }))
+        return 'unsupported'
+      }
+
+      const current = get({ subscribe }).locationPermission
+      const permission = await getLocationPermission()
+
+      // Don't overwrite a known granted/denied state with a generic 'prompt'
+      // (common on iOS where Permissions API is unreliable).
+      if (permission === 'prompt' && (current === 'granted' || current === 'denied')) {
+        return current
+      }
+
+      // Persist only stable states.
+      if (permission === 'granted' || permission === 'denied') {
+        saveLocationPermission(permission)
+      }
+
+      update(state => ({ ...state, locationPermission: permission }))
+      return permission
+    },
+
+    /**
      * Check and update current location
      * Respects app-level locationEnabled preference
      */
     checkLocation: async (): Promise<Coordinates | null> => {
       const state = get({ subscribe })
+      const previousPermission = state.locationPermission
 
       // If user has disabled location in app, don't check
       if (!state.locationEnabled) {
@@ -250,13 +280,27 @@ function createCommunityStore() {
 
       try {
         const permission = await getLocationPermission()
+
+        // If browser reports denied/unsupported, don't attempt to fetch a position
+        if (permission === 'denied' || permission === 'unsupported') {
+          if (permission === 'denied') saveLocationPermission('denied')
+          update(state => ({
+            ...state,
+            userLocation: null,
+            locationPermission: permission,
+            isCheckingLocation: false
+          }))
+          return null
+        }
+
         const location = await getCurrentLocation()
 
-        saveLocationPermission(permission)
+        // If we got a position, treat permission as granted regardless of Permissions API quirks
+        saveLocationPermission('granted')
         update(state => ({
           ...state,
           userLocation: location,
-          locationPermission: permission,
+          locationPermission: 'granted',
           isCheckingLocation: false
         }))
 
@@ -266,13 +310,15 @@ function createCommunityStore() {
         const isDenied = error?.message?.includes('permission denied') ||
                          error?.message?.includes('Permission denied')
 
-        const permissionState = isDenied ? 'denied' : 'prompt'
-        saveLocationPermission(permissionState)
+        if (isDenied) {
+          saveLocationPermission('denied')
+        }
 
         update(state => ({
           ...state,
           userLocation: null,
-          locationPermission: permissionState,
+          // Don't downgrade a known granted/denied state on transient failures (timeout/unavailable)
+          locationPermission: isDenied ? 'denied' : (previousPermission ?? null),
           isCheckingLocation: false
         }))
         return null

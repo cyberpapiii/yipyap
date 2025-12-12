@@ -12,17 +12,12 @@
 	let locationEnabled = $derived($communityStore.locationEnabled)
 
 	onMount(async () => {
-		// Always check current status on mount to verify permission is still valid
-		// and location can actually be fetched (not just that permission was granted)
+		// Sync permission state without forcing a geolocation lookup on mount.
+		// Avoids toggling/flapping and avoids triggering prompts on iOS.
 		try {
-			const location = await communityStore.checkLocation()
-			if (!location && locationPermission === 'prompt') {
-				// Permission API says 'granted' but location fetch failed
-				// This can happen when permission is stale or location services are off
-				error = 'Could not get location. Ensure location services are enabled.'
-			}
+			await communityStore.syncLocationPermission()
 		} catch (err) {
-			console.error('[LocationPermissionToggle] Failed to check location:', err)
+			console.error('[LocationPermissionToggle] Failed to sync permission:', err)
 		}
 	})
 

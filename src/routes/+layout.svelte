@@ -227,9 +227,9 @@
 
       // DEFERRED: Non-critical operations
       requestIdleCallback(() => {
-        // Check location permission (already doesn't await)
-        communityStore.checkLocation().catch((err) => {
-          console.warn('Failed to check location on app startup:', err)
+        // Sync permission state without prompting for location (avoids flapping on iOS)
+        communityStore.syncLocationPermission().catch((err) => {
+          console.warn('Failed to sync location permission on app startup:', err)
         })
 
         // Show quick onboarding if not completed
