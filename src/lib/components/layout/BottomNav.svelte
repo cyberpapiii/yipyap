@@ -1,55 +1,25 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { browser } from '$app/environment'
-  import { composeStore } from '$lib/stores/compose'
+  import { composeStore, showComposeModal } from '$lib/stores/compose'
   import { unreadCount } from '$lib/stores/notifications'
   import NotificationBadge from '../notifications/NotificationBadge.svelte'
   import { hapticsStore } from '$lib/stores/haptics'
 
   export let active: 'home' | 'thread' | 'profile' = 'home'
 
-  // iOS visual viewport positioning - keeps navbar at bottom of VISUAL viewport
-  // This prevents iOS from pushing the navbar above the keyboard
-  let navTop = $state<string>('auto')
-  let useVisualViewport = $state(false)
-
   function openComposer() {
+    // Haptic feedback for compose button
     hapticsStore.trigger('selection')
     composeStore.openModal()
   }
 
   function handleNavClick() {
+    // Haptic feedback for navigation
     hapticsStore.trigger('navigation')
   }
-
-  onMount(() => {
-    if (!browser) return
-
-    useVisualViewport = true
-
-    function updatePosition() {
-      // Use window.innerHeight (layout viewport) to keep navbar at TRUE bottom
-      // This means it will be hidden under the keyboard, not pushed above it
-      navTop = `${window.innerHeight}px`
-    }
-
-    // innerHeight doesn't change on iOS when keyboard opens, so this keeps
-    // the navbar at the layout viewport bottom (under the keyboard)
-    window.addEventListener('resize', updatePosition)
-    updatePosition()
-
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-    }
-  })
 </script>
 
-<nav
-  class="fixed left-0 right-0 z-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-  style:top={useVisualViewport ? navTop : 'auto'}
-  style:bottom={useVisualViewport ? 'auto' : '0'}
-  style:transform={useVisualViewport ? 'translateY(-100%)' : 'none'}
-  style="border-top: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom);">
+<nav class="fixed bottom-0 left-0 right-0 z-100 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+     style="border-top: 1px solid rgba(107, 107, 107, 0.1); padding-bottom: env(safe-area-inset-bottom)">
   <!-- Navigation layer: z-100-199 -->
   <div class="mx-auto flex h-12 max-w-md items-center justify-around px-8">
     <a
