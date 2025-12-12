@@ -38,10 +38,21 @@ export const composeStore = {
 
 	// Open compose modal
 	openModal: (replyTo?: ComposeState['replyTo']) => {
-		if (replyTo) {
-			composeState.update(state => ({ ...state, replyTo }))
-		}
-		showComposeModal.set(true)
+		// First close any existing modal state to prevent race conditions
+		showComposeModal.set(false)
+
+		// Clear previous state
+		composeState.set({
+			content: '',
+			isSubmitting: false,
+			error: null,
+			replyTo: replyTo
+		})
+
+		// Open fresh modal on next tick to ensure clean state
+		setTimeout(() => {
+			showComposeModal.set(true)
+		}, 0)
 	},
 
 	// Close compose modal

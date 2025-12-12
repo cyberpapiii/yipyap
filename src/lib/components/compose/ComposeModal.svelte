@@ -197,28 +197,39 @@
 
 	// Handle close
 	function handleClose() {
-		if (!$composeState.isSubmitting && !isClosing) {
-			// Clean up any pending success animations
-			if (pendingSuccessTimeout) {
-				clearTimeout(pendingSuccessTimeout)
-				pendingSuccessTimeout = null
-			}
-			if (pendingAnimationTimeout) {
-				clearTimeout(pendingAnimationTimeout)
-				pendingAnimationTimeout = null
-			}
+		// Don't close while submitting, but allow close even if isClosing is true
+		// to handle rapid taps (force close if stuck)
+		if ($composeState.isSubmitting) return
 
-			// Reset animation state
-			showSuccess = false
-
-			isClosing = true
-			setTimeout(() => {
-				composeStore.closeModal()
-				content = ''
-				isClosing = false
-				successPosition = { top: '50%', left: '50%' }
-			}, MODAL_EXIT_DURATION_MS) // Use timing constant
+		// Clean up any pending success animations
+		if (pendingSuccessTimeout) {
+			clearTimeout(pendingSuccessTimeout)
+			pendingSuccessTimeout = null
 		}
+		if (pendingAnimationTimeout) {
+			clearTimeout(pendingAnimationTimeout)
+			pendingAnimationTimeout = null
+		}
+
+		// Reset animation state
+		showSuccess = false
+
+		// If already closing, force immediate close
+		if (isClosing) {
+			composeStore.closeModal()
+			content = ''
+			isClosing = false
+			successPosition = { top: '50%', left: '50%' }
+			return
+		}
+
+		isClosing = true
+		setTimeout(() => {
+			composeStore.closeModal()
+			content = ''
+			isClosing = false
+			successPosition = { top: '50%', left: '50%' }
+		}, MODAL_EXIT_DURATION_MS) // Use timing constant
 	}
 
 	// Handle key shortcuts
@@ -261,88 +272,43 @@
 	})
 
 	// Lock body scroll when modal is open to prevent iOS scroll-to-focus behavior
-	// Uses overflow hidden instead of position fixed to avoid layout shifts
+	// Uses simpler overflow hidden approach to avoid layout shifts
 	$effect(() => {
 		if (!browser) return
 
 		if ($showComposeModal) {
-			// Store the current scroll position
-			const scrollY = window.scrollY
-			const scrollX = window.scrollX
-
-			// Store original styles
-			const originalBodyPosition = document.body.style.position
-			const originalBodyTop = document.body.style.top
-			const originalBodyLeft = document.body.style.left
-			const originalBodyWidth = document.body.style.width
+			// Store original overflow styles
 			const originalBodyOverflow = document.body.style.overflow
 			const originalDocumentOverflow = document.documentElement.style.overflow
 
-			// iOS-specific: Use position fixed on body for reliable scroll lock
-			document.body.style.position = 'fixed'
-			document.body.style.top = `-${scrollY}px`
-			document.body.style.left = `-${scrollX}px`
-			document.body.style.width = '100%'
+			// Simple overflow hidden - less aggressive than position:fixed
 			document.body.style.overflow = 'hidden'
 			document.documentElement.style.overflow = 'hidden'
 
-			// Track if we should ignore scroll events (during keyboard open)
-			let isKeyboardOpening = false
-			let keyboardOpenTimeout: ReturnType<typeof setTimeout> | null = null
-
-			// Prevent programmatic scroll attempts, but allow iOS keyboard scroll
-			const preventScroll = (e: Event) => {
-				// Don't fight iOS during keyboard opening (first 500ms after focus)
-				if (isKeyboardOpening) return
-
-				// Restore scroll position if it changes after keyboard is open
-				if (window.scrollY !== scrollY || window.scrollX !== scrollX) {
-					window.scrollTo(scrollX, scrollY)
-				}
-			}
-
-			// Monitor and prevent any scroll changes
-			window.addEventListener('scroll', preventScroll, { passive: true })
-			document.addEventListener('scroll', preventScroll, { passive: true })
-
-			// Also block touchmove on the document (but allow it on the modal)
-			const preventDocumentTouch = (e: TouchEvent) => {
-				// Only prevent if touching outside the modal
+			// Block touchmove on the backdrop (but allow it on the modal content)
+			const preventBackdropTouch = (e: TouchEvent) => {
 				const target = e.target as HTMLElement
-				if (!target.closest('[role="dialog"]')) {
+				// Allow touches inside the modal dialog and its children
+				if (!target.closest('[role="dialog"]') && !target.closest('.modal-content-area')) {
 					e.preventDefault()
 				}
 			}
-			document.addEventListener('touchmove', preventDocumentTouch, { passive: false })
+			document.addEventListener('touchmove', preventBackdropTouch, { passive: false })
 
-			// Focus textarea on the next DOM update cycle.
-			// This ensures the element is rendered and focusable.
-			// Using { preventScroll: true } is critical to stop iOS from scrolling the background page.
-			tick().then(() => {
+			// Focus textarea after a short delay to let iOS settle
+			setTimeout(() => {
 				if (textareaElement) {
 					textareaElement.focus({ preventScroll: true })
 				}
-			})
+			}, 50)
 
 			return () => {
-
-				// Remove event listeners
-				window.removeEventListener('scroll', preventScroll)
-				document.removeEventListener('scroll', preventScroll)
-				document.removeEventListener('touchmove', preventDocumentTouch)
+				// Remove event listener
+				document.removeEventListener('touchmove', preventBackdropTouch)
 
 				// Restore original styles
-				document.body.style.position = originalBodyPosition
-				document.body.style.top = originalBodyTop
-				document.body.style.left = originalBodyLeft
-				document.body.style.width = originalBodyWidth
 				document.body.style.overflow = originalBodyOverflow
 				document.documentElement.style.overflow = originalDocumentOverflow
-
-				// Restore scroll position after layout is restored
-				requestAnimationFrame(() => {
-					window.scrollTo(scrollX, scrollY)
-				})
 			}
 		}
 	})
@@ -443,9 +409,12 @@
 	})
 
 	$effect(() => {
-		// Only reset keyboard offset when modal closes
-		// Let the updateOffset handler deal with keyboard opening
-		if (!$showComposeModal) {
+		if ($showComposeModal) {
+			// Reset animation state when modal opens (handles rapid open/close)
+			isClosing = false
+			showSuccess = false
+		} else {
+			// Reset keyboard offset when modal closes
 			keyboardOffset = 0
 			targetKeyboardOffset = 0
 			if (keyboardSettleTimeout) {
@@ -589,7 +558,7 @@
 		<!-- Modal content -->
 		<div
 			bind:this={modalContainerElement}
-			class="w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			class="modal-content-area w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
 			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 			role="dialog"
 			tabindex="-1"
