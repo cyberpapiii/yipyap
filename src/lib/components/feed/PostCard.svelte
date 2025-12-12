@@ -4,7 +4,7 @@
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import type { PostCardProps } from '$lib/types'
 	import { formatDistanceToNow } from '$lib/utils/date'
-import { goto } from '$app/navigation'
+import { pushState } from '$app/navigation'
 	import { onMount } from 'svelte'
 	import { currentUser } from '$lib/stores/auth'
 	import { hapticsStore } from '$lib/stores/haptics'
@@ -37,11 +37,13 @@ import { goto } from '$app/navigation'
 	const displayContent = $derived(shouldTruncate ? post.content.slice(0, TRUNCATE_LENGTH) + '...' : post.content)
 
 	// Enhanced navigation with haptic feedback
+	// Uses shallow routing to keep feed mounted - thread opens as overlay
 	function openThread() {
 		if (!isInThread) {
 			// Haptic feedback for navigation
 			hapticsStore.trigger('navigation')
-			goto(`/thread/${post.id}`)
+			// Shallow routing: push state with thread ID, URL changes but page stays mounted
+			pushState(`/thread/${post.id}`, { threadId: post.id })
 		}
 	}
 

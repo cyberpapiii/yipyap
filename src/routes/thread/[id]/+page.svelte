@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
+  import { goto } from '$app/navigation'
   import { RefreshCw, ChevronDown } from 'lucide-svelte'
   import PostCard from '$lib/components/feed/PostCard.svelte'
   import CommentCard from '$lib/components/feed/CommentCard.svelte'
@@ -18,6 +19,15 @@
   const currentUser = currentUserStore
   const api = createRealtimeAPI(supabase as any)
   const pageStore = page
+
+  // SHALLOW ROUTING: When directly accessing /thread/[id] URL (shared link, refresh),
+  // redirect to home with thread param so overlay opens there
+  onMount(() => {
+    if (!browser) return
+    const postId = get(pageStore).params.id
+    // Navigate to home with thread param - home page will detect and open overlay
+    goto(`/?thread=${postId}`, { replaceState: true })
+  })
 
   // Helper to flatten nested comments into a single array for lookup
   function flattenComments(comments: CommentWithStats[]): CommentWithStats[] {

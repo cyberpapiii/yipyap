@@ -1,12 +1,14 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { beforeNavigate, afterNavigate } from '$app/navigation'
+  import { pushState } from '$app/navigation'
+  import { page } from '$app/stores'
   import { onMount, tick } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/feed/Feed.svelte'
   import SwipeableFeeds from '$lib/components/feed/SwipeableFeeds.svelte'
   import CommunitySelector from '$lib/components/community/CommunitySelector.svelte'
+  import ThreadOverlay from '$lib/components/thread/ThreadOverlay.svelte'
   import { RefreshCw } from 'lucide-svelte'
   import { composeStore, feedUtils, activeFeedType, realtime, anonymousUser as currentUserStore } from '$lib/stores'
   import { communityStore } from '$lib/stores/community'
@@ -62,8 +64,37 @@
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
 
-  // Simple scroll position storage key
-  const SCROLL_KEY = 'bingbong_home_scroll'
+  // Shallow routing: thread overlay state from page.state OR query param
+  // Query param is used for direct URL access (shared links, refresh)
+  const openThreadId = $derived.by(() => {
+    // First check page state (for in-app shallow navigation)
+    const stateThreadId = ($page.state as { threadId?: string })?.threadId
+    if (stateThreadId) return stateThreadId
+    // Fall back to query param (for direct URL access)
+    return $page.url.searchParams.get('thread')
+  })
+
+  // Open thread using shallow routing (feed stays mounted!)
+  function openThread(postId: string) {
+    if (!browser) return
+    // Push state with thread ID - URL changes but page doesn't navigate
+    pushState(`/thread/${postId}`, { threadId: postId })
+  }
+
+  // Close thread overlay
+  function closeThread() {
+    if (!browser) return
+    // Check if we came from a query param (direct link) vs pushState
+    const hasQueryParam = $page.url.searchParams.get('thread')
+    if (hasQueryParam) {
+      // For direct links, replace URL to remove query param
+      pushState('/', {})
+    } else {
+      // For in-app navigation, go back in history
+      history.back()
+    }
+  }
+
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
@@ -153,121 +184,7 @@
     }
   }
 
-  // Save scroll position before navigating away
-  beforeNavigate(({ to }) => {
-    if (!browser) return
-    // Only save when navigating to a thread
-    if (to?.route?.id?.startsWith('/thread/')) {
-      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
-    }
-  })
-
-  // Restore scroll position after navigating back
-  afterNavigate(async ({ from, type }) => {
-    const isThreadReturn = Boolean(from?.route?.id?.startsWith('/thread/'))
-
-    if (!browser) return
-
-    // Allow thread returns even if initializing is still true to avoid skipping refresh
-    if (initializing && !isThreadReturn) return
-
-    // Only refresh if navigating back from a thread page
-    if (isThreadReturn) {
-      const currentFeed = feedUtils.getFeedStore(feedType)
-      const currentState = get(currentFeed)
-
-      // Only refresh if we have posts and aren't already loading
-      const now = Date.now()
-      const withinCooldown = now - lastFeedSync < REFRESH_COOLDOWN_MS
-
-      if (currentState.posts.length > 0 && !currentState.loading && !withinCooldown) {
-        try {
-          // Fetch fresh data to sync vote counts with database
-          const user = get(cu)
-          const { subwayLineCommunity, geographicCommunity } = getCommunityFilters()
-
-          const freshData = await postsApi.getFeedPosts(
-            feedType,
-            undefined,
-            REFRESH_FEED_LIMIT,
-            user,
-            subwayLineCommunity,
-            geographicCommunity
-          )
-
-          // Smart merge: preserve optimistic vote updates that may not be in DB yet
-          // This handles the race condition where user votes, navigates away before
-          // the API call completes, and navigates back before DB has updated
-          const currentPostMap = new Map(currentState.posts.map(p => [p.id, p]))
-
-          const mergedPosts = freshData.data.map(freshPost => {
-            const currentPost = currentPostMap.get(freshPost.id)
-
-            // If user has voted on this post in current state but API shows different,
-            // preserve the optimistic update (user_vote and its score delta)
-            if (currentPost?.user_vote && !freshPost.user_vote) {
-              // API hasn't caught up - preserve optimistic state
-              return {
-                ...freshPost,
-                vote_score: currentPost.vote_score,
-                user_vote: currentPost.user_vote
-              }
-            }
-
-            // If both have user_vote but scores differ, trust current optimistic state
-            // as it includes the user's pending vote
-            if (currentPost?.user_vote && freshPost.user_vote &&
-                currentPost.user_vote === freshPost.user_vote &&
-                currentPost.vote_score !== freshPost.vote_score) {
-              // Both agree on vote direction but differ in score - use higher
-              // (optimistic adds vote immediately, DB might lag)
-              const useScore = Math.max(currentPost.vote_score, freshPost.vote_score)
-              return {
-                ...freshPost,
-                vote_score: useScore,
-                user_vote: currentPost.user_vote
-              }
-            }
-
-            // Normal case: use fresh data from API
-            return freshPost
-          })
-
-          // IMPORTANT: Do not replace the posts array on thread-return refresh.
-          // Replacing the list can shift scroll position (especially with momentum scrolling + virtualization).
-          for (const post of mergedPosts) {
-            if (!currentPostMap.has(post.id)) continue
-            currentFeed.updatePost(post.id, {
-              vote_score: post.vote_score,
-              user_vote: post.user_vote ?? null,
-              comment_count: post.comment_count
-            })
-          }
-          lastFeedSync = now
-
-        } catch (error) {
-          console.error('Error refreshing feed after navigation:', error)
-        }
-      }
-
-      // Restore scroll AFTER all feed updates are complete
-      // This ensures DOM is stable before we scroll
-      const savedScroll = sessionStorage.getItem(SCROLL_KEY)
-      if (savedScroll) {
-        const scrollY = parseInt(savedScroll, 10)
-        // Wait for any pending Svelte updates
-        await tick()
-        // Double RAF to ensure layout is fully computed
-        // First RAF: browser processes pending style/layout changes
-        // Second RAF: we scroll after browser has painted
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            window.scrollTo(0, scrollY)
-          })
-        })
-      }
-    }
-  })
+  // No scroll restoration needed - feed stays mounted with shallow routing!
 
   onMount(() => {
     if (!browser) return
@@ -624,3 +541,8 @@
     </div>
   </div>
 </div>
+
+<!-- Thread Overlay (shallow routing - feed stays mounted!) -->
+{#if openThreadId}
+  <ThreadOverlay postId={openThreadId} onClose={closeThread} />
+{/if}
