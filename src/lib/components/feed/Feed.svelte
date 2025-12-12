@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment'
 	import { onMount } from 'svelte'
 	import { Loader2, RefreshCw, AlertCircle, ChevronDown } from 'lucide-svelte'
 	import PostCard from './PostCard.svelte'
@@ -15,7 +16,8 @@
 		onReply,
 		onDelete,
 		onLoadMore,
-		hideHeader = false
+		hideHeader = false,
+		scrollKey
 	}: {
 		feedType: FeedType
 		onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
@@ -23,6 +25,7 @@
 		onDelete?: (postId: string) => Promise<void>
 		onLoadMore?: () => Promise<void>
 		hideHeader?: boolean
+		scrollKey?: string
 	} = $props()
 
 	// Enhanced state management
@@ -40,6 +43,7 @@
 	let feedOpacity = $state(1)
 	let isTransitioning = $state(false)
 	let pullRaf = 0
+	let scrollPersistRaf = 0
 
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
@@ -49,6 +53,43 @@
 	const PULL_SMOOTHING = 0.35
 	const ESTIMATED_CARD_HEIGHT = 240
 	const OVERSCAN = 4
+
+	function restoreScrollPosition() {
+		if (!browser || !feedContainer || !scrollKey) return
+		try {
+			const raw = sessionStorage.getItem(scrollKey)
+			if (raw === null) {
+				// Ensure we always have an entry (even for "top of feed" = 0),
+				// so history navigations don't fall back to an unpredictable position.
+				sessionStorage.setItem(scrollKey, String(feedContainer.scrollTop || 0))
+				return
+			}
+			const saved = Number(raw)
+			if (!Number.isFinite(saved)) return
+
+			// Apply on next frame so layout has settled (helps iOS swipe-back).
+			requestAnimationFrame(() => {
+				if (!feedContainer) return
+				feedContainer.scrollTop = Math.max(0, saved)
+				updateWindow()
+			})
+		} catch {
+			// ignore
+		}
+	}
+
+	function schedulePersistScroll() {
+		if (!browser || !feedContainer || !scrollKey) return
+		if (scrollPersistRaf) return
+		scrollPersistRaf = requestAnimationFrame(() => {
+			scrollPersistRaf = 0
+			try {
+				sessionStorage.setItem(scrollKey!, String(feedContainer.scrollTop || 0))
+			} catch {
+				// ignore
+			}
+		})
+	}
 
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
 	let windowStart = $state(0)
@@ -92,6 +133,7 @@
 		const threshold = scrollHeight - (clientHeight * 0.8)
 
 		updateWindow()
+		schedulePersistScroll()
 
 		if (scrolled >= threshold && $feedStore.hasMore && !$feedStore.loading) {
 			loadMore()
@@ -296,6 +338,7 @@
 		if (!feedContainer) return
 
 		updateWindow()
+		restoreScrollPosition()
 
 		feedContainer.addEventListener('scroll', handleScroll)
 		feedContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
@@ -304,6 +347,7 @@
 		feedContainer.addEventListener('touchcancel', handleTouchCancel)
 
 		return () => {
+			schedulePersistScroll()
 			if (feedContainer) {
 				feedContainer.removeEventListener('scroll', handleScroll)
 				feedContainer.removeEventListener('touchstart', handleTouchStart)
@@ -316,6 +360,12 @@
 
 	$effect(() => {
 		updateWindow()
+	})
+
+	$effect(() => {
+		// When switching feeds/communities, restore that specific scroll position.
+		if (!feedContainer) return
+		restoreScrollPosition()
 	})
 </script>
 

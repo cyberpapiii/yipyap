@@ -62,6 +62,7 @@
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
+  const FEED_SCROLL_PREFIX = 'bingbong_feed_scroll_v1'
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
   const REFRESH_FEED_LIMIT = 15
@@ -524,6 +525,7 @@
       {#snippet children({ feedType: currentFeed })}
         <Feed
           feedType={currentFeed}
+          scrollKey={`${FEED_SCROLL_PREFIX}:${currentFeed}:${selectedDisplayCommunity}`}
           onVote={onVote}
           onReply={onReply}
           onDelete={onDelete}
