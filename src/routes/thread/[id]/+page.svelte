@@ -138,6 +138,10 @@
 
   // Enable smooth view transitions for a more native feel (if supported)
   onNavigate((navigation) => {
+    // Skip view transitions for back navigation (popstate) - it delays rendering
+    // and can cause scroll restoration to run before content is ready
+    if (navigation.type === 'popstate') return
+
     // Use View Transitions API if available
     if (!document.startViewTransition) return
 
