@@ -549,16 +549,25 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
+	<!-- Backdrop - covers full screen, separate from modal positioning -->
 	<div
-		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
-		onclick={(e) => e.target === e.currentTarget && handleClose()}
+		class="fixed inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''}"
+		style="z-index: 1000;"
+		onclick={handleClose}
+		role="button"
+		tabindex="-1"
+		aria-label="Close modal"
+	></div>
+
+	<!-- Modal positioning container - handles keyboard offset -->
+	<div
+		class="fixed inset-0 flex items-end justify-center p-4 pointer-events-none"
+		style={`z-index: 1001; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); transition: padding-bottom 0.15s ease-out;`}
 	>
 		<!-- Modal content -->
 		<div
 			bind:this={modalContainerElement}
-			class="modal-content-area w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			class="modal-content-area pointer-events-auto w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
 			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 			role="dialog"
 			tabindex="-1"
