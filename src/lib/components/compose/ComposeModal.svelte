@@ -33,7 +33,7 @@
 	let baselineInnerHeight = 0
 	const KEYBOARD_THRESHOLD = 120
 	const MAX_KEYBOARD_HEIGHT = 400 // iOS keyboards are typically 260-350px, cap to prevent crazy values
-	const IOS_TOOLBAR_BUFFER = 44 // Extra padding for iOS autocomplete/suggestion toolbar
+	const IOS_TOOLBAR_BUFFER = 16 // Small buffer to clear iOS autocomplete toolbar
 	let keyboardSettleTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Community selector state
