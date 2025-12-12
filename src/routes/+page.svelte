@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { afterNavigate, beforeNavigate } from '$app/navigation'
+  import { afterNavigate } from '$app/navigation'
   import { onMount, onDestroy } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
@@ -75,31 +75,6 @@
     `${FEED_CACHE_PREFIX}:${type}:${community}`
 
   const getScrollKey = (type: FeedType) => `${FEED_SCROLL_PREFIX}:${type}:${selectedDisplayCommunity}`
-
-  const saveActiveFeedScroll = () => {
-    if (!browser) return
-    try {
-      const el = document.querySelector(`[data-feed-scroll="${feedType}"]`) as HTMLElement | null
-      if (!el) return
-      sessionStorage.setItem(getScrollKey(feedType), String(el.scrollTop || 0))
-    } catch {
-      // ignore
-    }
-  }
-
-  const saveAllFeedScrolls = () => {
-    if (!browser) return
-    const types: FeedType[] = ['new', 'hot']
-    for (const type of types) {
-      try {
-        const el = document.querySelector(`[data-feed-scroll="${type}"]`) as HTMLElement | null
-        if (!el) continue
-        sessionStorage.setItem(getScrollKey(type), String(el.scrollTop || 0))
-      } catch {
-        // ignore
-      }
-    }
-  }
 
   const loadCachedFeed = (type: FeedType, community: CommunityType | GeographicCommunity) => {
     if (!browser) return null
@@ -250,26 +225,22 @@
             return freshPost
           })
 
-          // Update the feed store with merged data
-          currentFeed.setPosts(mergedPosts)
+          // IMPORTANT: Do not replace the posts array on thread-return refresh.
+          // Replacing the list can shift scroll position (especially with momentum scrolling + virtualization).
+          for (const post of mergedPosts) {
+            if (!currentPostMap.has(post.id)) continue
+            currentFeed.updatePost(post.id, {
+              vote_score: post.vote_score,
+              user_vote: post.user_vote ?? null,
+              comment_count: post.comment_count
+            })
+          }
           lastFeedSync = now
 
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
         }
       }
-    }
-  })
-
-  // Capture exact scrollTop when navigating into a thread (including during momentum scroll).
-  beforeNavigate(({ to }) => {
-    if (!browser) return
-    if (to?.route?.id?.startsWith('/thread/')) {
-      // Save immediately, then again on next frame (helps "tap during fast scroll")
-      saveAllFeedScrolls()
-      requestAnimationFrame(() => {
-        saveAllFeedScrolls()
-      })
     }
   })
 

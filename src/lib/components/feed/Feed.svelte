@@ -43,6 +43,7 @@
 	let isTransitioning = $state(false)
 	let pullRaf = 0
 	let restoringScroll = false
+	let scrollPersistRaf = 0
 
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
@@ -90,6 +91,24 @@
 		requestAnimationFrame(apply)
 	}
 
+	function persistScrollImmediate() {
+		if (!feedContainer || !scrollKey) return
+		try {
+			sessionStorage.setItem(scrollKey, String(feedContainer.scrollTop || 0))
+		} catch {
+			// ignore
+		}
+	}
+
+	function schedulePersistScroll() {
+		if (!feedContainer || !scrollKey) return
+		if (scrollPersistRaf) return
+		scrollPersistRaf = requestAnimationFrame(() => {
+			scrollPersistRaf = 0
+			persistScrollImmediate()
+		})
+	}
+
 	// Handle community picker
 	function handleOpenPicker() {
 		communityStore.openPicker()
@@ -128,6 +147,7 @@
 		const threshold = scrollHeight - (clientHeight * 0.8)
 
 		updateWindow()
+		schedulePersistScroll()
 
 		if (scrolled >= threshold && $feedStore.hasMore && !$feedStore.loading) {
 			loadMore()
@@ -231,6 +251,10 @@
 
 	// Pull to refresh handlers
 	function handleTouchStart(e: TouchEvent) {
+		// Snapshot scrollTop at touchstart so "tap during momentum scroll" restores precisely.
+		// (Scroll events can lag behind the exact moment the user taps.)
+		persistScrollImmediate()
+
 		if ($feedStore.loading || refreshing) return
 		if (e.touches.length !== 1) return
 
@@ -341,6 +365,7 @@
 		feedContainer.addEventListener('touchcancel', handleTouchCancel)
 
 		return () => {
+			schedulePersistScroll()
 			if (feedContainer) {
 				feedContainer.removeEventListener('scroll', handleScroll)
 				feedContainer.removeEventListener('touchstart', handleTouchStart)
@@ -364,7 +389,6 @@
 
 <div
 	bind:this={feedContainer}
-	data-feed-scroll={feedType}
 	class="flex-1 overflow-y-auto custom-scrollbar overscroll-y-none"
 	style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
 	style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
