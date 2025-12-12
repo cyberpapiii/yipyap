@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { afterNavigate, onNavigate, disableScrollHandling } from '$app/navigation'
+  import { beforeNavigate, afterNavigate } from '$app/navigation'
   import { onMount, tick } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
@@ -16,15 +16,6 @@
   import { ensureAnonymousUser } from '$lib/auth'
   import { PostsAPI } from '$lib/api/posts'
   import { hapticsStore } from '$lib/stores/haptics'
-  import type { Snapshot } from './$types'
-
-  // Snapshot type for scroll position preservation
-  // NOTE: The feed containers use flex-1 but have no flex parent with constrained height,
-  // so the window scrolls instead of the containers. We capture window.scrollY.
-  interface ScrollSnapshot {
-    scrollY: number
-    activeFeed: FeedType
-  }
 
   const api = createRealtimeAPI(supabase as any)
   const postsApi = new PostsAPI(supabase as any)
@@ -69,11 +60,10 @@
   let initializing = $state(false)
   let refreshing = $state(false)
   let lastFeedSync = $state(0)
-
-  // Track bfcache restoration - iOS PWA uses bfcache for swipe-back navigation
-  // When restored from bfcache, scroll position is already correct - don't override
-  let restoredFromBFCache = false
   const REFRESH_COOLDOWN_MS = 8000
+
+  // Simple scroll position storage key
+  const SCROLL_KEY = 'bingbong_home_scroll'
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
@@ -163,70 +153,33 @@
     }
   }
 
-  // SvelteKit native snapshot for scroll position preservation
-  // This is the recommended pattern for preserving ephemeral DOM state
-  export const snapshot: Snapshot<ScrollSnapshot> = {
-    capture: () => {
-      // The feed containers don't actually scroll (they expand to fit content).
-      // The window/document scrolls instead. Capture window.scrollY.
-      return {
-        scrollY: window.scrollY,
-        activeFeed: feedType
-      }
-    },
-    restore: (value) => {
-      // iOS PWA uses bfcache for swipe-back - scroll is already restored
-      // Don't override if we came from bfcache
-      if (restoredFromBFCache) {
-        restoredFromBFCache = false
-        return
-      }
-
-      // Restore scroll position after navigating back
-      // Wait for DOM to be ready with the feed content
-      tick().then(() => {
-        // Double RAF ensures layout is complete after Svelte renders
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            // Restore window scroll position
-            window.scrollTo(0, value.scrollY)
-          })
-        })
-      })
+  // Save scroll position before navigating away
+  beforeNavigate(({ to }) => {
+    if (!browser) return
+    // Only save when navigating to a thread
+    if (to?.route?.id?.startsWith('/thread/')) {
+      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
     }
-  }
-
-  // Enable smooth view transitions for a more native feel (if supported)
-  onNavigate((navigation) => {
-    // Skip view transitions for same-page navigations (feed switching)
-    if (navigation.from?.route?.id === navigation.to?.route?.id) return
-
-    // Skip view transitions for back navigation (popstate) - it delays rendering
-    // and can cause scroll restoration to run before content is ready
-    if (navigation.type === 'popstate') return
-
-    // Use View Transitions API if available
-    if (!document.startViewTransition) return
-
-    return new Promise((resolve) => {
-      document.startViewTransition(async () => {
-        resolve()
-        await navigation.complete
-      })
-    })
   })
 
-  // Refresh feed when navigating back from thread (SvelteKit SPA navigation)
-  // visibilitychange doesn't fire for SPA navigation, so we use afterNavigate
+  // Restore scroll position after navigating back
   afterNavigate(async ({ from, type }) => {
     const isThreadReturn = Boolean(from?.route?.id?.startsWith('/thread/'))
 
     if (!browser) return
 
-    // Disable SvelteKit's built-in scroll handling for thread returns
-    // This prevents conflicts with our snapshot restoration
+    // Restore scroll position when returning from thread
     if (isThreadReturn) {
-      disableScrollHandling()
+      const savedScroll = sessionStorage.getItem(SCROLL_KEY)
+      if (savedScroll) {
+        const scrollY = parseInt(savedScroll, 10)
+        // Wait for content to render, then scroll
+        await tick()
+        // Use RAF to ensure layout is complete
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollY)
+        })
+      }
     }
 
     // Allow thread returns even if initializing is still true to avoid skipping refresh
@@ -315,17 +268,6 @@
 
   onMount(() => {
     if (!browser) return
-
-    // iOS PWA bfcache detection - when swiping back, the browser may restore
-    // the page from bfcache with scroll position already correct
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from bfcache - scroll is already correct
-        // Set flag to prevent snapshot.restore from overriding
-        restoredFromBFCache = true
-      }
-    }
-    window.addEventListener('pageshow', handlePageShow)
 
     // Ensure SSR cookie stays in sync with local preference.
     setFeedCookie(feedType)
@@ -487,7 +429,6 @@
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      window.removeEventListener('pageshow', handlePageShow)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   })

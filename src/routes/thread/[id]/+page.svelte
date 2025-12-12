@@ -1,6 +1,5 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { onNavigate } from '$app/navigation'
   import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { page } from '$app/stores'
@@ -134,23 +133,6 @@
         threadContainer.removeEventListener('touchcancel', handleTouchCancel)
       }
     }
-  })
-
-  // Enable smooth view transitions for a more native feel (if supported)
-  onNavigate((navigation) => {
-    // Skip view transitions for back navigation (popstate) - it delays rendering
-    // and can cause scroll restoration to run before content is ready
-    if (navigation.type === 'popstate') return
-
-    // Use View Transitions API if available
-    if (!document.startViewTransition) return
-
-    return new Promise((resolve) => {
-      document.startViewTransition(async () => {
-        resolve()
-        await navigation.complete
-      })
-    })
   })
 
   onDestroy(() => {
