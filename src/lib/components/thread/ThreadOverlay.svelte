@@ -568,6 +568,7 @@
 	class="fixed inset-y-0 right-0 z-[101] w-full bg-background shadow-2xl transition-transform duration-300 ease-out overflow-hidden"
 	style:transform={isVisible ? `translateX(${swipeOffset}px)` : 'translateX(100%)'}
 	style:transition={isSwipingHorizontal ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'}
+	style:padding-top="env(safe-area-inset-top)"
 >
 	<!-- Pull to refresh indicator -->
 	{#if pullToRefreshY > 0}
