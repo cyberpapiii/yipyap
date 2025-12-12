@@ -489,7 +489,7 @@
 </script>
 
 <div class="min-h-screen bg-background font-sans">
-  <div class="max-w-md mx-auto animate-fade-in">
+  <div class="max-w-md mx-auto">
     <!-- Fixed Feed Header - stays in place while feeds swipe -->
     <div class="max-w-2xl mx-auto px-4">
       <div class="flex items-start justify-between sticky top-0 bg-background/90 backdrop-blur-md py-6 pt-8 px-2 z-10">

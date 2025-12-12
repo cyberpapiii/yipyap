@@ -119,9 +119,8 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <article
-	class={`${indentClass} ${depth > 0 ? 'border-l-2 pl-2' : ''} animate-fade-in`}
+	class={`${indentClass} ${depth > 0 ? 'border-l-2 pl-2' : ''}`}
 	style:border-color={depth > 0 ? depthStyles.borderColor : ''}
-	style:animation-delay={`${depth * 100}ms`}
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
 	onmousedown={handleMouseDown}

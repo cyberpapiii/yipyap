@@ -216,7 +216,6 @@ import { goto } from '$app/navigation'
 		{!isInThread ? 'cursor-pointer hover:bg-accent/20 hover:border-border hover:shadow-lg hover:shadow-primary/5' : ''}
 		{isPressed ? 'scale-[0.98] bg-accent/40' : 'scale-100'}
 		{isHovered && !isInThread ? 'transform-gpu' : ''}
-		animate-fade-in
 	"
 	style="content-visibility: auto; contain-intrinsic-size: 320px;"
 	onclick={openThread}
