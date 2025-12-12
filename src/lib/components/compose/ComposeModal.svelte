@@ -24,6 +24,7 @@
 
 	let textareaElement = $state<HTMLTextAreaElement | null>(null)
 	let modalContainerElement = $state<HTMLDivElement | null>(null)
+	let overlayElement = $state<HTMLDivElement | null>(null)
 	let content = $state('')
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
@@ -55,9 +56,22 @@
 		const target = viewport ?? (browser ? window.visualViewport : null)
 		if (!target) return 0
 		const diff = window.innerHeight - target.height - target.offsetTop
-		if (diff > KEYBOARD_THRESHOLD) {
+
+		// iOS behavior differs by version/browser mode:
+		// - Sometimes `position: fixed` is already shifted above the keyboard.
+		// - Other times it is not, and we must manually offset.
+		// Detect how much our fixed overlay has already been shifted, and only apply
+		// the remaining offset to avoid "double lifting" (giant gap above keyboard).
+		let alreadyShifted = 0
+		if (overlayElement) {
+			const rect = overlayElement.getBoundingClientRect()
+			alreadyShifted = Math.max(0, window.innerHeight - rect.bottom)
+		}
+
+		const remaining = Math.max(0, diff - alreadyShifted)
+		if (remaining > KEYBOARD_THRESHOLD) {
 			// Clamp to reasonable max to prevent crazy values during iOS transitions
-			return Math.min(diff, MAX_KEYBOARD_HEIGHT)
+			return Math.min(remaining, MAX_KEYBOARD_HEIGHT)
 		}
 
 		// Fallback when the keyboard causes innerHeight to shrink but no visual viewport diff
@@ -558,8 +572,9 @@
 {#if $showComposeModal}
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
-		class="fixed inset-0 relative flex items-end justify-center p-4"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
+		bind:this={overlayElement}
+		class="fixed left-0 right-0 top-0 relative flex items-end justify-center"
+		style={`z-index: 1000; height: 100vh; height: 100svh; overflow: hidden; overscroll-behavior: none;`}
 	>
 		<!-- Backdrop (interactive for click-to-close) -->
 		<button
@@ -571,15 +586,20 @@
 			aria-label="Close compose"
 		></button>
 
-		<!-- Modal content -->
+		<!-- Sheet wrapper: move only the sheet for the keyboard -->
 		<div
-			bind:this={modalContainerElement}
-			class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-			role="dialog"
-			tabindex="-1"
+			class="relative w-full flex items-end justify-center p-4"
+			style={`z-index: 1; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
 		>
-			<!-- Header -->
+			<!-- Modal content -->
+			<div
+				bind:this={modalContainerElement}
+				class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+				style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
+				role="dialog"
+				tabindex="-1"
+			>
+				<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
 					{$composeState.replyTo ? 'Reply' : 'New Post'}
@@ -724,5 +744,6 @@
 				</div>
 			</form>
 		</div>
+	</div>
 	</div>
 {/if}
