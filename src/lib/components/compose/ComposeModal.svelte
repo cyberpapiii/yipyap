@@ -507,6 +507,24 @@
 		}
 	}
 
+	/* Localized "focus glow" behind the modal (not full-screen dimming) */
+	.modal-glow {
+		position: absolute;
+		inset: -28px;
+		border-radius: inherit;
+		pointer-events: none;
+		opacity: 1;
+
+		/* Dark outer glow that fades out */
+		background: radial-gradient(
+			closest-side,
+			rgba(0, 0, 0, 0.75) 0%,
+			rgba(0, 0, 0, 0.45) 40%,
+			rgba(0, 0, 0, 0.0) 78%
+		);
+		filter: blur(18px);
+	}
+
 	/* Success animation duration matches SUCCESS_ANIMATION_DURATION_MS=800ms */
 	.success-indicator {
 		position: fixed;
@@ -573,33 +591,31 @@
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		bind:this={overlayElement}
-		class="fixed left-0 right-0 top-0 relative flex items-end justify-center"
-		style={`z-index: 1000; height: 100vh; height: 100svh; overflow: hidden; overscroll-behavior: none;`}
+		class="fixed inset-0 relative flex items-end justify-center p-4"
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
 	>
-		<!-- Backdrop (interactive for click-to-close) -->
+		<!-- Fullscreen click-catcher (no visual dimming) -->
 		<button
 			type="button"
-			class="absolute inset-0 bg-black/60 {isClosing ? 'modal-overlay-exit' : ''} focus:outline-none"
+			class="absolute inset-0 bg-transparent focus:outline-none"
 			style="z-index: 0;"
 			disabled={$composeState.isSubmitting}
 			onclick={handleClose}
 			aria-label="Close compose"
 		></button>
 
-		<!-- Sheet wrapper: move only the sheet for the keyboard -->
+		<!-- Modal content -->
 		<div
-			class="relative w-full flex items-end justify-center p-4"
-			style={`z-index: 1; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
+			bind:this={modalContainerElement}
+			class="modal-content-area relative z-10 w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
+			role="dialog"
+			tabindex="-1"
 		>
-			<!-- Modal content -->
-			<div
-				bind:this={modalContainerElement}
-				class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-				style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-				role="dialog"
-				tabindex="-1"
-			>
-				<!-- Header -->
+			<!-- Localized glow behind the modal -->
+			<div class="modal-glow {isClosing ? 'modal-overlay-exit' : ''}" aria-hidden="true"></div>
+
+			<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
 					{$composeState.replyTo ? 'Reply' : 'New Post'}
@@ -744,6 +760,5 @@
 				</div>
 			</form>
 		</div>
-	</div>
 	</div>
 {/if}
