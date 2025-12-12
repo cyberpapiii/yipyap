@@ -29,8 +29,11 @@
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
 	let keyboardOffset = $state(0)
+	let targetKeyboardOffset = $state(0)
 	let baselineInnerHeight = 0
 	const KEYBOARD_THRESHOLD = 120
+	const MAX_KEYBOARD_HEIGHT = 400 // iOS keyboards are typically 260-350px, cap to prevent crazy values
+	let keyboardSettleTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Community selector state
 	let selectedCommunity = $state<GeographicCommunity>('nyc')
@@ -52,7 +55,8 @@
 		if (!target) return 0
 		const diff = window.innerHeight - target.height - target.offsetTop
 		if (diff > KEYBOARD_THRESHOLD) {
-			return diff
+			// Clamp to reasonable max to prevent crazy values during iOS transitions
+			return Math.min(diff, MAX_KEYBOARD_HEIGHT)
 		}
 
 		// Fallback when the keyboard causes innerHeight to shrink but no visual viewport diff
@@ -63,7 +67,10 @@
 			baselineInnerHeight = window.innerHeight
 		}
 		const fallbackDiff = baselineInnerHeight - window.innerHeight
-		return fallbackDiff > KEYBOARD_THRESHOLD ? fallbackDiff : 0
+		if (fallbackDiff > KEYBOARD_THRESHOLD) {
+			return Math.min(fallbackDiff, MAX_KEYBOARD_HEIGHT)
+		}
+		return 0
 	}
 
 	// Auto-resize textarea
@@ -346,7 +353,8 @@
 		baselineInnerHeight = browser ? window.innerHeight : 0
 		let rafId: number | null = null
 
-		// Throttled update using requestAnimationFrame to prevent vibration
+		// Debounced update to let iOS settle before applying keyboard offset
+		// This prevents the modal from jumping around during keyboard animation
 		const updateOffset = () => {
 			// Cancel any pending update
 			if (rafId !== null) {
@@ -355,7 +363,41 @@
 
 			// Schedule update on next frame
 			rafId = requestAnimationFrame(() => {
-				keyboardOffset = calculateKeyboardOffset(viewport)
+				const newOffset = calculateKeyboardOffset(viewport)
+
+				// If keyboard is closing (offset decreasing to 0), apply immediately
+				if (newOffset === 0 && keyboardOffset > 0) {
+					if (keyboardSettleTimeout) {
+						clearTimeout(keyboardSettleTimeout)
+						keyboardSettleTimeout = null
+					}
+					targetKeyboardOffset = 0
+					keyboardOffset = 0
+					rafId = null
+					return
+				}
+
+				// If keyboard is opening or changing, debounce to let iOS settle
+				targetKeyboardOffset = newOffset
+
+				// Clear any existing settle timeout
+				if (keyboardSettleTimeout) {
+					clearTimeout(keyboardSettleTimeout)
+				}
+
+				// Wait a bit for iOS to settle, then apply the offset
+				// This prevents the modal from jumping to incorrect positions during keyboard animation
+				keyboardSettleTimeout = setTimeout(() => {
+					// Only apply if the value hasn't changed significantly (iOS has settled)
+					const currentOffset = calculateKeyboardOffset(viewport)
+					// Use the more stable of the two values (prevents oscillation)
+					const finalOffset = Math.abs(currentOffset - targetKeyboardOffset) < 50
+						? targetKeyboardOffset
+						: currentOffset
+					keyboardOffset = Math.min(finalOffset, MAX_KEYBOARD_HEIGHT)
+					keyboardSettleTimeout = null
+				}, 100) // 100ms settle time
+
 				rafId = null
 			})
 		}
@@ -373,6 +415,12 @@
 			// Cancel any pending animation frame
 			if (rafId !== null) {
 				cancelAnimationFrame(rafId)
+			}
+
+			// Cancel keyboard settle timeout
+			if (keyboardSettleTimeout) {
+				clearTimeout(keyboardSettleTimeout)
+				keyboardSettleTimeout = null
 			}
 
 			// Clean up pending timeouts
@@ -393,7 +441,16 @@
 	})
 
 	$effect(() => {
-		keyboardOffset = $showComposeModal ? calculateKeyboardOffset() : 0
+		// Only reset keyboard offset when modal closes
+		// Let the updateOffset handler deal with keyboard opening
+		if (!$showComposeModal) {
+			keyboardOffset = 0
+			targetKeyboardOffset = 0
+			if (keyboardSettleTimeout) {
+				clearTimeout(keyboardSettleTimeout)
+				keyboardSettleTimeout = null
+			}
+		}
 	})
 
 	// Update content when it changes
@@ -524,7 +581,7 @@
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 bg-black/60 flex items-end justify-center p-4 {isClosing ? 'modal-overlay-exit' : ''}"
-		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom;`}
+		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
 		onclick={(e) => e.target === e.currentTarget && handleClose()}
 	>
 		<!-- Modal content -->
