@@ -39,7 +39,17 @@
     }
   }>()
 
-  let feedType = $state<FeedType>('hot')
+  const getInitialFeedType = (): FeedType => {
+    if (!browser) return 'hot'
+    try {
+      const raw = localStorage.getItem('bingbong_feed')
+      return raw === 'new' ? 'new' : 'hot'
+    } catch {
+      return 'hot'
+    }
+  }
+
+  let feedType = $state<FeedType>(getInitialFeedType())
   let initializing = $state(false)
   let refreshing = $state(false)
   let lastFeedSync = $state(0)
@@ -229,9 +239,7 @@
     })()
 
     ;(async () => {
-      const saved = (localStorage.getItem('bingbong_feed') as FeedType) || 'hot'
-      feedType = saved
-
+      const saved = feedType
       initializing = true
       try {
         const selectedCommunity = $communityStore.selectedCommunity
@@ -293,7 +301,7 @@
           lastFeedSync = cached.timestamp
         }
 
-        await switchFeed(saved, { skipPersist: true })
+        await switchFeed(feedType, { skipPersist: true })
       } finally {
         initializing = false
       }
