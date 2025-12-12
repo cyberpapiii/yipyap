@@ -28,13 +28,6 @@
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
 	let successPosition = $state({ top: '50%', left: '50%' })
-	let keyboardOffset = $state(0)
-	let targetKeyboardOffset = $state(0)
-	let baselineInnerHeight = 0
-	const KEYBOARD_THRESHOLD = 120
-	const MAX_KEYBOARD_HEIGHT = 400 // iOS keyboards are typically 260-350px, cap to prevent crazy values
-	const IOS_TOOLBAR_BUFFER = 16 // Small buffer to clear iOS autocomplete toolbar
-	let keyboardSettleTimeout: ReturnType<typeof setTimeout> | null = null
 
 	// Community selector state
 	let selectedCommunity = $state<GeographicCommunity>('nyc')
@@ -49,30 +42,6 @@
 	// Track pending timeouts for cleanup
 	let pendingSuccessTimeout: ReturnType<typeof setTimeout> | null = null
 	let pendingAnimationTimeout: ReturnType<typeof setTimeout> | null = null
-
-	function calculateKeyboardOffset(viewport?: VisualViewport | null) {
-		if (!browser) return 0
-		const target = viewport ?? (browser ? window.visualViewport : null)
-		if (!target) return 0
-		const diff = window.innerHeight - target.height - target.offsetTop
-		if (diff > KEYBOARD_THRESHOLD) {
-			// Clamp to reasonable max to prevent crazy values during iOS transitions
-			return Math.min(diff, MAX_KEYBOARD_HEIGHT)
-		}
-
-		// Fallback when the keyboard causes innerHeight to shrink but no visual viewport diff
-		if (!baselineInnerHeight) {
-			baselineInnerHeight = window.innerHeight
-		}
-		if (window.innerHeight > baselineInnerHeight) {
-			baselineInnerHeight = window.innerHeight
-		}
-		const fallbackDiff = baselineInnerHeight - window.innerHeight
-		if (fallbackDiff > KEYBOARD_THRESHOLD) {
-			return Math.min(fallbackDiff, MAX_KEYBOARD_HEIGHT)
-		}
-		return 0
-	}
 
 	// Auto-resize textarea
 	function autoResize() {
@@ -289,81 +258,7 @@
 	onMount(() => {
 		document.addEventListener('keydown', handleKeydown)
 
-		let viewport: VisualViewport | null = null
-		baselineInnerHeight = browser ? window.innerHeight : 0
-		let rafId: number | null = null
-
-		// Debounced update to let iOS settle before applying keyboard offset
-		// This prevents the modal from jumping around during keyboard animation
-		const updateOffset = () => {
-			// Cancel any pending update
-			if (rafId !== null) {
-				cancelAnimationFrame(rafId)
-			}
-
-			// Schedule update on next frame
-			rafId = requestAnimationFrame(() => {
-				const newOffset = calculateKeyboardOffset(viewport)
-
-				// If keyboard is closing (offset decreasing to 0), apply immediately
-				if (newOffset === 0 && keyboardOffset > 0) {
-					if (keyboardSettleTimeout) {
-						clearTimeout(keyboardSettleTimeout)
-						keyboardSettleTimeout = null
-					}
-					targetKeyboardOffset = 0
-					keyboardOffset = 0
-					rafId = null
-					return
-				}
-
-				// If keyboard is opening or changing, debounce to let iOS settle
-				targetKeyboardOffset = newOffset
-
-				// Clear any existing settle timeout
-				if (keyboardSettleTimeout) {
-					clearTimeout(keyboardSettleTimeout)
-				}
-
-				// Wait a bit for iOS to settle, then apply the offset
-				// This prevents the modal from jumping to incorrect positions during keyboard animation
-				keyboardSettleTimeout = setTimeout(() => {
-					// Only apply if the value hasn't changed significantly (iOS has settled)
-					const currentOffset = calculateKeyboardOffset(viewport)
-					// Use the more stable of the two values (prevents oscillation)
-					const finalOffset = Math.abs(currentOffset - targetKeyboardOffset) < 50
-						? targetKeyboardOffset
-						: currentOffset
-					// Add buffer for iOS autocomplete toolbar that sits above keyboard
-					keyboardOffset = Math.min(finalOffset, MAX_KEYBOARD_HEIGHT) + IOS_TOOLBAR_BUFFER
-					keyboardSettleTimeout = null
-				}, 100) // 100ms settle time
-
-				rafId = null
-			})
-		}
-
-		if (browser && window.visualViewport) {
-			viewport = window.visualViewport
-			viewport.addEventListener('resize', updateOffset)
-			viewport.addEventListener('scroll', updateOffset)
-			updateOffset()
-		}
-
-		window.addEventListener('resize', updateOffset)
-
 		return () => {
-			// Cancel any pending animation frame
-			if (rafId !== null) {
-				cancelAnimationFrame(rafId)
-			}
-
-			// Cancel keyboard settle timeout
-			if (keyboardSettleTimeout) {
-				clearTimeout(keyboardSettleTimeout)
-				keyboardSettleTimeout = null
-			}
-
 			// Clean up pending timeouts
 			if (pendingSuccessTimeout) {
 				clearTimeout(pendingSuccessTimeout)
@@ -373,11 +268,6 @@
 			}
 
 			document.removeEventListener('keydown', handleKeydown)
-			if (viewport) {
-				viewport.removeEventListener('resize', updateOffset)
-				viewport.removeEventListener('scroll', updateOffset)
-			}
-			window.removeEventListener('resize', updateOffset)
 		}
 	})
 
@@ -386,14 +276,6 @@
 			// Reset animation state when modal opens (handles rapid open/close)
 			isClosing = false
 			showSuccess = false
-		} else {
-			// Reset keyboard offset when modal closes
-			keyboardOffset = 0
-			targetKeyboardOffset = 0
-			if (keyboardSettleTimeout) {
-				clearTimeout(keyboardSettleTimeout)
-				keyboardSettleTimeout = null
-			}
 		}
 	})
 
@@ -522,11 +404,11 @@
 {/if}
 
 {#if $showComposeModal}
-	<!-- Modal positioned directly - no full-screen wrapper to avoid iOS fixed positioning bugs -->
+	<!-- Modal positioned directly - no visualViewport manipulation to test if navbar stays put -->
 	<div
 		bind:this={modalContainerElement}
 		class="modal-content-area fixed left-4 right-4 mx-auto w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-		style={`z-index: 1001; bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px + 1rem); background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1); transition: bottom 0.15s ease-out;`}
+		style="z-index: 1001; bottom: calc(env(safe-area-inset-bottom) + 1rem); background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
 		role="dialog"
 		tabindex="-1"
 	>
