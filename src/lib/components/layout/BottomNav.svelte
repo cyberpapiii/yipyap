@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { composeStore, showComposeModal } from '$lib/stores/compose'
+  import { composeStore, showComposeModal } from '$lib/stores'
   import { unreadCount } from '$lib/stores/notifications'
   import NotificationBadge from '../notifications/NotificationBadge.svelte'
   import { hapticsStore } from '$lib/stores/haptics'
