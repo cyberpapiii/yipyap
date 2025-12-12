@@ -39,6 +39,12 @@
     }
   }>()
 
+  const setFeedCookie = (type: FeedType) => {
+    if (!browser) return
+    // 1 year
+    document.cookie = `bingbong_feed=${type}; Max-Age=31536000; Path=/; SameSite=Lax`
+  }
+
   const getInitialFeedType = (): FeedType => {
     if (!browser) return 'hot'
     try {
@@ -49,7 +55,8 @@
     }
   }
 
-  let feedType = $state<FeedType>(getInitialFeedType())
+  // Prefer SSR-selected feedType (cookie-backed) to avoid hydration flicker.
+  let feedType = $state<FeedType>(data.initialFeed?.feedType ?? getInitialFeedType())
   let initializing = $state(false)
   let refreshing = $state(false)
   let lastFeedSync = $state(0)
@@ -229,6 +236,9 @@
   onMount(() => {
     if (!browser) return
 
+    // Ensure SSR cookie stays in sync with local preference.
+    setFeedCookie(feedType)
+
     ;(async () => {
       try {
         const navigation = await import('$app/navigation') as { prefetchRoutes?: (paths?: string[]) => Promise<void> }
@@ -374,6 +384,7 @@
     feedType = type
     if (!options.skipPersist) {
       localStorage.setItem('bingbong_feed', type)
+      setFeedCookie(type)
     }
 
     // Haptic feedback for button-based feed switch only

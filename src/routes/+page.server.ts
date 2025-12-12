@@ -5,13 +5,16 @@ import type { FeedType, CommunityType } from '$lib/types'
 
 const DEFAULT_FEED: FeedType = 'hot'
 const DEFAULT_COMMUNITY: CommunityType = 'nyc'
-const PAGE_SIZE = 20
+const PAGE_SIZE = 12
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ cookies }) => {
 	try {
+		const cookieFeed = cookies.get('bingbong_feed')
+		const initialFeedType: FeedType = cookieFeed === 'new' ? 'new' : DEFAULT_FEED
+
 		const api = new PostsAPI(supabase as any)
 		const response = await api.getFeedPosts(
-			DEFAULT_FEED,
+			initialFeedType,
 			undefined,
 			PAGE_SIZE,
 			undefined,
@@ -20,7 +23,7 @@ export const load: PageServerLoad = async () => {
 
 		return {
 			initialFeed: {
-				feedType: DEFAULT_FEED,
+				feedType: initialFeedType,
 				community: DEFAULT_COMMUNITY,
 				posts: response.data,
 				hasMore: response.hasMore,
