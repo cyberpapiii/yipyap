@@ -20,10 +20,10 @@
 >
 	<div class="flex gap-3 items-start">
 		<!-- Avatar skeleton -->
-		<div
+			<div
 			class="h-10 w-10 bg-skeleton rounded-full {animated ? 'animate-loading-pulse' : ''}"
 			style:animation-delay={`${delay * 100 + 100}ms`}
-		></div>
+			></div>
 
 		<!-- Content skeleton (mirrors PostCard layout) -->
 		<div class="flex-1 min-w-0 space-y-3">
@@ -34,7 +34,7 @@
 					style:animation-delay={`${delay * 100 + 150}ms`}
 				></div>
 				<div class="ml-auto">
-					<div
+				<div
 						class="h-5 w-5 bg-skeleton rounded-md {animated ? 'animate-loading-pulse' : ''}"
 						style:animation-delay={`${delay * 100 + 200}ms`}
 					></div>

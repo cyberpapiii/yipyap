@@ -31,8 +31,11 @@
 	let refreshing = $state(false)
 	let pullToRefreshY = $state(0)
 	let isPulling = $state(false)
+	let gestureAxis = $state<'none' | 'vertical' | 'horizontal'>('none')
 	let startY = 0
 	let currentY = 0
+	let startX = 0
+	let currentX = 0
 	let feedOpacity = $state(1)
 	let isTransitioning = $state(false)
 
@@ -40,6 +43,7 @@
 	const PULL_THRESHOLD = 80
 	const MAX_PULL = 120
 	const SCROLL_TOP_THRESHOLD = 5
+	const GESTURE_LOCK_THRESHOLD = 10
 	const ESTIMATED_CARD_HEIGHT = 240
 	const OVERSCAN = 4
 
@@ -174,15 +178,20 @@
 		if ($feedStore.loading || refreshing) return
 		if (e.touches.length !== 1) return
 
+		startX = e.touches[0].clientX
 		startY = e.touches[0].clientY
+		currentX = startX
 		currentY = startY
 		pullToRefreshY = 0
-		isPulling = isAtTop()
+		isPulling = false
+		gestureAxis = 'none'
 	}
 
 	function handleTouchMove(e: TouchEvent) {
 		if (e.touches.length !== 1) return
+		currentX = e.touches[0].clientX
 		currentY = e.touches[0].clientY
+		const deltaX = currentX - startX
 		const deltaY = currentY - startY
 
 		if ($feedStore.loading || refreshing) {
@@ -190,12 +199,37 @@
 			return
 		}
 
+		// Ignore horizontal swipes (e.g., switching feeds) so we don't show pull-to-refresh.
+		if (gestureAxis === 'none') {
+			const absX = Math.abs(deltaX)
+			const absY = Math.abs(deltaY)
+			if (absX > GESTURE_LOCK_THRESHOLD || absY > GESTURE_LOCK_THRESHOLD) {
+				if (absX > absY * 1.1) {
+					gestureAxis = 'horizontal'
+					resetPullState()
+					return
+				}
+				if (absY > absX * 1.1) {
+					gestureAxis = 'vertical'
+				}
+			}
+		}
+
+		if (gestureAxis === 'horizontal') {
+			resetPullState()
+			return
+		}
+
+		// If we haven't locked into a vertical gesture yet, do nothing.
+		if (gestureAxis !== 'vertical') return
+
 		const atTop = isAtTop()
 
 		if (!isPulling) {
 			if (deltaY > 0 && atTop) {
 				isPulling = true
 				startY = currentY
+				startX = currentX
 				pullToRefreshY = 0
 			}
 			return
@@ -218,6 +252,7 @@
 		if (!isPulling) return
 
 		isPulling = false
+		gestureAxis = 'none'
 
 		if (pullToRefreshY >= PULL_THRESHOLD) {
 			refreshFeed()
@@ -227,6 +262,7 @@
 	}
 
 	function handleTouchCancel() {
+		gestureAxis = 'none'
 		resetPullState()
 	}
 

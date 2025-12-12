@@ -80,13 +80,17 @@
   let refreshing = $state(false)
   let pullToRefreshY = $state(0)
   let isPulling = $state(false)
+  let gestureAxis = $state<'none' | 'vertical' | 'horizontal'>('none')
   let startY = 0
   let currentY = 0
+  let startX = 0
+  let currentX = 0
 
   // Pull to refresh constants
   const PULL_THRESHOLD = 80
   const MAX_PULL = 120
   const SCROLL_TOP_THRESHOLD = 5
+  const GESTURE_LOCK_THRESHOLD = 10
 
   onMount(() => {
     if (!browser) return
@@ -380,33 +384,65 @@
     if ($thread.loading || refreshing) return
     if (e.touches.length !== 1) return
 
+    startX = e.touches[0].clientX
     startY = e.touches[0].clientY
+    currentX = startX
     currentY = startY
     pullToRefreshY = 0
-    isPulling = isAtTop()
+    isPulling = false
+    gestureAxis = 'none'
   }
 
   function handleTouchMove(e: TouchEvent) {
     // Disable pull-to-refresh when compose modal is open
     if ($showComposeModal) {
+      gestureAxis = 'none'
       resetPullState()
       return
     }
     if (e.touches.length !== 1) return
+    currentX = e.touches[0].clientX
     currentY = e.touches[0].clientY
+    const deltaX = currentX - startX
     const deltaY = currentY - startY
 
     if ($thread.loading || refreshing) {
+      gestureAxis = 'none'
       resetPullState()
       return
     }
 
     const atTop = isAtTop()
 
+    // Ignore horizontal gestures (e.g. back-swipe / sideways movement) so we don't
+    // accidentally show pull-to-refresh.
+    if (gestureAxis === 'none') {
+      const absX = Math.abs(deltaX)
+      const absY = Math.abs(deltaY)
+      if (absX > GESTURE_LOCK_THRESHOLD || absY > GESTURE_LOCK_THRESHOLD) {
+        if (absX > absY * 1.1) {
+          gestureAxis = 'horizontal'
+          resetPullState()
+          return
+        }
+        if (absY > absX * 1.1) {
+          gestureAxis = 'vertical'
+        }
+      }
+    }
+
+    if (gestureAxis === 'horizontal') {
+      resetPullState()
+      return
+    }
+
+    if (gestureAxis !== 'vertical') return
+
     if (!isPulling) {
       if (deltaY > 0 && atTop) {
         isPulling = true
         startY = currentY
+        startX = currentX
         pullToRefreshY = 0
       }
       return
@@ -428,12 +464,14 @@
   function handleTouchEnd() {
     // Disable pull-to-refresh when compose modal is open
     if ($showComposeModal) {
+      gestureAxis = 'none'
       resetPullState()
       return
     }
     if (!isPulling) return
 
     isPulling = false
+    gestureAxis = 'none'
 
     if (pullToRefreshY >= PULL_THRESHOLD) {
       refreshThread()
@@ -443,6 +481,7 @@
   }
 
   function handleTouchCancel() {
+    gestureAxis = 'none'
     resetPullState()
   }
 

@@ -19,13 +19,17 @@
 	let refreshing = $state(false)
 	let pullToRefreshY = $state(0)
 	let isPulling = $state(false)
+	let gestureAxis = $state<'none' | 'vertical' | 'horizontal'>('none')
 	let startY = 0
 	let currentY = 0
+	let startX = 0
+	let currentX = 0
 	let feedOpacity = $state(1)
 
 	const PULL_THRESHOLD = 80
 	const MAX_PULL = 120
 	const SCROLL_TOP_THRESHOLD = 5
+	const GESTURE_LOCK_THRESHOLD = 10
 
 	// Subway line to color mapping
 	const subwayLineColors: Record<string, string> = {
@@ -54,11 +58,11 @@
 
 		// Fetch initial notifications (async; don't block mount)
 		void (async () => {
-			if (user) {
-				await notificationsStore.fetchNotifications(0, 20, false)
-				await notificationsStore.fetchUnreadCount()
-				notificationsStore.subscribeToRealtime()
-			}
+		if (user) {
+			await notificationsStore.fetchNotifications(0, 20, false)
+			await notificationsStore.fetchUnreadCount()
+			notificationsStore.subscribeToRealtime()
+		}
 		})()
 
 		// Add touch event listeners
@@ -161,21 +165,52 @@
 
 	function handleTouchStart(e: TouchEvent) {
 		if (e.touches.length !== 1) return
+		startX = e.touches[0].clientX
 		startY = e.touches[0].clientY
+		currentX = startX
 		currentY = startY
-		const scrollTop = window.scrollY || document.documentElement.scrollTop
-		isPulling = scrollTop <= SCROLL_TOP_THRESHOLD
+		pullToRefreshY = 0
+		isPulling = false
+		gestureAxis = 'none'
 	}
 
 	function handleTouchMove(e: TouchEvent) {
 		if (e.touches.length !== 1) return
+		currentX = e.touches[0].clientX
 		currentY = e.touches[0].clientY
+		const deltaX = currentX - startX
 		const deltaY = currentY - startY
 		const scrollTop = window.scrollY || document.documentElement.scrollTop
+
+		// Ignore horizontal gestures (e.g. swiping around the app) so we don't show pull-to-refresh.
+		if (gestureAxis === 'none') {
+			const absX = Math.abs(deltaX)
+			const absY = Math.abs(deltaY)
+			if (absX > GESTURE_LOCK_THRESHOLD || absY > GESTURE_LOCK_THRESHOLD) {
+				if (absX > absY * 1.1) {
+					gestureAxis = 'horizontal'
+					isPulling = false
+					pullToRefreshY = 0
+					return
+				}
+				if (absY > absX * 1.1) {
+					gestureAxis = 'vertical'
+				}
+			}
+		}
+
+		if (gestureAxis === 'horizontal') {
+			isPulling = false
+			pullToRefreshY = 0
+			return
+		}
+
+		if (gestureAxis !== 'vertical') return
 
 		if (!isPulling && deltaY > 0 && scrollTop <= SCROLL_TOP_THRESHOLD) {
 			isPulling = true
 			startY = currentY
+			startX = currentX
 			pullToRefreshY = 0
 			return
 		}
@@ -192,6 +227,7 @@
 	function handleTouchEnd() {
 		if (!isPulling) return
 		isPulling = false
+		gestureAxis = 'none'
 
 		if (pullToRefreshY >= PULL_THRESHOLD) {
 			refreshNotifications()

@@ -209,8 +209,8 @@ export class PostsAPI {
 
 	private async enrichPosts(posts: any[], limit: number, currentUser?: AnonymousUser | null): Promise<PaginatedResponse<PostWithStats>> {
 		const postsWithVotes = currentUser && posts?.length
-			? await this.addUserVotesToPosts(posts, currentUser.id)
-			: posts || []
+		  ? await this.addUserVotesToPosts(posts, currentUser.id)
+		  : posts || []
 
 		const withAnon = await this.attachAnonymousIdentities(postsWithVotes)
 
