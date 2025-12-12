@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { afterNavigate } from '$app/navigation'
-  import { onMount, onDestroy } from 'svelte'
+  import { afterNavigate, onNavigate } from '$app/navigation'
+  import { onMount, onDestroy, tick } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
   import Feed from '$lib/components/feed/Feed.svelte'
@@ -16,6 +16,14 @@
   import { ensureAnonymousUser } from '$lib/auth'
   import { PostsAPI } from '$lib/api/posts'
   import { hapticsStore } from '$lib/stores/haptics'
+  import type { Snapshot } from './$types'
+
+  // Snapshot type for scroll position preservation
+  interface ScrollSnapshot {
+    hot: number
+    new: number
+    activeFeed: FeedType
+  }
 
   const api = createRealtimeAPI(supabase as any)
   const postsApi = new PostsAPI(supabase as any)
@@ -62,7 +70,6 @@
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
-  const FEED_SCROLL_PREFIX = 'bingbong_feed_scroll_v2'
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
   const REFRESH_FEED_LIMIT = 15
@@ -73,8 +80,6 @@
 
   const getCacheKey = (type: FeedType, community: CommunityType | GeographicCommunity) =>
     `${FEED_CACHE_PREFIX}:${type}:${community}`
-
-  const getScrollKey = (type: FeedType) => `${FEED_SCROLL_PREFIX}:${type}:${selectedDisplayCommunity}`
 
   const loadCachedFeed = (type: FeedType, community: CommunityType | GeographicCommunity) => {
     if (!browser) return null
@@ -152,6 +157,54 @@
       refreshing = false
     }
   }
+
+  // SvelteKit native snapshot for scroll position preservation
+  // This is the recommended pattern for preserving ephemeral DOM state
+  export const snapshot: Snapshot<ScrollSnapshot> = {
+    capture: () => {
+      // Capture scroll positions for both feeds before navigation
+      const hotContainer = document.querySelector('[data-feed-container][data-feed-type="hot"]') as HTMLElement | null
+      const newContainer = document.querySelector('[data-feed-container][data-feed-type="new"]') as HTMLElement | null
+      return {
+        hot: hotContainer?.scrollTop ?? 0,
+        new: newContainer?.scrollTop ?? 0,
+        activeFeed: feedType
+      }
+    },
+    restore: (value) => {
+      // Restore scroll position after navigating back
+      // Wait for DOM to be ready with the feed content
+      tick().then(() => {
+        // Use requestAnimationFrame to ensure DOM is fully rendered
+        requestAnimationFrame(() => {
+          const container = document.querySelector(
+            `[data-feed-container][data-feed-type="${value.activeFeed}"]`
+          ) as HTMLElement | null
+          if (container) {
+            const targetScroll = value[value.activeFeed] ?? 0
+            const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight)
+            container.scrollTop = Math.min(targetScroll, maxScroll)
+          }
+        })
+      })
+    }
+  }
+
+  // Enable smooth view transitions for a more native feel (if supported)
+  onNavigate((navigation) => {
+    // Skip view transitions for same-page navigations (feed switching)
+    if (navigation.from?.route?.id === navigation.to?.route?.id) return
+
+    // Use View Transitions API if available
+    if (!document.startViewTransition) return
+
+    return new Promise((resolve) => {
+      document.startViewTransition(async () => {
+        resolve()
+        await navigation.complete
+      })
+    })
+  })
 
   // Refresh feed when navigating back from thread (SvelteKit SPA navigation)
   // visibilitychange doesn't fire for SPA navigation, so we use afterNavigate
@@ -364,27 +417,38 @@
               geographicCommunity
             )
 
-            // Smart merge: preserve optimistic vote updates
+            // Smart merge: update posts in-place to preserve scroll position
+            // Using updatePost() instead of setPosts() avoids array replacement
             const currentState = get(currentFeed)
             const currentPostMap = new Map(currentState.posts.map(p => [p.id, p]))
 
-            const mergedPosts = freshData.data.map(freshPost => {
+            for (const freshPost of freshData.data) {
               const currentPost = currentPostMap.get(freshPost.id)
+              if (!currentPost) continue // Skip posts not in current view
 
-              if (currentPost?.user_vote && !freshPost.user_vote) {
-                return { ...freshPost, vote_score: currentPost.vote_score, user_vote: currentPost.user_vote }
-              }
+              // Determine the final values to use
+              let finalVoteScore = freshPost.vote_score
+              let finalUserVote = freshPost.user_vote ?? null
 
-              if (currentPost?.user_vote && freshPost.user_vote &&
+              if (currentPost.user_vote && !freshPost.user_vote) {
+                // API hasn't caught up - preserve optimistic state
+                finalVoteScore = currentPost.vote_score
+                finalUserVote = currentPost.user_vote
+              } else if (currentPost.user_vote && freshPost.user_vote &&
                   currentPost.user_vote === freshPost.user_vote &&
                   currentPost.vote_score !== freshPost.vote_score) {
-                return { ...freshPost, vote_score: Math.max(currentPost.vote_score, freshPost.vote_score), user_vote: currentPost.user_vote }
+                // Both agree on vote direction but differ in score - use higher
+                finalVoteScore = Math.max(currentPost.vote_score, freshPost.vote_score)
+                finalUserVote = currentPost.user_vote
               }
 
-              return freshPost
-            })
-
-            currentFeed.setPosts(mergedPosts)
+              // Update in-place to preserve DOM and scroll position
+              currentFeed.updatePost(freshPost.id, {
+                vote_score: finalVoteScore,
+                user_vote: finalUserVote,
+                comment_count: freshPost.comment_count
+              })
+            }
             lastFeedSync = now
           } catch (error) {
             console.error('Error refreshing feed on visibility change:', error)
@@ -547,7 +611,6 @@
       {#snippet children({ feedType: currentFeed })}
         <Feed
           feedType={currentFeed}
-          scrollKey={getScrollKey(currentFeed)}
           onVote={onVote}
           onReply={onReply}
           onDelete={onDelete}

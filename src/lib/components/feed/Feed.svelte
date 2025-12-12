@@ -15,8 +15,7 @@
 		onReply,
 		onDelete,
 		onLoadMore,
-		hideHeader = false,
-		scrollKey
+		hideHeader = false
 	}: {
 		feedType: FeedType
 		onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
@@ -24,7 +23,6 @@
 		onDelete?: (postId: string) => Promise<void>
 		onLoadMore?: () => Promise<void>
 		hideHeader?: boolean
-		scrollKey?: string
 	} = $props()
 
 	// Enhanced state management
@@ -42,8 +40,6 @@
 	let feedOpacity = $state(1)
 	let isTransitioning = $state(false)
 	let pullRaf = 0
-	let restoringScroll = false
-	let scrollPersistRaf = 0
 
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
@@ -53,56 +49,6 @@
 	const PULL_SMOOTHING = 0.35
 
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
-
-	function restoreScrollPosition() {
-		if (!feedContainer || !scrollKey) return
-		if (restoringScroll) return
-		restoringScroll = true
-		let attempts = 0
-
-		const apply = () => {
-			attempts += 1
-			try {
-				const raw = sessionStorage.getItem(scrollKey!)
-				const saved = raw === null ? 0 : Number(raw)
-				if (!Number.isFinite(saved)) {
-					restoringScroll = false
-					return
-				}
-
-				const max = Math.max(0, feedContainer.scrollHeight - feedContainer.clientHeight)
-				// If the container isn't scrollable yet (e.g., posts not rendered), retry a few frames.
-				if (max === 0 && attempts < 8) {
-					requestAnimationFrame(apply)
-					return
-				}
-
-				feedContainer.scrollTop = Math.min(Math.max(0, saved), max)
-			} finally {
-				restoringScroll = false
-			}
-		}
-
-		requestAnimationFrame(apply)
-	}
-
-	function persistScrollImmediate() {
-		if (!feedContainer || !scrollKey) return
-		try {
-			sessionStorage.setItem(scrollKey, String(feedContainer.scrollTop || 0))
-		} catch {
-			// ignore
-		}
-	}
-
-	function schedulePersistScroll() {
-		if (!feedContainer || !scrollKey) return
-		if (scrollPersistRaf) return
-		scrollPersistRaf = requestAnimationFrame(() => {
-			scrollPersistRaf = 0
-			persistScrollImmediate()
-		})
-	}
 
 	// Handle community picker
 	function handleOpenPicker() {
@@ -116,8 +62,6 @@
 		const { scrollTop, scrollHeight, clientHeight } = feedContainer
 		const scrolled = scrollTop + clientHeight
 		const threshold = scrollHeight - (clientHeight * 0.8)
-
-		schedulePersistScroll()
 
 		if (scrolled >= threshold && $feedStore.hasMore && !$feedStore.loading) {
 			loadMore()
@@ -221,10 +165,6 @@
 
 	// Pull to refresh handlers
 	function handleTouchStart(e: TouchEvent) {
-		// Snapshot scrollTop at touchstart so "tap during momentum scroll" restores precisely.
-		// (Scroll events can lag behind the exact moment the user taps.)
-		persistScrollImmediate()
-
 		if ($feedStore.loading || refreshing) return
 		if (e.touches.length !== 1) return
 
@@ -325,7 +265,10 @@
 	onMount(() => {
 		if (!feedContainer) return
 
-		restoreScrollPosition()
+		// Scroll restoration is now handled by SvelteKit's native snapshot feature
+		// in +page.svelte. The snapshot captures scroll before navigation and restores
+		// it when navigating back. DOM persistence handles feed switching (hot <-> new)
+		// since SwipeableFeeds keeps both Feed components mounted.
 
 		feedContainer.addEventListener('scroll', handleScroll)
 		feedContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
@@ -334,7 +277,6 @@
 		feedContainer.addEventListener('touchcancel', handleTouchCancel)
 
 		return () => {
-			schedulePersistScroll()
 			if (feedContainer) {
 				feedContainer.removeEventListener('scroll', handleScroll)
 				feedContainer.removeEventListener('touchstart', handleTouchStart)
@@ -344,16 +286,12 @@
 			}
 		}
 	})
-
-	$effect(() => {
-		// When feed/community changes, restore saved position for this key.
-		if (!feedContainer) return
-		restoreScrollPosition()
-	})
 </script>
 
 <div
 	bind:this={feedContainer}
+	data-feed-container
+	data-feed-type={feedType}
 	class="flex-1 overflow-y-auto custom-scrollbar overscroll-y-none"
 	style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
 	style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
