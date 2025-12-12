@@ -15,7 +15,8 @@
 		onReply,
 		onDelete,
 		onLoadMore,
-		hideHeader = false
+		hideHeader = false,
+		scrollKey
 	}: {
 		feedType: FeedType
 		onVote?: (postId: string, voteType: 'up' | 'down' | null) => Promise<void>
@@ -23,6 +24,7 @@
 		onDelete?: (postId: string) => Promise<void>
 		onLoadMore?: () => Promise<void>
 		hideHeader?: boolean
+		scrollKey?: string
 	} = $props()
 
 	// Enhanced state management
@@ -40,6 +42,7 @@
 	let feedOpacity = $state(1)
 	let isTransitioning = $state(false)
 	let pullRaf = 0
+	let restoringScroll = false
 
 	// Pull to refresh constants
 	const PULL_THRESHOLD = 80
@@ -53,6 +56,39 @@
 	const feedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
 	let windowStart = $state(0)
 	let windowEnd = $state(12)
+
+	function restoreScrollPosition() {
+		if (!feedContainer || !scrollKey) return
+		if (restoringScroll) return
+		restoringScroll = true
+		let attempts = 0
+
+		const apply = () => {
+			attempts += 1
+			try {
+				const raw = sessionStorage.getItem(scrollKey!)
+				const saved = raw === null ? 0 : Number(raw)
+				if (!Number.isFinite(saved)) {
+					restoringScroll = false
+					return
+				}
+
+				const max = Math.max(0, feedContainer.scrollHeight - feedContainer.clientHeight)
+				// If the container isn't scrollable yet (e.g., posts not rendered), retry a few frames.
+				if (max === 0 && attempts < 8) {
+					requestAnimationFrame(apply)
+					return
+				}
+
+				feedContainer.scrollTop = Math.min(Math.max(0, saved), max)
+				updateWindow()
+			} finally {
+				restoringScroll = false
+			}
+		}
+
+		requestAnimationFrame(apply)
+	}
 
 	// Handle community picker
 	function handleOpenPicker() {
@@ -296,6 +332,7 @@
 		if (!feedContainer) return
 
 		updateWindow()
+		restoreScrollPosition()
 
 		feedContainer.addEventListener('scroll', handleScroll)
 		feedContainer.addEventListener('touchstart', handleTouchStart, { passive: false })
@@ -317,10 +354,17 @@
 	$effect(() => {
 		updateWindow()
 	})
+
+	$effect(() => {
+		// When feed/community changes, restore saved position for this key.
+		if (!feedContainer) return
+		restoreScrollPosition()
+	})
 </script>
 
 <div
 	bind:this={feedContainer}
+	data-feed-scroll={feedType}
 	class="flex-1 overflow-y-auto custom-scrollbar overscroll-y-none"
 	style:transform={`translateY(${pullToRefreshY * 0.3}px)`}
 	style:transition={!isPulling ? 'transform 0.3s ease-out' : ''}
