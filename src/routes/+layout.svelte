@@ -316,15 +316,15 @@
     <!-- Loading fallback: blocks interaction while ComposeModal lazy-loads -->
     <button
       type="button"
-      class="fixed inset-0 bg-transparent focus:outline-none"
+      class="fixed inset-0 bg-transparent flex items-center justify-center focus:outline-none"
       style="z-index: 1000;"
       onclick={() => composeStore.closeModal()}
       aria-label="Close compose"
     >
-      <div class="absolute inset-x-0 bottom-10 flex justify-center pointer-events-none">
-        <div class="px-4 py-2 rounded-2xl bg-black/60 text-muted-foreground text-sm shadow-2xl">
-          Loading…
-        </div>
+      <div class="rounded-2xl px-4 py-3 text-muted-foreground text-sm"
+        style="background: rgba(16, 16, 16, 0.9); border: 1px solid rgba(107, 107, 107, 0.1); box-shadow: 0 0 80px 30px rgba(0,0,0,0.65);"
+      >
+        Loading…
       </div>
     </button>
   {/if}

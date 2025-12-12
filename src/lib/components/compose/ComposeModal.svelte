@@ -24,7 +24,6 @@
 
 	let textareaElement = $state<HTMLTextAreaElement | null>(null)
 	let modalContainerElement = $state<HTMLDivElement | null>(null)
-	let overlayElement = $state<HTMLDivElement | null>(null)
 	let content = $state('')
 	let isClosing = $state(false)
 	let showSuccess = $state(false)
@@ -56,22 +55,9 @@
 		const target = viewport ?? (browser ? window.visualViewport : null)
 		if (!target) return 0
 		const diff = window.innerHeight - target.height - target.offsetTop
-
-		// iOS behavior differs by version/browser mode:
-		// - Sometimes `position: fixed` is already shifted above the keyboard.
-		// - Other times it is not, and we must manually offset.
-		// Detect how much our fixed overlay has already been shifted, and only apply
-		// the remaining offset to avoid "double lifting" (giant gap above keyboard).
-		let alreadyShifted = 0
-		if (overlayElement) {
-			const rect = overlayElement.getBoundingClientRect()
-			alreadyShifted = Math.max(0, window.innerHeight - rect.bottom)
-		}
-
-		const remaining = Math.max(0, diff - alreadyShifted)
-		if (remaining > KEYBOARD_THRESHOLD) {
+		if (diff > KEYBOARD_THRESHOLD) {
 			// Clamp to reasonable max to prevent crazy values during iOS transitions
-			return Math.min(remaining, MAX_KEYBOARD_HEIGHT)
+			return Math.min(diff, MAX_KEYBOARD_HEIGHT)
 		}
 
 		// Fallback when the keyboard causes innerHeight to shrink but no visual viewport diff
@@ -494,10 +480,6 @@
 		}
 	}
 
-	.modal-overlay-exit {
-		animation: overlay-fade-out 0.3s ease-out forwards;
-	}
-
 	@keyframes overlay-fade-out {
 		0% {
 			opacity: 1;
@@ -507,22 +489,37 @@
 		}
 	}
 
-	/* Localized "focus glow" behind the modal (not full-screen dimming) */
+	/* Localized outer glow behind the modal (no full-screen backdrop). */
 	.modal-glow {
 		position: absolute;
-		inset: -28px;
-		border-radius: inherit;
+		inset: -80px;
+		border-radius: 2rem;
 		pointer-events: none;
 		opacity: 1;
-
-		/* Dark outer glow that fades out */
 		background: radial-gradient(
-			closest-side,
+			ellipse at center,
 			rgba(0, 0, 0, 0.75) 0%,
-			rgba(0, 0, 0, 0.45) 40%,
-			rgba(0, 0, 0, 0.0) 78%
+			rgba(0, 0, 0, 0.45) 35%,
+			rgba(0, 0, 0, 0) 70%
 		);
-		filter: blur(18px);
+		filter: blur(10px);
+	}
+
+	.modal-glow-enter {
+		animation: glow-fade-in 0.25s ease-out;
+	}
+
+	.modal-glow-exit {
+		animation: overlay-fade-out 0.3s ease-out forwards;
+	}
+
+	@keyframes glow-fade-in {
+		0% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
 	}
 
 	/* Success animation duration matches SUCCESS_ANIMATION_DURATION_MS=800ms */
@@ -563,9 +560,10 @@
 			transition: opacity 0.2s ease;
 		}
 
-		.modal-overlay-exit {
+		.modal-glow-enter,
+		.modal-glow-exit {
 			animation: none !important;
-			transition: opacity 0.2s ease;
+			opacity: 1;
 		}
 
 		.success-indicator {
@@ -590,11 +588,10 @@
 {#if $showComposeModal}
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
-		bind:this={overlayElement}
 		class="fixed inset-0 relative flex items-end justify-center p-4"
 		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
 	>
-		<!-- Fullscreen click-catcher (no visual dimming) -->
+		<!-- Backdrop (interactive for click-to-close) -->
 		<button
 			type="button"
 			class="absolute inset-0 bg-transparent focus:outline-none"
@@ -604,17 +601,17 @@
 			aria-label="Close compose"
 		></button>
 
-		<!-- Modal content -->
-		<div
-			bind:this={modalContainerElement}
-			class="modal-content-area relative z-10 w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-			role="dialog"
-			tabindex="-1"
-		>
-			<!-- Localized glow behind the modal -->
-			<div class="modal-glow {isClosing ? 'modal-overlay-exit' : ''}" aria-hidden="true"></div>
+		<!-- Modal glow + content (localized spotlight) -->
+		<div class="relative w-full max-w-lg" style="z-index: 1;">
+			<div class="modal-glow {isClosing ? 'modal-glow-exit' : 'modal-glow-enter'}"></div>
 
+			<div
+				bind:this={modalContainerElement}
+				class="modal-content-area relative w-full max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
+				style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
+				role="dialog"
+				tabindex="-1"
+			>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
@@ -759,6 +756,7 @@
 						</div>
 				</div>
 			</form>
+			</div>
 		</div>
 	</div>
 {/if}
