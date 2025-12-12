@@ -19,7 +19,9 @@
 	let touchStartY = $state(0)
 	let touchCurrentX = $state(0)
 	let isDragging = $state(false)
-	let containerTranslateX = $state(0)
+	// IMPORTANT: initialize position from activeFeed to avoid a 1-frame flicker
+	// (default 0 shows "new" briefly before effects run).
+	let containerTranslateX = $state(activeFeed === 'new' ? 0 : -100)
 	let isAnimating = $state(false)
 	let containerElement: HTMLDivElement
 
