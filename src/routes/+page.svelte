@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import { afterNavigate } from '$app/navigation'
+  import { afterNavigate, beforeNavigate } from '$app/navigation'
   import { onMount, onDestroy } from 'svelte'
   import { get } from 'svelte/store'
   import { supabase } from '$lib/supabase'
@@ -62,11 +62,12 @@
   let lastFeedSync = $state(0)
   const REFRESH_COOLDOWN_MS = 8000
   const FEED_CACHE_PREFIX = 'bingbong_feed_cache_v1'
-  const FEED_SCROLL_PREFIX = 'bingbong_feed_scroll_v1'
+  const HOME_SCROLL_PREFIX = 'bingbong_home_scroll_v1'
   const INITIAL_FEED_LIMIT = 12
   const PAGINATED_FEED_LIMIT = 15
   const REFRESH_FEED_LIMIT = 15
   let feedLoadSeq = 0
+  let scrollPersistRaf = 0
 
   // Derived feed store for header
   const currentFeedStore = $derived.by(() => feedUtils.getFeedStore(feedType))
@@ -116,6 +117,40 @@
     return { subwayLineCommunity, geographicCommunity }
   }
 
+  const getHomeScrollKey = () => `${HOME_SCROLL_PREFIX}:${feedType}:${selectedDisplayCommunity}`
+
+  const persistHomeScroll = () => {
+    if (!browser) return
+    if (scrollPersistRaf) return
+    scrollPersistRaf = requestAnimationFrame(() => {
+      scrollPersistRaf = 0
+      try {
+        sessionStorage.setItem(getHomeScrollKey(), String(window.scrollY || 0))
+      } catch {
+        // ignore
+      }
+    })
+  }
+
+  const restoreHomeScroll = () => {
+    if (!browser) return
+    try {
+      const raw = sessionStorage.getItem(getHomeScrollKey())
+      const y = raw === null ? 0 : Number(raw)
+      if (!Number.isFinite(y)) return
+
+      // iOS swipe-back can restore to a stale position; force it.
+      requestAnimationFrame(() => {
+        window.scrollTo(0, Math.max(0, y))
+        requestAnimationFrame(() => {
+          window.scrollTo(0, Math.max(0, y))
+        })
+      })
+    } catch {
+      // ignore
+    }
+  }
+
   // Watch for community changes and reload feed
   $effect(() => {
     const communityKey = `${$communityStore.selectedCommunity}:${$communityStore.selectedPostCommunity}`
@@ -163,6 +198,9 @@
 
     // Only refresh if navigating back from a thread page
     if (isThreadReturn) {
+      // Restore scroll position first (especially important for iOS swipe-back)
+      restoreHomeScroll()
+
       const currentFeed = feedUtils.getFeedStore(feedType)
       const currentState = get(currentFeed)
 
@@ -230,6 +268,31 @@
         } catch (error) {
           console.error('Error refreshing feed after navigation:', error)
         }
+      }
+    }
+  })
+
+  // Persist scroll while on the home feed (throttled)
+  onMount(() => {
+    if (!browser) return
+
+    // Initialize scroll entry (including 0) so swipe-back always has a stable value.
+    persistHomeScroll()
+
+    window.addEventListener('scroll', persistHomeScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', persistHomeScroll)
+    }
+  })
+
+  // Snapshot scroll immediately when navigating into a thread.
+  beforeNavigate(({ to }) => {
+    if (!browser) return
+    if (to?.route?.id?.startsWith('/thread/')) {
+      try {
+        sessionStorage.setItem(getHomeScrollKey(), String(window.scrollY || 0))
+      } catch {
+        // ignore
       }
     }
   })
@@ -525,7 +588,6 @@
       {#snippet children({ feedType: currentFeed })}
         <Feed
           feedType={currentFeed}
-          scrollKey={`${FEED_SCROLL_PREFIX}:${currentFeed}:${selectedDisplayCommunity}`}
           onVote={onVote}
           onReply={onReply}
           onDelete={onDelete}
