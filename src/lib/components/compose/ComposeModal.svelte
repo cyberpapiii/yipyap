@@ -493,6 +493,32 @@
 		}
 	}
 
+	/* Glow layer that moves with the modal animations */
+	.modal-shell {
+		position: relative;
+		overflow: visible;
+		isolation: isolate;
+	}
+
+	.modal-glow {
+		position: absolute;
+		inset: -80px;
+		border-radius: 28px;
+		pointer-events: none;
+		z-index: -1;
+		opacity: 0.9;
+		filter: blur(42px);
+		background:
+			radial-gradient(60% 60% at 50% 40%, rgba(1, 115, 92, 0.35) 0%, rgba(1, 115, 92, 0) 70%),
+			radial-gradient(70% 70% at 30% 60%, rgba(124, 56, 161, 0.22) 0%, rgba(124, 56, 161, 0) 70%),
+			radial-gradient(70% 70% at 70% 65%, rgba(0, 98, 207, 0.18) 0%, rgba(0, 98, 207, 0) 70%);
+		transition: opacity 0.25s ease;
+	}
+
+	.modal-glow-exit {
+		opacity: 0;
+	}
+
 	/* Success animation duration matches SUCCESS_ANIMATION_DURATION_MS=800ms */
 	.success-indicator {
 		position: fixed;
@@ -531,9 +557,26 @@
 			transition: opacity 0.2s ease;
 		}
 
+		.modal-enter {
+			opacity: 1;
+		}
+
+		.modal-exit {
+			opacity: 0;
+		}
+
 		.modal-overlay-exit {
 			animation: none !important;
 			transition: opacity 0.2s ease;
+			opacity: 0;
+		}
+
+		.modal-glow {
+			transition: none !important;
+		}
+
+		.modal-glow-exit {
+			opacity: 0;
 		}
 
 		.success-indicator {
@@ -573,12 +616,17 @@
 
 		<!-- Modal content -->
 		<div
-			bind:this={modalContainerElement}
-			class="modal-content-area relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl {isClosing ? 'modal-exit' : 'modal-enter'}"
-			style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
-			role="dialog"
-			tabindex="-1"
+			class="modal-shell w-full max-w-lg {isClosing ? 'modal-exit' : 'modal-enter'}"
 		>
+			<div class="modal-glow {isClosing ? 'modal-glow-exit' : ''}" aria-hidden="true"></div>
+
+			<div
+				bind:this={modalContainerElement}
+				class="modal-content-area relative w-full max-h-[80vh] flex flex-col overflow-hidden shadow-xl rounded-2xl"
+				style="background-color: #101010; border: 1px solid rgba(107, 107, 107, 0.1);"
+				role="dialog"
+				tabindex="-1"
+			>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-3">
 				<h2 class="text-2xl font-bold">
@@ -723,6 +771,7 @@
 						</div>
 				</div>
 			</form>
+			</div>
 		</div>
 	</div>
 {/if}
