@@ -62,7 +62,22 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith('/_app/')) {
-    event.respondWith(cacheFirst(request, RUNTIME_CACHE));
+    // IMPORTANT: serve build assets (including lazy-loaded chunks) from the precache.
+    // They are stored in CACHE_NAME during install, so we must look across caches here.
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse.ok) {
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, networkResponse.clone());
+            });
+          }
+          return networkResponse;
+        });
+      })
+    );
     return;
   }
 

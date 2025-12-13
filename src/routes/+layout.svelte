@@ -23,6 +23,7 @@
   type LazyCommunityPicker = typeof import('$lib/components/community/CommunityPicker.svelte').default
   type LazyInstallGate = typeof import('$lib/components/onboarding/InstallGate.svelte').default
   type LazyQuickOnboarding = typeof import('$lib/components/onboarding/QuickOnboarding.svelte').default
+  type LazyComposeModal = typeof import('$lib/components/compose/ComposeModal.svelte').default
 
   const { children } = $props()
   const api = createRealtimeAPI(supabase as any)
@@ -35,17 +36,25 @@
   const supabaseOrigin = config.supabase.url ? new URL(config.supabase.url).origin : null
 
   // Lazy load ComposeModal component
-  let ComposeModal = $state<any>(null)
+  let ComposeModal = $state<LazyComposeModal | null>(null)
+  let composeModalLoadError = $state<string | null>(null)
   let CommunityPickerComponent = $state<LazyCommunityPicker | null>(null)
   let InstallGateComponent = $state<LazyInstallGate | null>(null)
   let QuickOnboardingComponent = $state<LazyQuickOnboarding | null>(null)
 
   // Load ComposeModal when needed
   $effect(() => {
+    if (!browser) return
     if ($showComposeModal && !ComposeModal) {
-      import('$lib/components/compose/ComposeModal.svelte').then(module => {
-        ComposeModal = module.default
-      })
+      composeModalLoadError = null
+      import('$lib/components/compose/ComposeModal.svelte')
+        .then((module) => {
+          ComposeModal = module.default
+        })
+        .catch((error) => {
+          console.error('Failed to lazy-load ComposeModal:', error)
+          composeModalLoadError = error instanceof Error ? error.message : 'Failed to load composer'
+        })
     }
   })
 
@@ -321,7 +330,13 @@
       onclick={() => composeStore.closeModal()}
       aria-label="Close compose"
     >
-      <div class="text-muted-foreground text-sm">Loading…</div>
+      <div class="text-muted-foreground text-sm">
+        {#if composeModalLoadError}
+          Failed to load composer. Tap to close.
+        {:else}
+          Loading…
+        {/if}
+      </div>
     </button>
   {/if}
 {/if}

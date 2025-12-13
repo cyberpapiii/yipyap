@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { composeStore, showComposeModal } from '$lib/stores/compose'
+  import { composeStore, showComposeModal } from '$lib/stores'
   import { unreadCount } from '$lib/stores/notifications'
   import NotificationBadge from '../notifications/NotificationBadge.svelte'
   import { hapticsStore } from '$lib/stores/haptics'
@@ -7,9 +7,15 @@
   export let active: 'home' | 'thread' | 'profile' = 'home'
 
   function openComposer() {
-    // Haptic feedback for compose button
-    hapticsStore.trigger('selection')
+    // Always open the modal even if haptics fails for any reason
     composeStore.openModal()
+
+    // Haptic feedback for compose button (nice-to-have)
+    try {
+      hapticsStore.trigger('selection')
+    } catch {
+      // ignore
+    }
   }
 
   function handleNavClick() {
