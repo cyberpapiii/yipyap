@@ -11,6 +11,7 @@
   import type { AnonymousUser, CommunityType, GeographicCommunity } from '$lib/types'
   import { Toaster } from '$lib/components/ui'
   import BottomNav from '$lib/components/layout/BottomNav.svelte'
+  import ComposeModal from '$lib/components/compose/ComposeModal.svelte'
   import { composeStore, anonymousUser as currentUserStore, showComposeModal } from '$lib/stores'
   import { createRealtimeAPI } from '$lib/api/realtime'
   import { notificationsStore } from '$lib/stores/notifications'
@@ -23,7 +24,6 @@
   type LazyCommunityPicker = typeof import('$lib/components/community/CommunityPicker.svelte').default
   type LazyInstallGate = typeof import('$lib/components/onboarding/InstallGate.svelte').default
   type LazyQuickOnboarding = typeof import('$lib/components/onboarding/QuickOnboarding.svelte').default
-  type LazyComposeModal = typeof import('$lib/components/compose/ComposeModal.svelte').default
 
   const { children } = $props()
   const api = createRealtimeAPI(supabase as any)
@@ -35,28 +35,9 @@
 
   const supabaseOrigin = config.supabase.url ? new URL(config.supabase.url).origin : null
 
-  // Lazy load ComposeModal component
-  let ComposeModal = $state<LazyComposeModal | null>(null)
-  let composeModalLoadError = $state<string | null>(null)
   let CommunityPickerComponent = $state<LazyCommunityPicker | null>(null)
   let InstallGateComponent = $state<LazyInstallGate | null>(null)
   let QuickOnboardingComponent = $state<LazyQuickOnboarding | null>(null)
-
-  // Load ComposeModal when needed
-  $effect(() => {
-    if (!browser) return
-    if ($showComposeModal && !ComposeModal) {
-      composeModalLoadError = null
-      import('$lib/components/compose/ComposeModal.svelte')
-        .then((module) => {
-          ComposeModal = module.default
-        })
-        .catch((error) => {
-          console.error('Failed to lazy-load ComposeModal:', error)
-          composeModalLoadError = error instanceof Error ? error.message : 'Failed to load composer'
-        })
-    }
-  })
 
   // Lazy load community picker only when opened
   $effect(() => {
@@ -318,27 +299,7 @@
 
 <!-- Compose Modal - owned by the ComposeModal component (single overlay/backdrop) -->
 {#if $showComposeModal}
-  {#if ComposeModal}
-    <!-- svelte-ignore svelte_component_deprecated -->
-    <svelte:component this={ComposeModal} onSubmit={onSubmit} />
-  {:else}
-    <!-- Loading fallback: blocks interaction while ComposeModal lazy-loads -->
-    <button
-      type="button"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center focus:outline-none"
-      style="z-index: 1000;"
-      onclick={() => composeStore.closeModal()}
-      aria-label="Close compose"
-    >
-      <div class="text-muted-foreground text-sm">
-        {#if composeModalLoadError}
-          Failed to load composer. Tap to close.
-        {:else}
-          Loading…
-        {/if}
-      </div>
-    </button>
-  {/if}
+  <ComposeModal onSubmit={onSubmit} />
 {/if}
 
 <!-- Community Picker Modal - rendered at root level -->

@@ -1,15 +1,38 @@
+import { browser } from '$app/environment'
 import { writable } from 'svelte/store'
 import type { ComposeState, PostWithStats, CommentWithStats } from '$lib/types'
 
-// Compose state store
-export const composeState = writable<ComposeState>({
+const DEFAULT_COMPOSE_STATE: ComposeState = {
 	content: '',
 	isSubmitting: false,
 	error: null
-})
+}
+
+type ComposeGlobalStores = {
+	composeState: ReturnType<typeof writable<ComposeState>>
+	showComposeModal: ReturnType<typeof writable<boolean>>
+}
+
+function getGlobalStores(): ComposeGlobalStores | null {
+	if (!browser) return null
+
+	const w = window as Window & { __yipyap_composeStores__?: ComposeGlobalStores }
+	if (!w.__yipyap_composeStores__) {
+		w.__yipyap_composeStores__ = {
+			composeState: writable<ComposeState>({ ...DEFAULT_COMPOSE_STATE }),
+			showComposeModal: writable<boolean>(false)
+		}
+	}
+	return w.__yipyap_composeStores__
+}
+
+const globalStores = getGlobalStores()
+
+// Compose state store (globalized in browser to avoid duplicated module instances)
+export const composeState = globalStores?.composeState ?? writable<ComposeState>({ ...DEFAULT_COMPOSE_STATE })
 
 // Modal visibility
-export const showComposeModal = writable<boolean>(false)
+export const showComposeModal = globalStores?.showComposeModal ?? writable<boolean>(false)
 
 // Compose store functions
 export const composeStore = {
@@ -30,11 +53,7 @@ export const composeStore = {
 		composeState.update(state => ({ ...state, replyTo })),
 
 	// Clear compose state
-	clear: () => composeState.set({
-		content: '',
-		isSubmitting: false,
-		error: null
-	}),
+	clear: () => composeState.set({ ...DEFAULT_COMPOSE_STATE }),
 
 	// Open compose modal
 	openModal: (replyTo?: ComposeState['replyTo']) => {

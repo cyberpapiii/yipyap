@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte'
 	import AnonymousAvatar from '../community/AnonymousAvatar.svelte'
 	import { Button } from '$lib/components/ui'
-	import { composeStore, showComposeModal, composeState } from '$lib/stores'
+	import { composeStore, composeState } from '$lib/stores'
 	import type { ComposeState, GeographicCommunity } from '$lib/types'
 	import { getAllGeographicCommunities, requiresGeofence } from '$lib/config/communities'
 	import { communityStore } from '$lib/stores/community'
@@ -248,7 +248,6 @@
 	// Only listen for keyboard shortcuts while the modal is open.
 	$effect(() => {
 		if (!browser) return
-		if (!$showComposeModal) return
 
 		document.addEventListener('keydown', handleKeydown)
 		return () => {
@@ -287,40 +286,40 @@
 	$effect(() => {
 		if (!browser) return
 
-		if ($showComposeModal) {
-			// Store original overflow styles
-			const originalBodyOverflow = document.body.style.overflow
-			const originalDocumentOverflow = document.documentElement.style.overflow
+		// Store original overflow styles
+		const originalBodyOverflow = document.body.style.overflow
+		const originalDocumentOverflow = document.documentElement.style.overflow
 
-			// Simple overflow hidden - less aggressive than position:fixed
-			document.body.style.overflow = 'hidden'
-			document.documentElement.style.overflow = 'hidden'
+		// Simple overflow hidden - less aggressive than position:fixed
+		document.body.style.overflow = 'hidden'
+		document.documentElement.style.overflow = 'hidden'
 
-			// Block touchmove on the backdrop (but allow it on the modal content)
-			const preventBackdropTouch = (e: TouchEvent) => {
-				const target = e.target as HTMLElement
-				// Allow touches inside the modal dialog and its children
-				if (!target.closest('[role="dialog"]') && !target.closest('.modal-content-area')) {
-					e.preventDefault()
-				}
+		// Block touchmove on the backdrop (but allow it on the modal content)
+		const preventBackdropTouch = (e: TouchEvent) => {
+			const target = e.target as HTMLElement
+			// Allow touches inside the modal dialog and its children
+			if (!target.closest('[role="dialog"]') && !target.closest('.modal-content-area')) {
+				e.preventDefault()
 			}
-			document.addEventListener('touchmove', preventBackdropTouch, { passive: false })
+		}
+		document.addEventListener('touchmove', preventBackdropTouch, { passive: false })
 
-			// Focus textarea after a short delay to let iOS settle
-			setTimeout(() => {
-				if (textareaElement) {
-					textareaElement.focus({ preventScroll: true })
-				}
-			}, 50)
-
-			return () => {
-				// Remove event listener
-				document.removeEventListener('touchmove', preventBackdropTouch)
-
-				// Restore original styles
-				document.body.style.overflow = originalBodyOverflow
-				document.documentElement.style.overflow = originalDocumentOverflow
+		// Focus textarea after a short delay to let iOS settle
+		const focusTimeout = setTimeout(() => {
+			if (textareaElement) {
+				textareaElement.focus({ preventScroll: true })
 			}
+		}, 50)
+
+		return () => {
+			clearTimeout(focusTimeout)
+
+			// Remove event listener
+			document.removeEventListener('touchmove', preventBackdropTouch)
+
+			// Restore original styles
+			document.body.style.overflow = originalBodyOverflow
+			document.documentElement.style.overflow = originalDocumentOverflow
 		}
 	})
 
@@ -412,22 +411,6 @@
 				viewport.removeEventListener('scroll', updateOffset)
 			}
 			window.removeEventListener('resize', updateOffset)
-		}
-	})
-
-	$effect(() => {
-		if ($showComposeModal) {
-			// Reset animation state when modal opens (handles rapid open/close)
-			isClosing = false
-			showSuccess = false
-		} else {
-			// Reset keyboard offset when modal closes
-			keyboardOffset = 0
-			targetKeyboardOffset = 0
-			if (keyboardSettleTimeout) {
-				clearTimeout(keyboardSettleTimeout)
-				keyboardSettleTimeout = null
-			}
 		}
 	})
 
@@ -598,7 +581,6 @@
 	</div>
 {/if}
 
-{#if $showComposeModal}
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
 		class="fixed inset-0 relative flex items-end justify-center p-4"
@@ -774,4 +756,3 @@
 			</div>
 		</div>
 	</div>
-{/if}
