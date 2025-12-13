@@ -583,7 +583,7 @@
 
 	<!-- Modal overlay (WCAG 4.1.2: Remove conflicting role/tabindex, backdrop is purely decorative) - Modal layer: z-1000-1999 -->
 	<div
-		class="fixed inset-0 relative flex items-end justify-center p-4"
+		class="fixed inset-0 flex items-end justify-center p-4"
 		style={`z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + ${keyboardOffset}px); overflow: hidden; overscroll-behavior: none; will-change: padding-bottom; transition: padding-bottom 0.15s ease-out;`}
 	>
 		<!-- Backdrop (interactive for click-to-close) -->
